@@ -9,3 +9,7 @@ list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_
 2026-09-29,8,AEROFLEX,Cash (non-F&O),Pullback,508.0,523.24,538.94,554.63,,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
 2026-09-29,9,KIRIINDUS,Cash (non-F&O),Pullback,525.9,541.68,557.93,574.18,ASM,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
 2026-09-29,10,CENTUM,Cash (non-F&O),Candle at support,4450.0,4583.5,4721.01,4858.51,ASM,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-28,1,SHILPAMED,Cash (non-F&O),Retest,980.1,1009.5,1039.79,1070.07,ASM,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-28
+2026-09-28,6,TFCILTD,Cash (non-F&O),Pullback,132.93,136.92,141.03,145.13,,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-28
+2026-09-28,9,WELENT,Cash (non-F&O),Pullback,725.2,746.96,769.36,791.77,ASM,Construction,Lagging,Waiting for entry,,,,,,,,,,,Listed,2026-09-28
+2026-09-28,10,GLAXO,Midcap 150,Pullback,2795.9,2879.78,2966.17,3052.56,Low volume,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-28

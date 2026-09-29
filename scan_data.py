@@ -51,12 +51,28 @@ BASE_MAX_RANGE_PCT = 12.0
 BREAKOUT_MAX_EXT_PCT = 5.0           # B: skip if price already > 5% above the base top
 NEAR_SUPPORT_PCT = 3.0               # C/E: within 3% of support
 RETEST_NEAR_PCT = 2.0                # D: came back within 2% of the broken level
+RETEST_MAX_ABOVE_PCT = 5.0           # D: price must still be within 5% of the level (else it has run away)
+MAX_PULLBACK_PCT = 15.0              # C/D/E: a drop of more than 15% from the 20-day high is a fall, not a dip
+BUY_ZONE_PCT = 3.0                   # support-style buy zone = support .. +3%
 VOL_MULT = 1.5
 ENTRY_BUFFER = 0.01                  # breakout entry: trigger high .. +1%
 SCORE = {"B": 3, "D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1}
 MIN_VALUE_CR = 50
 MIN_HISTORY = 40                     # shorter histories can't show any structure
 SHORT_HISTORY_FLAG = 120
+
+# ---- Track record ----
+PICKS_FILE = os.path.join("data", "picks_log.csv")
+TOP_N = 10                           # the daily list = top 10 eligible
+ENTRY_WINDOW = 3                     # a pick can be bought within the first 3 sessions after the list date
+PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
+               "t1", "t2", "warning_at_listing"]
+
+# ---- Track record of past picks
+TOP_N = 10                           # the list shows the top 10 eligible stocks each day
+ENTRY_WINDOW_SESSIONS = 3            # a pick counts as bought if the entry is reached within 3 sessions
+PICKS_LOG = os.path.join(OUT_DIR, "picks_log.csv")        # permanent diary of every day's top 10
+PICKS_STATUS = os.path.join(OUT_DIR, "picks_status.csv")  # re-evaluated every run from real prices
 
 FALLBACK_FNO = """ABB ABCAPITAL ADANIENSOL ADANIENT ADANIGREEN ADANIPORTS ALKEM AMBER AMBUJACEM ANGELONE
 APLAPOLLO APOLLOHOSP ASHOKLEY ASIANPAINT ASTRAL AUBANK AUROPHARMA AXISBANK BAJAJ-AUTO BAJAJFINSV
@@ -340,6 +356,8 @@ def check_retest(peaks, l, c, n):
             continue
         if c[-1] < pv or c[b:].min() < pv * 0.98:
             continue
+        if pct(c[-1], pv) > RETEST_MAX_ABOVE_PCT:      # ran away from the level: no longer a retest
+            continue
         if best is None or pv > best["P"]:
             best = {"P": pv, "b": b}
     return best
@@ -390,9 +408,17 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     supports = support_levels(peaks, last_trough, c, n)
     C = check_pullback(A, supports, h, l, c)
     D = check_retest(peaks, l, c, n)
+    if B and D and B["bl"] <= D["P"] <= B["bh"] * 1.01:
+        D = None                                    # same level as the base just broken: don't count it twice
     candle = check_candle(o, h, l, c)
     near_S = next((S for S in supports if S * 0.97 <= l[-2:].min() <= S * (1 + NEAR_SUPPORT_PCT / 100)), None)
     E = bool(candle and (C or D or near_S is not None))
+
+    # A fall of more than 15% from the 20-day high is not a dip: dip-style setups (C, D, E) don't count
+    drop_from_high = pct(h[-20:].max(), c[-1])
+    deep_drop = bool(drop_from_high > MAX_PULLBACK_PCT and (C or D or E))
+    if deep_drop:
+        C, D, E = None, None, False
 
     ret1, ret3 = trailing_return(c, 21), trailing_return(c, 63)
     G = bool(ret1 == ret1 and ret3 == ret3 and ret1 > nifty["ret_1m"] and ret3 > nifty["ret_3m"])
@@ -402,6 +428,7 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     VOL = bool(trig_vr == trig_vr and trig_vr >= VOL_MULT and (B or C or D or E))
 
     # ---- entry style and levels (priority: breakout > retest > pullback > candle)
+    zone_status = ""
     if B:
         style = "Breakout"
         entry_low, entry_high = h[-1], h[-1] * (1 + ENTRY_BUFFER)
@@ -409,8 +436,10 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     elif D or C or E:
         S = D["P"] if D else (C["S"] if C else near_S)
         style = "Retest" if D else ("Pullback" if C else "Candle at support")
-        entry_low, entry_high = S, max(c[-1], S * 1.01)
+        entry_low, entry_high = S, S * (1 + BUY_ZONE_PCT / 100)     # buy near support only
         support = S
+        zone_status = ("In buy zone" if c[-1] <= entry_high
+                       else f"Above buy zone by {pct(c[-1], entry_high):.1f}%: wait for a dip into the zone")
     else:
         style = ""
         entry_low, entry_high = np.nan, np.nan
@@ -452,7 +481,9 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         why.append("No resistance overhead (at or near its 52-week high)")
 
     missing = []
-    if not has_setup:
+    if deep_drop:
+        missing.append(f"Fell {drop_from_high:.1f}% from its 20-day high (more than {MAX_PULLBACK_PCT:.0f}%: a fall, not a dip)")
+    if not has_setup and not deep_drop:
         missing.append("No entry setup (no breakout, retest, pullback or candle at support)")
     if not F:
         missing.append(f"Room to next resistance only {room:.1f}% (need {MIN_ROOM_PCT:.0f}%)")
@@ -460,18 +491,23 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     # ---- warning flags (information only, never exclusions)
     band = bands.get(sym, "unknown")
     value20 = (c[-20:] * v[-20:]).mean() / 1e7
-    flags = []
+    flags, tags = [], []
     if sym in banned:
         flags.append("F&O ban list (no new F&O positions; cash buying allowed)")
+        tags.append("F&O ban")
     for name, syms in surveillance.items():
         if sym in syms:
             flags.append(f"On NSE {name} list (surveillance; higher margin / trade restrictions possible)")
+            tags.append(name)
     if band in ("2", "5", "2.0", "5.0"):
         flags.append(f"{band}% price band (daily move capped at {band}%)")
+        tags.append(f"{band.split('.')[0]}% band")
     if n < SHORT_HISTORY_FLAG:
         flags.append(f"Short history: {n} sessions, limited price structure")
+        tags.append("New listing")
     if segment == "Midcap 150" and value20 < MIN_VALUE_CR:
         flags.append(f"Thin liquidity: Rs {value20:.0f} cr/day avg")
+        tags.append("Low volume")
 
     hi52 = h[-252:].max()
     return {
@@ -479,7 +515,9 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "date": dates[-1].strftime("%Y-%m-%d"), "history_sessions": n,
         "eligible": eligible, "score": score, "setups": setups, "entry_style": style,
         "reason": "; ".join(why), "not_eligible_because": "; ".join(missing),
+        "warning": ", ".join(tags),
         "flags": "; ".join(flags), "n_flags": len(flags),
+        "zone_status": zone_status, "deep_pullback": deep_drop, "drop_from_20d_high_pct": r2(drop_from_high),
         "close": r2(c[-1]), "chg_pct": r2(pct(c[-1], c[-2])),
         "entry_low": r2(entry_low), "entry_high": r2(entry_high),
         "t1": r2(t1) if style else None, "t2": r2(t2) if style else None, "time_exit_days": TIME_EXIT_DAYS,
@@ -497,6 +535,266 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "retest_break_date": dates[D["b"]].strftime("%Y-%m-%d") if D else None,
         "pullback_support": r2(C["S"]) if C else None,
         "last_swing_trough": r2(last_trough), "price_band": band, "avg_value20_cr": r2(value20),
+    }
+
+
+# ---------------------------------------------------------------- track record
+def update_picks_log(table, list_date):
+    """Save today's top 10 eligible picks to the permanent log (a re-run on the same date replaces them)."""
+    top = table[table["eligible"]].head(TOP_N)
+    new = pd.DataFrame({
+        "list_date": list_date, "list_rank": range(1, len(top) + 1),
+        "symbol": top["symbol"].values, "entry_style": top["entry_style"].values,
+        "entry_low": top["entry_low"].values, "entry_high": top["entry_high"].values,
+        "t1": top["t1"].values, "t2": top["t2"].values,
+        "close_at_list": top["close"].values, "warning": top["warning"].values,
+    })
+    if os.path.exists(PICKS_LOG):
+        log = pd.read_csv(PICKS_LOG, dtype={"list_date": str})
+        log = pd.concat([log[log["list_date"] != list_date], new], ignore_index=True)
+    else:
+        log = new
+    log.to_csv(PICKS_LOG, index=False, encoding="utf-8")
+    return log
+
+
+def evaluate_pick(p, df):
+    """Replay real prices after the list date: entry (within 3 sessions), then T1/T2 within 30 days."""
+    out = {"status": "Waiting for entry", "fill_date": None, "fill_price": None, "t1_date": None,
+           "t2_date": None, "exit_date": None, "result_pct": None, "max_dip_pct": None,
+           "last_close": None, "days_held": None, "event_date": None}
+    if df is None:
+        out["status"] = "No price data"
+        return out
+    ds = df.index.strftime("%Y-%m-%d")
+    after = df[ds > p["list_date"]]
+    ads = after.index.strftime("%Y-%m-%d")
+    lo, hi = float(p["entry_low"]), float(p["entry_high"])
+
+    fill_i, fill_price = None, None
+    for i in range(min(ENTRY_WINDOW_SESSIONS, len(after))):
+        row = after.iloc[i]
+        touched = row["Low"] <= hi and row["High"] >= lo
+        if p["entry_style"] == "Breakout":
+            touched = touched and row["Open"] <= hi          # opened above the range = skipped that day
+        if touched:
+            fill_i, fill_price = i, min(max(row["Open"], lo), hi)
+            break
+    if fill_i is None:
+        if len(after) >= ENTRY_WINDOW_SESSIONS:
+            out.update(status="Not bought", event_date=ads[ENTRY_WINDOW_SESSIONS - 1])
+        return out
+
+    fill_date = ads[fill_i]
+    deadline = (pd.Timestamp(fill_date) + pd.Timedelta(days=TIME_EXIT_DAYS)).strftime("%Y-%m-%d")
+    hold = after.iloc[fill_i + 1:]
+    hds = hold.index.strftime("%Y-%m-%d")
+    hold = hold[hds <= deadline]
+    hds = hold.index.strftime("%Y-%m-%d")
+    window_over = ds[-1] >= deadline
+    t1_hits = np.where(hold["High"].to_numpy() >= p["t1"])[0]
+    t2_hits = np.where(hold["High"].to_numpy() >= p["t2"])[0]
+    t1_date = hds[t1_hits[0]] if len(t1_hits) else None
+    t2_date = hds[t2_hits[0]] if len(t2_hits) else None
+
+    end = t2_hits[0] + 1 if t2_date else len(hold)
+    lows = np.r_[after.iloc[fill_i]["Low"], hold["Low"].to_numpy()[:end]]
+    last_close = float(hold["Close"].iloc[-1]) if len(hold) else float(after.iloc[fill_i]["Close"])
+    out.update(fill_date=fill_date, fill_price=r2(fill_price), t1_date=t1_date, t2_date=t2_date,
+               max_dip_pct=r2(pct(lows.min(), fill_price)), last_close=r2(last_close),
+               days_held=(pd.Timestamp(hds[end - 1] if len(hold) else fill_date) - pd.Timestamp(fill_date)).days)
+    if t2_date:
+        out.update(status="Full win (T2 hit)", exit_date=t2_date, event_date=t2_date,
+                   result_pct=r2(pct(p["t2"], fill_price)))
+    elif window_over and t1_date:
+        out.update(status="Partial win (T1 hit)", exit_date=hds[-1], event_date=hds[-1],
+                   result_pct=r2(pct(p["t1"], fill_price)))
+    elif window_over:
+        out.update(status="Failed (30 days, no target)", exit_date=hds[-1] if len(hds) else fill_date,
+                   event_date=hds[-1] if len(hds) else fill_date, result_pct=r2(pct(last_close, fill_price)))
+    elif t1_date:
+        out.update(status="T1 hit, running for T2", event_date=t1_date,
+                   result_pct=r2(pct(last_close, fill_price)))
+    else:
+        out.update(status="Running", event_date=fill_date, result_pct=r2(pct(last_close, fill_price)))
+    return out
+
+
+def track_record(log, frames, latest_date):
+    """Evaluate every logged pick; return the status table and a summary for meta.json."""
+    rows = []
+    for _, p in log.iterrows():
+        res = evaluate_pick(p, frames.get(p["symbol"] + ".NS"))
+        rows.append({**p.to_dict(), **res, "new_today": res["event_date"] == latest_date})
+    st = pd.DataFrame(rows)
+    st.to_csv(PICKS_STATUS, index=False, encoding="utf-8")
+    cnt = st["status"].value_counts().to_dict() if not st.empty else {}
+    full = cnt.get("Full win (T2 hit)", 0)
+    part = cnt.get("Partial win (T1 hit)", 0)
+    fail = cnt.get("Failed (30 days, no target)", 0)
+    finished = full + part + fail
+    bought = st["fill_date"].notna().sum() if not st.empty else 0
+    failed_rows = st[st["status"] == "Failed (30 days, no target)"] if not st.empty else st
+    return {
+        "since": log["list_date"].min() if not log.empty else None,
+        "total_picks": int(len(st)), "bought": int(bought),
+        "not_bought": int(cnt.get("Not bought", 0)), "waiting_for_entry": int(cnt.get("Waiting for entry", 0)),
+        "running": int(cnt.get("Running", 0)), "t1_hit_running_for_t2": int(cnt.get("T1 hit, running for T2", 0)),
+        "full_wins": int(full), "partial_wins": int(part), "failed": int(fail), "finished": int(finished),
+        "win_rate_pct": r2(100 * (full + part) / finished) if finished else None,
+        "full_win_rate_pct": r2(100 * full / finished) if finished else None,
+        "partial_win_rate_pct": r2(100 * part / finished) if finished else None,
+        "avg_failed_result_pct": r2(failed_rows["result_pct"].astype(float).mean()) if len(failed_rows) else None,
+        "avg_max_dip_pct": r2(st["max_dip_pct"].astype(float).mean()) if bought else None,
+        "new_results_today": int(st["new_today"].sum()) if not st.empty else 0,
+    }
+
+
+# ---------------------------------------------------------------- track record
+def _naive(df):
+    if getattr(df.index, "tz", None) is not None:
+        df = df.copy()
+        df.index = df.index.tz_localize(None)
+    return df
+
+
+def replay_pick(p, df):
+    """Replay one pick against the prices after its list date.
+    Entry: within ENTRY_WINDOW sessions. Breakout = stop-limit (skip a day that opens above entry_high);
+    buy zone = limit order, filled when the day trades inside the zone. Targets checked from the day after
+    the fill (plus the fill day's close). T2 = full win; T1 only by day 30 = partial win; neither = failed."""
+    df = _naive(df)
+    out = {"status": "Waiting for entry", "fill_date": None, "fill_price": None, "t1_date": None,
+           "t2_date": None, "close_date": None, "exit_price": None, "return_pct": None,
+           "current_pct": None, "max_dip_pct": None, "days_held": None,
+           "last_event": "Listed", "last_event_date": p["list_date"]}
+    after = df[df.index > pd.Timestamp(p["list_date"])]
+    if after.empty:
+        return out
+    lo, hi = float(p["entry_low"]), float(p["entry_high"])
+    fill_i, fill = None, None
+    for i in range(min(ENTRY_WINDOW, len(after))):
+        r = after.iloc[i]
+        if p["entry_style"] == "Breakout":
+            if r["Open"] > hi:
+                continue
+            if r["High"] >= lo:
+                fill_i, fill = i, max(r["Open"], lo)
+                break
+        elif r["Low"] <= hi and r["High"] >= lo:
+            fill_i, fill = i, min(max(r["Open"], lo), hi)
+            break
+    if fill_i is None:
+        if len(after) >= ENTRY_WINDOW:
+            out.update(status="Not bought", last_event="Not bought (entry never reached)",
+                       last_event_date=str(after.index[ENTRY_WINDOW - 1].date()))
+        return out
+
+    fd = after.index[fill_i]
+    out.update(status="Running", fill_date=str(fd.date()), fill_price=round(float(fill), 2),
+               last_event="Bought", last_event_date=str(fd.date()))
+    expiry = fd + pd.Timedelta(days=TIME_EXIT_DAYS)
+    hold = after.iloc[fill_i:]
+    hold = hold[hold.index <= expiry]
+    t1, t2 = float(p["t1"]), float(p["t2"])
+    t1d = t2d = None
+    for j in range(len(hold)):
+        r = hold.iloc[j]
+        reach = r["Close"] if j == 0 else r["High"]
+        if t1d is None and reach >= t1:
+            t1d = hold.index[j]
+        if reach >= t2:
+            t2d = hold.index[j]
+            break
+    end = t2d if t2d is not None else hold.index[-1]
+    path = hold[hold.index <= end]
+    lows = path["Low"].iloc[1:] if len(path) > 1 else path["Close"]
+    out["max_dip_pct"] = r2(min(0.0, pct(lows.min(), fill))) or 0.0
+    if t1d is not None:
+        out.update(t1_date=str(t1d.date()), last_event="T1 hit (+3%)", last_event_date=str(t1d.date()))
+
+    expired = df.index[-1] >= expiry
+    if t2d is not None:
+        out.update(status="Full win (T2)", t2_date=str(t2d.date()), close_date=str(t2d.date()),
+                   exit_price=round(t2, 2), return_pct=r2(pct(t2, fill)),
+                   last_event="T2 hit (+6%)", last_event_date=str(t2d.date()),
+                   days_held=(t2d - fd).days)
+    elif expired:
+        ev = df.index[df.index >= expiry][0]
+        if t1d is not None:
+            out.update(status="Partial win (T1)", close_date=str(ev.date()), exit_price=round(t1, 2),
+                       return_pct=r2(pct(t1, fill)), last_event="Closed: partial win (30 days, T1 only)")
+        else:
+            px = float(hold["Close"].iloc[-1])
+            out.update(status="Failed", close_date=str(ev.date()), exit_price=round(px, 2),
+                       return_pct=r2(pct(px, fill)), last_event="Failed (30 days, no target)")
+        out.update(last_event_date=str(ev.date()), days_held=(ev - fd).days)
+    else:
+        out.update(status="Running (T1 hit)" if t1d is not None else "Running",
+                   current_pct=r2(pct(float(df["Close"].iloc[-1]), fill)),
+                   days_held=(df.index[-1] - fd).days)
+    return out
+
+
+def _replay_all(log, frames):
+    missing = [s + ".NS" for s in log["symbol"].unique() if s + ".NS" not in frames]
+    if missing:
+        frames.update(download(missing, period="6mo", min_rows=1))
+    rows = []
+    for _, p in log.iterrows():
+        df = frames.get(p["symbol"] + ".NS")
+        res = replay_pick(p, df) if df is not None else {"status": "Price data unavailable"}
+        rows.append({**p.to_dict(), **res})
+    return pd.DataFrame(rows)
+
+
+def update_track_record(table, frames, data_date):
+    """Add today's top 10 to the picks log, replay every pick, and summarise the record.
+    A stock that already has an open pick (waiting for entry or running) is not logged again,
+    so one trade is never counted twice."""
+    if os.path.exists(PICKS_FILE):
+        log = pd.read_csv(PICKS_FILE, dtype={"list_date": str})
+        log = log[[c for c in PICK_STATIC if c in log.columns]]
+    else:
+        log = pd.DataFrame(columns=PICK_STATIC)
+    if data_date and not table.empty:
+        log = log[log["list_date"] != data_date]            # idempotent: rebuild today's entries
+        prior = _replay_all(log, frames) if not log.empty else pd.DataFrame(columns=["symbol", "status"])
+        active = set(prior.loc[prior["status"].astype(str).str.startswith(("Running", "Waiting")), "symbol"])
+        top = table[table["eligible"]].head(TOP_N)
+        top = top[~top["symbol"].isin(active)]
+        today = pd.DataFrame({
+            "list_date": data_date, "rank": top["rank"], "symbol": top["symbol"], "segment": top["segment"],
+            "entry_style": top["entry_style"], "entry_low": top["entry_low"], "entry_high": top["entry_high"],
+            "t1": top["t1"], "t2": top["t2"], "warning_at_listing": top["warning"].fillna(""),
+        })
+        log = pd.concat([log, today], ignore_index=True)
+
+    full = _replay_all(log, frames) if not log.empty else pd.DataFrame()
+    if not full.empty:
+        full = full.sort_values(["list_date", "rank"], ascending=[False, True])
+    full.to_csv(PICKS_FILE, index=False, encoding="utf-8")
+
+    st = full["status"] if not full.empty else pd.Series(dtype=str)
+    fw, pw, fl = int((st == "Full win (T2)").sum()), int((st == "Partial win (T1)").sum()), int((st == "Failed").sum())
+    closed = fw + pw + fl
+    done = full[full["status"].isin(["Full win (T2)", "Partial win (T1)", "Failed"])] if not full.empty else full
+    new = full[full["last_event_date"] == data_date] if not full.empty else full
+    return {
+        "since": str(full["list_date"].min()) if not full.empty else None,
+        "picks": int(len(full)),
+        "bought": int(full["fill_date"].notna().sum()) if not full.empty else 0,
+        "not_bought": int((st == "Not bought").sum()),
+        "waiting_for_entry": int((st == "Waiting for entry").sum()),
+        "running": int(st.str.startswith("Running").sum()),
+        "running_t1_hit": int((st == "Running (T1 hit)").sum()),
+        "full_wins_t2": fw, "partial_wins_t1": pw, "failed": fl, "closed": closed,
+        "win_rate_t1_or_better_pct": r2(100 * (fw + pw) / closed) if closed else None,
+        "full_win_rate_t2_pct": r2(100 * fw / closed) if closed else None,
+        "avg_return_closed_pct": r2(done["return_pct"].mean()) if closed else None,
+        "avg_max_dip_closed_pct": r2(done["max_dip_pct"].mean()) if closed else None,
+        "new_events_today": int(len(new)),
+        "file": PICKS_FILE,
     }
 
 
@@ -570,6 +868,12 @@ def main():
         latest_date = None
     table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False, encoding="utf-8")
 
+    try:
+        track = update_track_record(table, frames, latest_date)
+    except Exception as e:                     # tracking must never block the daily list
+        print("track record failed:", e)
+        track = {"error": str(e)}
+
     elig = table[table["eligible"]] if not table.empty else table
     meta = {
         "generated_at_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M"),
@@ -593,6 +897,7 @@ def main():
         "flags_not_rejections": ["F&O ban", "ASM/GSM list", "2%/5% price band", "short price history",
                                  "thin liquidity (Midcap 150)"],
         "price_source": "Yahoo Finance via yfinance (unofficial)",
+        "track_record": track,
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)

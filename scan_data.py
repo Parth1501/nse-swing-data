@@ -66,7 +66,8 @@ PICKS_FILE = os.path.join("data", "picks_log.csv")
 TOP_N = 10                           # the daily list = top 10 eligible
 ENTRY_WINDOW = 3                     # a pick can be bought within the first 3 sessions after the list date
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
-               "t1", "t2", "warning_at_listing"]
+               "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
+MIN_SECTOR_STOCKS = 3                # need at least 3 stocks to judge a sector
 
 # ---- Track record of past picks
 TOP_N = 10                           # the list shows the top 10 eligible stocks each day
@@ -165,6 +166,59 @@ def get_index_members(fname):
         except Exception as e:
             print(f"Index list fetch failed ({url}):", e)
     return [], "not available"
+
+
+def get_industry_map():
+    """NSE industry for each stock, from the Nifty Total Market list (≈750 stocks), else Nifty 500 + Microcap 250."""
+    groups = (("ind_niftytotalmarket_list.csv",), ("ind_nifty500list.csv", "ind_niftymicrocap250_list.csv"))
+    for files in groups:
+        mapping, used = {}, []
+        for fname in files:
+            for url in (f"https://nsearchives.nseindia.com/content/indices/{fname}",
+                        f"https://www.niftyindices.com/IndexConstituent/{fname}",
+                        f"https://niftyindices.com/IndexConstituent/{fname}"):
+                try:
+                    df = pd.read_csv(io.StringIO(nse_get(url)))
+                    df.columns = [c.strip().upper() for c in df.columns]
+                    if "INDUSTRY" not in df.columns:
+                        continue
+                    for _, r in df.iterrows():
+                        s, ind = str(r["SYMBOL"]).strip(), str(r["INDUSTRY"]).strip()
+                        if s and ind and ind.lower() != "nan":
+                            mapping.setdefault(s, ind)
+                    used.append(url)
+                    break
+                except Exception as e:
+                    print(f"Industry list fetch failed ({url}):", e)
+        if len(mapping) >= 400:
+            return mapping, "; ".join(used)
+    return {}, "not available"
+
+
+def add_sector_strength(table, nifty):
+    """Sector = NSE industry. Sector strength = median 1M and 3M return of our stocks in that sector vs Nifty.
+    Leading: beating Nifty on both. Improving: 1M better, 3M not. Weakening: 3M better, 1M not. Lagging: neither."""
+    if table.empty:
+        return table, []
+    n1, n3 = nifty["ret_1m"], nifty["ret_3m"]
+    stats = []
+    for sec, g in table[table["sector"] != "Unknown"].groupby("sector"):
+        if len(g) < MIN_SECTOR_STOCKS:
+            continue
+        m1, m3 = g["ret_1m"].median(), g["ret_3m"].median()
+        if m1 != m1 or m3 != m3:
+            continue
+        rs1, rs3 = m1 - n1, m3 - n3
+        tag = ("Leading" if rs1 > 0 and rs3 > 0 else "Improving" if rs1 > 0
+               else "Weakening" if rs3 > 0 else "Lagging")
+        stats.append({"sector": sec, "stocks": int(len(g)), "median_1m": r2(m1), "median_3m": r2(m3),
+                      "vs_nifty_1m": r2(rs1), "vs_nifty_3m": r2(rs3), "tag": tag})
+    stats.sort(key=lambda s: s["vs_nifty_1m"] + s["vs_nifty_3m"], reverse=True)
+    by = {s["sector"]: s for s in stats}
+    table["sector_tag"] = table["sector"].map(lambda s: by[s]["tag"] if s in by else "No data")
+    table["sector_1m"] = table["sector"].map(lambda s: by[s]["median_1m"] if s in by else None)
+    table["sector_3m"] = table["sector"].map(lambda s: by[s]["median_3m"] if s in by else None)
+    return table, stats
 
 
 def get_eq_symbols(bands):
@@ -767,6 +821,7 @@ def update_track_record(table, frames, data_date):
             "list_date": data_date, "rank": top["rank"], "symbol": top["symbol"], "segment": top["segment"],
             "entry_style": top["entry_style"], "entry_low": top["entry_low"], "entry_high": top["entry_high"],
             "t1": top["t1"], "t2": top["t2"], "warning_at_listing": top["warning"].fillna(""),
+            "sector": top["sector"], "sector_tag": top["sector_tag"],
         })
         log = pd.concat([log, today], ignore_index=True)
 
@@ -825,6 +880,7 @@ def main():
     surv = get_asm_gsm()
     surveillance = {"ASM": set(surv["asm"]["symbols"]), "GSM": set(surv["gsm"]["symbols"])}
     mid150, mid150_src = get_index_members("ind_niftymidcap150list.csv")
+    industry, industry_src = get_industry_map()
     mid_set = set(mid150)
     mid_only = [s for s in mid150 if s not in fno_set]
 
@@ -864,8 +920,10 @@ def main():
         latest_date = table["date"].mode().iloc[0]
         table["stale"] = table["date"] != latest_date
         table.insert(0, "rank", range(1, len(table) + 1))
+        table.insert(4, "sector", table["symbol"].map(industry).fillna("Unknown"))
+        table, sector_stats = add_sector_strength(table, nifty)
     else:
-        latest_date = None
+        latest_date, sector_stats = None, []
     table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False, encoding="utf-8")
 
     try:
@@ -898,6 +956,8 @@ def main():
                                  "thin liquidity (Midcap 150)"],
         "price_source": "Yahoo Finance via yfinance (unofficial)",
         "track_record": track,
+        "sector_source": industry_src,
+        "sectors": sector_stats,
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)

@@ -1,0 +1,11 @@
+list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_listing,status,fill_date,fill_price,t1_date,t2_date,close_date,exit_price,return_pct,current_pct,max_dip_pct,days_held,last_event,last_event_date
+2026-09-29,1,MANINDS,Cash (non-F&O),Retest,944.0,972.32,1001.49,1030.66,ASM,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,2,ACMESOLAR,Cash (non-F&O),Retest,430.5,443.42,456.72,470.02,,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,3,LIQUID1,Cash (non-F&O),Retest,1123.29,1156.99,1191.7,1226.41,5% band,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,4,SHREEJISPG,Cash (non-F&O),Breakout,767.1,774.77,798.01,821.26,ASM,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,5,ELLEN,Cash (non-F&O),Pullback,343.95,354.27,364.9,375.52,,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,6,SANSERA,Cash (non-F&O),Pullback,4040.4,4161.61,4286.46,4411.31,ASM,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,7,SMSPHARMA,Cash (non-F&O),Pullback,447.8,461.23,475.07,488.91,,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,8,AEROFLEX,Cash (non-F&O),Pullback,508.0,523.24,538.94,554.63,,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,9,KIRIINDUS,Cash (non-F&O),Pullback,525.9,541.68,557.93,574.18,ASM,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,10,CENTUM,Cash (non-F&O),Candle at support,4450.0,4583.5,4721.01,4858.51,ASM,Waiting for entry,,,,,,,,,,,Listed,2026-09-29

@@ -1,5 +1,5 @@
 {
-  "generated_at_ist": "2026-09-29 21:38",
+  "generated_at_ist": "2026-09-29 22:08",
   "data_date": "2026-09-29",
   "method": "price action + volume only; no indicators; no stop-loss",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
@@ -25,16 +25,16 @@
     "TEMPSENS"
   ],
   "note_failed": "Listed fewer than 40 sessions ago or no Yahoo data",
-  "eligible_count": 34,
+  "eligible_count": 31,
   "pattern_counts": {
     "pat_A_uptrend": 93,
     "pat_B_base_breakout": 9,
-    "pat_C_pullback": 57,
-    "pat_D_retest": 64,
-    "pat_E_candle": 37,
-    "pat_F_room": 157,
+    "pat_C_pullback": 49,
+    "pat_D_retest": 34,
+    "pat_E_candle": 31,
+    "pat_F_room": 163,
     "pat_G_rel_strength": 209,
-    "vol_ok": 27
+    "vol_ok": 24
   },
   "score_points": {
     "B": 3,
@@ -86,5 +86,24 @@
     "short price history",
     "thin liquidity (Midcap 150)"
   ],
-  "price_source": "Yahoo Finance via yfinance (unofficial)"
+  "price_source": "Yahoo Finance via yfinance (unofficial)",
+  "track_record": {
+    "since": "2026-09-29",
+    "picks": 10,
+    "bought": 0,
+    "not_bought": 0,
+    "waiting_for_entry": 10,
+    "running": 0,
+    "running_t1_hit": 0,
+    "full_wins_t2": 0,
+    "partial_wins_t1": 0,
+    "failed": 0,
+    "closed": 0,
+    "win_rate_t1_or_better_pct": null,
+    "full_win_rate_t2_pct": null,
+    "avg_return_closed_pct": null,
+    "avg_max_dip_closed_pct": null,
+    "new_events_today": 10,
+    "file": "data/picks_log.csv"
+  }
 }

@@ -1,6 +1,7 @@
 {
-  "generated_at_ist": "2026-09-29 20:31",
+  "generated_at_ist": "2026-09-29 21:38",
   "data_date": "2026-09-29",
+  "method": "price action + volume only; no indicators; no stop-loss",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
   "fno_count": 213,
   "midcap150_count": 150,
@@ -23,16 +24,43 @@
     "TECHNOCRAF",
     "TEMPSENS"
   ],
-  "note_failed": "Listed fewer than 40 sessions ago or no Yahoo data - too little history to analyse",
-  "flags_not_rejections": [
-    "F&O ban",
-    "ASM/GSM list",
-    "2%/5% price band",
-    "short price history",
-    "thin liquidity (Midcap 150)"
+  "note_failed": "Listed fewer than 40 sessions ago or no Yahoo data",
+  "eligible_count": 34,
+  "pattern_counts": {
+    "pat_A_uptrend": 93,
+    "pat_B_base_breakout": 9,
+    "pat_C_pullback": 57,
+    "pat_D_retest": 64,
+    "pat_E_candle": 37,
+    "pat_F_room": 157,
+    "pat_G_rel_strength": 209,
+    "vol_ok": 27
+  },
+  "score_points": {
+    "B": 3,
+    "D": 3,
+    "A": 2,
+    "C": 2,
+    "G": 2,
+    "E": 1,
+    "VOL": 1
+  },
+  "targets_pct": [
+    3.0,
+    6.0
   ],
-  "valid_setups": 0,
-  "flagged_setups": 0,
+  "time_exit_days": 30,
+  "nifty": {
+    "date": "2026-09-29",
+    "close": 22716.2,
+    "ret_1m": -6.04,
+    "ret_3m": -5.37,
+    "uptrend_structure": false,
+    "last_swing_peak": 24378.6,
+    "last_swing_trough": 23116.1,
+    "above_last_trough": false,
+    "pct_below_high52": 16.1
+  },
   "fno_ban": {
     "status": "ok",
     "header": "Securities in Ban For Trade Date 30-SEP-2026:",
@@ -51,19 +79,12 @@
     }
   },
   "price_band_source": "NSE sec_list.csv",
-  "market": {
-    "nifty_date": "2026-09-29",
-    "nifty_close": 22716.2,
-    "nifty_ema20": 23377.78,
-    "nifty_ema50": 23722.62,
-    "nifty_above_20_50": false,
-    "vix_close": 13.41,
-    "vix_5d_change_pct": 21.93,
-    "vix_ok": false,
-    "market_ok": false
-  },
-  "rules_not_checked_here": [
-    "upcoming events (results, board meetings, ex-dates)"
+  "flags_not_rejections": [
+    "F&O ban",
+    "ASM/GSM list",
+    "2%/5% price band",
+    "short price history",
+    "thin liquidity (Midcap 150)"
   ],
   "price_source": "Yahoo Finance via yfinance (unofficial)"
 }

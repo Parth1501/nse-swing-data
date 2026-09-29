@@ -43,6 +43,7 @@ CLOSE_TOP_OF_RANGE = 0.70
 MIN_VALUE_CR = 50
 ENTRY_BUFFER = 0.005          # entry range = trigger high .. trigger high +0.5%
 RISK_PER_LAKH = 1000          # 1% of Rs 1,00,000
+MIN_HISTORY = 40              # sessions needed to compute RSI/MACD/ATR; shorter histories can't be analysed
 
 FALLBACK_FNO = """ABB ABCAPITAL ADANIENSOL ADANIENT ADANIGREEN ADANIPORTS ALKEM AMBER AMBUJACEM ANGELONE
 APLAPOLLO APOLLOHOSP ASHOKLEY ASIANPAINT ASTRAL AUBANK AUROPHARMA AXISBANK BAJAJ-AUTO BAJAJFINSV
@@ -182,7 +183,7 @@ def get_asm_gsm():
 
 
 # ---------------------------------------------------------------- prices
-def download(tickers, period="2y", min_rows=210, chunk_size=40, retries=3):
+def download(tickers, period="2y", min_rows=MIN_HISTORY, chunk_size=40, retries=3):
     frames = {}
     for i in range(0, len(tickers), chunk_size):
         chunk = tickers[i:i + chunk_size]
@@ -257,7 +258,8 @@ def r2(x):
     return None if x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else round(float(x), 2)
 
 
-def analyse(sym, df, bands, banned, segment="F&O", surveillance=frozenset(), in_mid150=False):
+def analyse(sym, df, bands, banned, segment="F&O", surveillance=None, in_mid150=False):
+    surveillance = surveillance or {}
     c, h, l, v = df["Close"], df["High"], df["Low"], df["Volume"]
     e20, e50, e200 = ema(c, 20), ema(c, 50), ema(c, 200)
     r = rsi(c)
@@ -282,7 +284,11 @@ def analyse(sym, df, bands, banned, segment="F&O", surveillance=frozenset(), in_
     prev_high = h.iloc[-2]
     hi52 = h.iloc[-252:].max()
 
-    trend_ok = C > E20 > E50 and C > E200
+    n_rows = len(df)
+    has200, has50 = n_rows >= 200, n_rows >= 50
+    trend_ok = (C > E20
+                and (E20 > E50 if has50 else True)
+                and (C > E200 if has200 else True))   # short history: unavailable EMAs are skipped and flagged
     ext_ok = ext <= MAX_EXT_ABOVE_EMA20
     rsi_ok = RSI_LO <= RSI <= RSI_HI
     macd_ok = macd.iloc[-1] > sig.iloc[-1] and hist.iloc[-1] > hist.iloc[-2]
@@ -317,15 +323,26 @@ def analyse(sym, df, bands, banned, segment="F&O", surveillance=frozenset(), in_
     shares = math.floor(RISK_PER_LAKH / (entry_top - stop)) if not np.isnan(stop) else None
 
     band = bands.get(sym, "unknown")
+
+    # ---- Warning flags: shown to the user, NOT used to reject (user decides)
+    flags = []
+    if sym in banned:
+        flags.append("F&O ban list (no new F&O positions; cash buying allowed)")
+    for name, syms in surveillance.items():
+        if sym in syms:
+            flags.append(f"On NSE {name} list (surveillance; higher margin / trade restrictions possible)")
+    if band in ("2", "5", "2.0", "5.0"):
+        flags.append(f"{band}% price band (daily move capped at {band}%)")
+    if not has200:
+        flags.append(f"Short history: {n_rows} sessions, 200 EMA check skipped"
+                     + ("" if has50 else ", 50 EMA check skipped too"))
+    if segment == "Midcap 150" and not value_ok:
+        flags.append(f"Thin liquidity: Rs {value20_cr.iloc[-1]:.0f} cr/day avg")
+
+    # ---- Rule failures (reject)
     reasons = []
     if segment == "Cash (non-F&O)" and not value_ok:
         reasons.append(f"Liquidity: 20-day avg traded value Rs {value20_cr.iloc[-1]:.0f} cr < 50 cr")
-    if sym in surveillance:
-        reasons.append("On NSE ASM/GSM list")
-    if sym in banned:
-        reasons.append("In F&O ban list")
-    if band in ("2", "5", "2.0", "5.0"):
-        reasons.append(f"{band}% price band")
     if not trend_ok:
         reasons.append("Trend fail (need Close>20EMA>50EMA and >200EMA)")
     if not ext_ok:
@@ -353,13 +370,17 @@ def analyse(sym, df, bands, banned, segment="F&O", surveillance=frozenset(), in_
         "passes_all_rules": len(reasons) == 0,
         "n_fails": len(reasons),
         "reject_reasons": "; ".join(reasons),
+        "flags": "; ".join(flags),
+        "n_flags": len(flags),
+        "history_sessions": n_rows,
         "setup": setup,
         "open": r2(df["Open"].iloc[-1]), "high": r2(H), "low": r2(L), "close": r2(C),
         "chg_pct": r2((C / c.iloc[-2] - 1) * 100),
         "volume": int(V), "avg_vol20": int(AV) if AV == AV else None,
         "vol_ratio": r2(vol_ratio), "pullback_vol_ratio": r2(pull_vol_ratio),
         "close_range_pos": r2(range_pos),
-        "ema20": r2(E20), "ema50": r2(E50), "ema200": r2(E200), "pct_above_ema20": r2(ext),
+        "ema20": r2(E20), "ema50": r2(E50) if has50 else None, "ema200": r2(E200) if has200 else None,
+        "pct_above_ema20": r2(ext),
         "rsi14": r2(RSI), "macd": r2(macd.iloc[-1]), "macd_signal": r2(sig.iloc[-1]),
         "macd_hist": r2(hist.iloc[-1]), "macd_hist_prev": r2(hist.iloc[-2]),
         "atr14": r2(ATR), "atr_pct": r2(ATR / C * 100),
@@ -404,14 +425,13 @@ def main():
     bands = get_price_bands()
     eq_syms, eq_src = get_eq_symbols(bands)
     surv = get_asm_gsm()
-    surveillance = set(surv["asm"]["symbols"]) | set(surv["gsm"]["symbols"])
+    surveillance = {"ASM": set(surv["asm"]["symbols"]), "GSM": set(surv["gsm"]["symbols"])}
     mid150, mid150_src = get_index_members("ind_niftymidcap150list.csv")
     mid_set = set(mid150)
     mid_only = [s for s in mid150 if s not in fno_set]
 
-    # Other stocks: EQ series, not F&O or Midcap 150, not in a 2%/5% band, then keep only liquid ones
-    others = [s for s in eq_syms if s not in fno_set and s not in mid_set
-              and bands.get(s, "") not in ("2", "5", "2.0", "5.0")]
+    # Other stocks: EQ series, not F&O or Midcap 150; keep only liquid ones (price-band stocks are flagged, not dropped)
+    others = [s for s in eq_syms if s not in fno_set and s not in mid_set]
     liquid, screened = liquid_non_fno(others) if others else ([], 0)
     print(f"F&O: {len(fno)} | Midcap 150 (non-F&O): {len(mid_only)} | others screened: {screened} "
           f"| liquid others: {len(liquid)}")
@@ -466,7 +486,11 @@ def main():
         "universe_count": len(universe),
         "stocks_analysed": len(rows),
         "stocks_failed_download": failed,
+        "note_failed": f"Listed fewer than {MIN_HISTORY} sessions ago or no Yahoo data - too little history to analyse",
+        "flags_not_rejections": ["F&O ban", "ASM/GSM list", "2%/5% price band", "short price history",
+                                 "thin liquidity (Midcap 150)"],
         "valid_setups": int(table["passes_all_rules"].sum()) if not table.empty else 0,
+        "flagged_setups": int((table["passes_all_rules"] & (table["n_flags"] > 0)).sum()) if not table.empty else 0,
         "fno_ban": ban,
         "asm_gsm": {k: {"status": v["status"], "count": len(v["symbols"])} for k, v in surv.items()},
         "price_band_source": "NSE sec_list.csv" if bands else "not available",

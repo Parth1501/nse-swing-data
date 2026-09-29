@@ -18,6 +18,8 @@ Each stock gets a score; the list is ranked. No stop-loss (user's choice).
 Writes:
   data/latest.csv  - one row per stock: patterns, score, entry/exit levels, reason, flags
   data/meta.json   - data date, Nifty context, F&O ban list, run stats
+  data/sector_map.csv - sectors of stocks outside the Nifty Total Market list, read once from
+                        NSE's stock quote page and reused (re-checked every ~6 months)
 """
 import io
 import json
@@ -68,6 +70,11 @@ ENTRY_WINDOW = 3                     # a pick can be bought within the first 3 s
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
                "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
 MIN_SECTOR_STOCKS = 3                # need at least 3 stocks to judge a sector
+SECTOR_CACHE = os.path.join("data", "sector_map.csv")
+MAX_SECTOR_LOOKUPS = 150             # NSE quote lookups per run (the cache means later runs need only a few)
+SECTOR_CACHE_DAYS = 180              # re-check a cached sector after about 6 months
+SECTOR_LOOKUP_PAUSE = 0.4            # seconds between NSE requests, to stay polite
+ETF_SECTOR = "ETF / Fund"            # shown as the sector, never rated as a sector group
 
 # ---- Track record of past picks
 TOP_N = 10                           # the list shows the top 10 eligible stocks each day
@@ -195,6 +202,100 @@ def get_industry_map():
     return {}, "not available"
 
 
+def load_sector_cache():
+    try:
+        df = pd.read_csv(SECTOR_CACHE, dtype=str, keep_default_na=False)
+        return {r["symbol"]: r.to_dict() for _, r in df.iterrows() if r.get("symbol")}
+    except Exception:
+        return {}
+
+
+def save_sector_cache(cache):
+    cols = ["symbol", "sector", "macro", "industry", "basic_industry", "fetched_on"]
+    rows = [{c: cache[s].get(c, "") for c in cols} for s in sorted(cache)]
+    pd.DataFrame(rows, columns=cols).to_csv(SECTOR_CACHE, index=False, encoding="utf-8")
+
+
+def _pick_sector(info, known):
+    """NSE's quote page has macro / sector / industry / basic industry. Use the level whose name
+    matches the sector names in the index list, so every stock is grouped the same way."""
+    vals = [str(info.get(k) or "").strip() for k in ("sector", "macro", "industry")]
+    vals = [v for v in vals if v and v.upper() not in ("-", "NA", "N/A", "NONE", "NAN")]
+    for v in vals:
+        if v in known:
+            return v
+    return vals[0] if vals else ""
+
+
+def fill_missing_sectors(symbols, industry):
+    """Sector for stocks that are not in the Nifty Total Market list, from NSE's stock quote API.
+    Results are kept in data/sector_map.csv, so each stock is looked up once (re-checked after ~6 months).
+    Looks up in the given order (best-ranked first); stops early if NSE blocks us."""
+    known = set(industry.values())
+    cache = load_sector_cache()
+    today = datetime.now(IST).date()
+    result, todo = {}, []
+    for s in symbols:
+        if s in industry:
+            continue
+        c = cache.get(s)
+        if c and c.get("sector"):
+            result[s] = c["sector"]
+            try:
+                age = (today - datetime.strptime(c.get("fetched_on", ""), "%Y-%m-%d").date()).days
+            except ValueError:
+                age = SECTOR_CACHE_DAYS + 1
+            if age <= SECTOR_CACHE_DAYS:
+                continue
+        todo.append(s)
+    stats = {"outside_index_list": len([s for s in symbols if s not in industry]),
+             "from_cache": len(result), "looked_up": 0, "found": 0, "not_found": [], "errors": 0,
+             "stopped_early": False}
+    sess, streak, changed = None, 0, False
+    for i, s in enumerate(todo[:MAX_SECTOR_LOOKUPS]):
+        if sess is None or i % 40 == 0:        # fresh NSE cookies every 40 requests
+            sess = requests.Session()
+            sess.headers.update(NSE_HEADERS)
+            try:
+                sess.get("https://www.nseindia.com", timeout=15)
+            except Exception:
+                pass
+        stats["looked_up"] += 1
+        try:
+            r = sess.get("https://www.nseindia.com/api/quote-equity", params={"symbol": s}, timeout=20)
+            r.raise_for_status()
+            js = r.json()
+            streak = 0
+            info = js.get("industryInfo") or {}
+            sec = _pick_sector(info, known)
+            if not sec and (js.get("info") or {}).get("isETFSec"):
+                sec = ETF_SECTOR
+            if sec:
+                cache[s] = {"symbol": s, "sector": sec, "macro": str(info.get("macro") or ""),
+                            "industry": str(info.get("industry") or ""),
+                            "basic_industry": str(info.get("basicIndustry") or ""),
+                            "fetched_on": today.isoformat()}
+                result[s] = sec
+                stats["found"] += 1
+                changed = True
+            else:
+                stats["not_found"].append(s)
+        except Exception as e:
+            stats["errors"] += 1
+            streak += 1
+            sess = None                         # get new cookies before the next try
+            print(f"Sector lookup failed for {s}:", e)
+            if streak >= 5:
+                stats["stopped_early"] = True
+                print("Sector lookups stopped: 5 failures in a row (NSE may be blocking)")
+                break
+        time.sleep(SECTOR_LOOKUP_PAUSE)
+    stats["left_for_next_run"] = max(0, len(todo) - stats["looked_up"])
+    if changed:
+        save_sector_cache(cache)
+    return result, stats
+
+
 def add_sector_strength(table, nifty):
     """Sector = NSE industry. Sector strength = median 1M and 3M return of our stocks in that sector vs Nifty.
     Leading: beating Nifty on both. Improving: 1M better, 3M not. Weakening: 3M better, 1M not. Lagging: neither."""
@@ -202,7 +303,7 @@ def add_sector_strength(table, nifty):
         return table, []
     n1, n3 = nifty["ret_1m"], nifty["ret_3m"]
     stats = []
-    for sec, g in table[table["sector"] != "Unknown"].groupby("sector"):
+    for sec, g in table[~table["sector"].isin(["Unknown", ETF_SECTOR])].groupby("sector"):
         if len(g) < MIN_SECTOR_STOCKS:
             continue
         m1, m3 = g["ret_1m"].median(), g["ret_3m"].median()
@@ -920,10 +1021,16 @@ def main():
         latest_date = table["date"].mode().iloc[0]
         table["stale"] = table["date"] != latest_date
         table.insert(0, "rank", range(1, len(table) + 1))
-        table.insert(4, "sector", table["symbol"].map(industry).fillna("Unknown"))
+        try:                                   # sectors for stocks outside the index list
+            extra, sector_lookup = fill_missing_sectors(list(table["symbol"]), industry)
+        except Exception as e:                 # never let this block the daily list
+            print("sector lookup failed:", e)
+            extra, sector_lookup = {}, {"error": str(e)}
+        sector_of = {**extra, **industry}
+        table.insert(4, "sector", table["symbol"].map(sector_of).fillna("Unknown"))
         table, sector_stats = add_sector_strength(table, nifty)
     else:
-        latest_date, sector_stats = None, []
+        latest_date, sector_stats, sector_lookup = None, [], {}
     table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False, encoding="utf-8")
 
     try:
@@ -956,7 +1063,9 @@ def main():
                                  "thin liquidity (Midcap 150)"],
         "price_source": "Yahoo Finance via yfinance (unofficial)",
         "track_record": track,
-        "sector_source": industry_src,
+        "sector_source": (f"{industry_src}; stocks outside it: NSE stock quote page "
+                          f"(cached in data/sector_map.csv)"),
+        "sector_lookup": sector_lookup,
         "sectors": sector_stats,
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:

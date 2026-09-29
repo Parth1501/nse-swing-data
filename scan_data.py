@@ -1,8 +1,8 @@
 """
 Daily NSE swing-scan data builder (runs on GitHub Actions).
 
-Downloads ~2 years of daily prices for NSE F&O stocks plus every other NSE EQ
-stock with 20-day average traded value >= Rs 50 crore, plus Nifty 50 and India VIX,
+Downloads ~2 years of daily prices for NSE F&O stocks, Nifty Midcap 150 stocks, and every
+other NSE EQ stock with 20-day average traded value >= Rs 50 crore, plus Nifty 50 and India VIX,
 calculates every indicator used by the swing-trade
 rules, applies the mechanical checks, and writes:
   data/latest.csv  - one row per stock with indicators, levels and pass/fail reasons
@@ -119,6 +119,22 @@ def get_price_bands():
     except Exception as e:
         print("Price band fetch failed:", e)
         return {}
+
+
+def get_index_members(fname):
+    """Constituents of a Nifty index (e.g. ind_niftymidcap150list.csv) from NSE / niftyindices."""
+    for url in (f"https://nsearchives.nseindia.com/content/indices/{fname}",
+                f"https://www.niftyindices.com/IndexConstituent/{fname}",
+                f"https://niftyindices.com/IndexConstituent/{fname}"):
+        try:
+            df = pd.read_csv(io.StringIO(nse_get(url)))
+            df.columns = [c.strip().upper() for c in df.columns]
+            syms = sorted({str(x).strip() for x in df["SYMBOL"].dropna() if str(x).strip()})
+            if len(syms) >= 20:
+                return syms, url
+        except Exception as e:
+            print(f"Index list fetch failed ({url}):", e)
+    return [], "not available"
 
 
 def get_eq_symbols(bands):
@@ -241,7 +257,7 @@ def r2(x):
     return None if x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else round(float(x), 2)
 
 
-def analyse(sym, df, bands, banned, is_fno=True, surveillance=frozenset()):
+def analyse(sym, df, bands, banned, segment="F&O", surveillance=frozenset(), in_mid150=False):
     c, h, l, v = df["Close"], df["High"], df["Low"], df["Volume"]
     e20, e50, e200 = ema(c, 20), ema(c, 50), ema(c, 200)
     r = rsi(c)
@@ -302,7 +318,7 @@ def analyse(sym, df, bands, banned, is_fno=True, surveillance=frozenset()):
 
     band = bands.get(sym, "unknown")
     reasons = []
-    if not is_fno and not value_ok:
+    if segment == "Cash (non-F&O)" and not value_ok:
         reasons.append(f"Liquidity: 20-day avg traded value Rs {value20_cr.iloc[-1]:.0f} cr < 50 cr")
     if sym in surveillance:
         reasons.append("On NSE ASM/GSM list")
@@ -331,7 +347,8 @@ def analyse(sym, df, bands, banned, is_fno=True, surveillance=frozenset()):
 
     return {
         "symbol": sym,
-        "segment": "F&O" if is_fno else "Cash (non-F&O)",
+        "segment": segment,
+        "in_midcap150": bool(in_mid150),
         "date": df.index[-1].strftime("%Y-%m-%d"),
         "passes_all_rules": len(reasons) == 0,
         "n_fails": len(reasons),
@@ -388,13 +405,21 @@ def main():
     eq_syms, eq_src = get_eq_symbols(bands)
     surv = get_asm_gsm()
     surveillance = set(surv["asm"]["symbols"]) | set(surv["gsm"]["symbols"])
+    mid150, mid150_src = get_index_members("ind_niftymidcap150list.csv")
+    mid_set = set(mid150)
+    mid_only = [s for s in mid150 if s not in fno_set]
 
-    # Non-F&O stocks: EQ series, not already in F&O, not in a 2%/5% band, then keep only liquid ones
-    others = [s for s in eq_syms if s not in fno_set and bands.get(s, "") not in ("2", "5", "2.0", "5.0")]
+    # Other stocks: EQ series, not F&O or Midcap 150, not in a 2%/5% band, then keep only liquid ones
+    others = [s for s in eq_syms if s not in fno_set and s not in mid_set
+              and bands.get(s, "") not in ("2", "5", "2.0", "5.0")]
     liquid, screened = liquid_non_fno(others) if others else ([], 0)
-    print(f"F&O: {len(fno)} | non-F&O screened: {screened} | liquid non-F&O: {len(liquid)}")
+    print(f"F&O: {len(fno)} | Midcap 150 (non-F&O): {len(mid_only)} | others screened: {screened} "
+          f"| liquid others: {len(liquid)}")
 
-    universe = fno + liquid
+    segment_of = {s: "F&O" for s in fno}
+    segment_of.update({s: "Midcap 150" for s in mid_only})
+    segment_of.update({s: "Cash (non-F&O)" for s in liquid})
+    universe = fno + mid_only + liquid
     tickers = [s + ".NS" for s in universe] + ["^NSEI", "^INDIAVIX"]
     frames = download(tickers)
 
@@ -411,7 +436,8 @@ def main():
             failed.append(s)
             continue
         try:
-            rows.append(analyse(s, df, bands, banned, is_fno=s in fno_set, surveillance=surveillance))
+            rows.append(analyse(s, df, bands, banned, segment=segment_of[s], surveillance=surveillance,
+                                in_mid150=s in mid_set))
         except Exception as e:
             print("analyse failed", s, e)
             failed.append(s)
@@ -431,8 +457,11 @@ def main():
     meta = {
         "generated_at_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M"),
         "data_date": latest_date,
-        "universe_source": f"F&O: {fno_src}; non-F&O: {eq_src} filtered to 20-day avg traded value >= Rs 50 cr",
+        "universe_source": (f"F&O: {fno_src}; Nifty Midcap 150: {mid150_src}; others: {eq_src} "
+                            f"filtered to 20-day avg traded value >= Rs 50 cr"),
         "fno_count": len(fno),
+        "midcap150_count": len(mid150),
+        "midcap150_non_fno_count": len(mid_only),
         "liquid_non_fno_count": len(liquid),
         "universe_count": len(universe),
         "stocks_analysed": len(rows),
@@ -447,8 +476,8 @@ def main():
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    print(json.dumps({k: meta[k] for k in ("data_date", "fno_count", "liquid_non_fno_count", "stocks_analysed",
-                                           "valid_setups", "asm_gsm", "market")}, indent=2))
+    print(json.dumps({k: meta[k] for k in ("data_date", "fno_count", "midcap150_count", "liquid_non_fno_count",
+                                           "stocks_analysed", "valid_setups", "asm_gsm", "market")}, indent=2))
 
 
 if __name__ == "__main__":

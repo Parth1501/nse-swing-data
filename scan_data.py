@@ -1,12 +1,23 @@
 """
-Daily NSE swing-scan data builder (runs on GitHub Actions).
+Daily NSE price-action swing list builder (runs on GitHub Actions).
 
-Downloads ~2 years of daily prices for NSE F&O stocks, Nifty Midcap 150 stocks, and every
-other NSE EQ stock with 20-day average traded value >= Rs 50 crore, plus Nifty 50 and India VIX,
-calculates every indicator used by the swing-trade
-rules, applies the mechanical checks, and writes:
-  data/latest.csv  - one row per stock with indicators, levels and pass/fail reasons
-  data/meta.json   - data date, market filter numbers, F&O ban list, run stats
+Universe: NSE F&O stocks + Nifty Midcap 150 + every other NSE EQ stock with a
+20-day average traded value >= Rs 50 crore.
+
+No indicators (no moving averages, RSI, MACD or ATR). Only price structure and volume:
+  A  Uptrend structure    - last 2 swing peaks and last 2 swing troughs each higher
+  B  Base breakout        - 2-6 week sideways base (range <= 12%) broken on a close
+  C  Pullback to support  - in an uptrend, price back within 3% of support and holding
+  D  Retest               - an old peak broken in the last month, revisited, holding as support
+  E  Candle at support    - hammer / bullish engulfing / inside-day breakout near support
+  F  Room to run          - next resistance at least 6% above entry (REQUIRED)
+  G  Relative strength    - beat Nifty over 1 and 3 months
+  Volume check            - trigger day volume >= 1.5x its prior 20-day average
+Each stock gets a score; the list is ranked. No stop-loss (user's choice).
+
+Writes:
+  data/latest.csv  - one row per stock: patterns, score, entry/exit levels, reason, flags
+  data/meta.json   - data date, Nifty context, F&O ban list, run stats
 """
 import io
 import json
@@ -30,20 +41,22 @@ NSE_HEADERS = {
 }
 INDEX_SYMBOLS = {"NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50", "NIFTYFPI", "SENSEX", "BANKEX"}
 
-# ---- Rule parameters (from the trade plan) ----
-T1_PCT, T2_PCT = 0.03, 0.05
-MAX_STOP_PCT = 0.02
-MIN_RR_T1 = 1.5
-ATR_MULT_MIN_STOP = 0.75
-MAX_EXT_ABOVE_EMA20 = 6.0
-RSI_LO, RSI_HI = 55, 70
-BREAKOUT_VOL_MULT = 1.5
-TRIGGER_VOL_MULT = 1.3
-CLOSE_TOP_OF_RANGE = 0.70
+# ---- Plan parameters ----
+T1_PCT, T2_PCT = 0.03, 0.06          # exits: +3% and +6% from the entry reference
+TIME_EXIT_DAYS = 30                  # calendar days
+MIN_ROOM_PCT = 6.0                   # F: next resistance must be >= 6% above entry
+PIVOT_W = 5                          # swing point = highest/lowest of 5 days either side
+BASE_LENGTHS = (30, 20, 15, 10)      # B: 6, 4, 3, 2 week bases (longest preferred)
+BASE_MAX_RANGE_PCT = 12.0
+BREAKOUT_MAX_EXT_PCT = 5.0           # B: skip if price already > 5% above the base top
+NEAR_SUPPORT_PCT = 3.0               # C/E: within 3% of support
+RETEST_NEAR_PCT = 2.0                # D: came back within 2% of the broken level
+VOL_MULT = 1.5
+ENTRY_BUFFER = 0.01                  # breakout entry: trigger high .. +1%
+SCORE = {"B": 3, "D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1}
 MIN_VALUE_CR = 50
-ENTRY_BUFFER = 0.005          # entry range = trigger high .. trigger high +0.5%
-RISK_PER_LAKH = 1000          # 1% of Rs 1,00,000
-MIN_HISTORY = 40              # sessions needed to compute RSI/MACD/ATR; shorter histories can't be analysed
+MIN_HISTORY = 40                     # shorter histories can't show any structure
+SHORT_HISTORY_FLAG = 120
 
 FALLBACK_FNO = """ABB ABCAPITAL ADANIENSOL ADANIENT ADANIGREEN ADANIPORTS ALKEM AMBER AMBUJACEM ANGELONE
 APLAPOLLO APOLLOHOSP ASHOKLEY ASIANPAINT ASTRAL AUBANK AUROPHARMA AXISBANK BAJAJ-AUTO BAJAJFINSV
@@ -222,109 +235,231 @@ def liquid_non_fno(symbols):
     return sorted(keep), len(frames)
 
 
-# ---------------------------------------------------------------- indicators
-def ema(s, n):
-    return s.ewm(span=n, adjust=False).mean()
 
 
-def rsi(close, n=14):
-    d = close.diff()
-    gain = d.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
-    loss = (-d.clip(upper=0)).ewm(alpha=1 / n, adjust=False).mean()
-    rs = gain / loss.replace(0, np.nan)
-    return (100 - 100 / (1 + rs)).fillna(100)
+# ---------------------------------------------------------------- price-action helpers
+def r2(x):
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        return None
+    return None if (math.isnan(x) or math.isinf(x)) else round(x, 2)
 
 
-def atr(df, n=14):
-    pc = df["Close"].shift(1)
-    tr = pd.concat([df["High"] - df["Low"], (df["High"] - pc).abs(), (df["Low"] - pc).abs()], axis=1).max(axis=1)
-    return tr.ewm(alpha=1 / n, adjust=False).mean()
+def pct(a, b):
+    """% change from b to a."""
+    return (a / b - 1) * 100 if b else np.nan
 
 
-def nearest_resistance(df, above, lookback=250, w=5):
-    """Nearest pivot high (higher than 5 bars each side) above `above`, within the lookback."""
-    h = df["High"].values[-lookback:]
-    levels = []
+def swing_points(h, l, w=PIVOT_W):
+    """Confirmed swing peaks / troughs as lists of (index, price). A swing needs w days on both sides."""
+    peaks, troughs = [], []
     for i in range(w, len(h) - w):
-        if h[i] == h[i - w:i + w + 1].max() and h[i] > above:
-            levels.append(h[i])
-    hi52 = df["High"].values[-252:].max()
-    if hi52 > above:
+        if h[i] == h[i - w:i + w + 1].max() and h[i] > h[i - w:i].max():
+            peaks.append((i, h[i]))
+        if l[i] == l[i - w:i + w + 1].min() and l[i] < l[i - w:i].min():
+            troughs.append((i, l[i]))
+    return peaks, troughs
+
+
+def vol_ratio_at(v, k):
+    """Volume on day k vs the average of the 20 days before it."""
+    prior = v[max(0, k - 20):k]
+    if len(prior) < 5 or prior.mean() <= 0:
+        return np.nan
+    return v[k] / prior.mean()
+
+
+def check_uptrend(peaks, troughs, n, close):
+    """A: last 2 peaks and last 2 troughs (within ~6 months) each higher; structure still intact."""
+    rp = [p for p in peaks if p[0] >= n - 120]
+    rt = [t for t in troughs if t[0] >= n - 120]
+    if len(rp) < 2 or len(rt) < 2:
+        return False, None
+    p1, p2 = rp[-2][1], rp[-1][1]
+    t1, t2 = rt[-2][1], rt[-1][1]
+    recent = max(rp[-1][0], rt[-1][0]) >= n - 63
+    return bool(p2 > p1 and t2 > t1 and close > t2 and recent), t2
+
+
+def check_base_breakout(h, l, c, v, n):
+    """B: close above a 2-6 week base whose range is <= 12%, in the last 3 sessions, still holding."""
+    for bo in (n - 1, n - 2, n - 3):
+        for L in BASE_LENGTHS:
+            s = bo - L
+            if s < 0:
+                continue
+            bh, bl = h[s:bo].max(), l[s:bo].min()
+            rng = pct(bh, bl)
+            if rng > BASE_MAX_RANGE_PCT or c[bo] <= bh:
+                continue
+            if (c[bo:] < bh).any():
+                continue
+            if pct(c[-1], bh) > BREAKOUT_MAX_EXT_PCT:
+                continue
+            return {"bo": bo, "L": L, "bh": bh, "bl": bl, "rng": rng, "vr": vol_ratio_at(v, bo)}
+    return None
+
+
+def support_levels(peaks, last_trough, c, n):
+    """Support = last swing trough + old peaks (last year) that price has since closed above."""
+    levels = []
+    if last_trough is not None and last_trough < c[-1]:
+        levels.append(last_trough)
+    for pi, pv in peaks:
+        if pi >= n - 250 and pv < c[-1] and (c[pi + 1:] > pv).any():
+            levels.append(pv)
+    return sorted(set(levels), reverse=True)
+
+
+def check_pullback(uptrend, supports, h, l, c):
+    """C: in an uptrend, >= 3% off the 20-day high, low came within 3% of support, closes holding."""
+    if not uptrend:
+        return None
+    recent_high = h[-20:].max()
+    off_high = pct(recent_high, c[-1])
+    if off_high < 3:
+        return None
+    for S in supports:
+        if l[-3:].min() <= S * (1 + NEAR_SUPPORT_PCT / 100) and c[-3:].min() >= S * 0.995:
+            return {"S": S, "off_high": off_high}
+    return None
+
+
+def check_retest(peaks, l, c, n):
+    """D: an old peak broken 3-20 sessions ago, price came back within 2% of it, still closing above."""
+    best = None
+    for pi, pv in peaks:
+        above = np.where(c[pi + 1:] > pv)[0]
+        if len(above) == 0:
+            continue
+        b = pi + 1 + above[0]
+        if not (n - 21 <= b <= n - 4) or pi < b - 250:
+            continue
+        if l[b + 1:].min() > pv * (1 + RETEST_NEAR_PCT / 100):
+            continue
+        if c[-1] < pv or c[b:].min() < pv * 0.98:
+            continue
+        if best is None or pv > best["P"]:
+            best = {"P": pv, "b": b}
+    return best
+
+
+def check_candle(o, h, l, c):
+    """E (candle part): hammer, bullish engulfing or inside-day breakout on the latest session."""
+    rng = h[-1] - l[-1]
+    if rng <= 0:
+        return None
+    body = abs(c[-1] - o[-1])
+    lower = min(o[-1], c[-1]) - l[-1]
+    upper = h[-1] - max(o[-1], c[-1])
+    if lower >= 2 * max(body, rng * 0.05) and upper <= max(body, rng * 0.1) and (c[-1] - l[-1]) / rng >= 0.67:
+        return "Hammer"
+    if c[-2] < o[-2] and c[-1] > o[-1] and o[-1] <= c[-2] and c[-1] >= o[-2]:
+        return "Bullish engulfing"
+    if h[-2] <= h[-3] and l[-2] >= l[-3] and c[-1] > h[-2]:
+        return "Inside-day breakout"
+    return None
+
+
+def next_resistance(peaks, h, above):
+    """Nearest swing peak (last year) or 52-week high above the entry; NaN = nothing overhead."""
+    n = len(h)
+    levels = [pv for pi, pv in peaks if pi >= n - 250 and pv > above * 1.001]
+    hi52 = h[-252:].max()
+    if hi52 > above * 1.001:
         levels.append(hi52)
     return min(levels) if levels else np.nan
 
 
-def r2(x):
-    return None if x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else round(float(x), 2)
+def trailing_return(c, days):
+    return pct(c[-1], c[-days - 1]) if len(c) > days else np.nan
 
 
-def analyse(sym, df, bands, banned, segment="F&O", surveillance=None, in_mid150=False):
+# ---------------------------------------------------------------- per-stock analysis
+def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_mid150=False):
     surveillance = surveillance or {}
-    c, h, l, v = df["Close"], df["High"], df["Low"], df["Volume"]
-    e20, e50, e200 = ema(c, 20), ema(c, 50), ema(c, 200)
-    r = rsi(c)
-    macd = ema(c, 12) - ema(c, 26)
-    sig = ema(macd, 9)
-    hist = macd - sig
-    a = atr(df)
-    avg_vol20 = v.shift(1).rolling(20).mean()          # prior 20 sessions (excludes trigger day)
-    value20_cr = (c * v).rolling(20).mean() / 1e7
+    o, h, l, c, v = (df[k].to_numpy(dtype=float) for k in ("Open", "High", "Low", "Close", "Volume"))
+    n = len(c)
+    dates = df.index
+    fmt = lambda i: dates[i].strftime("%d %b")  # noqa: E731
 
-    C, H, L, V = c.iloc[-1], h.iloc[-1], l.iloc[-1], v.iloc[-1]
-    E20, E50, E200 = e20.iloc[-1], e50.iloc[-1], e200.iloc[-1]
-    RSI = r.iloc[-1]
-    ATR = a.iloc[-1]
-    AV = avg_vol20.iloc[-1]
-    vol_ratio = V / AV if AV and AV > 0 else np.nan
-    pull_vol_ratio = v.iloc[-4:-1].mean() / AV if AV and AV > 0 else np.nan   # 3 sessions before trigger
-    rng = H - L
-    range_pos = (C - L) / rng if rng > 0 else np.nan
-    ext = (C / E20 - 1) * 100
-    prior20_high = h.shift(1).rolling(20).max().iloc[-1]
-    prev_high = h.iloc[-2]
-    hi52 = h.iloc[-252:].max()
+    peaks, troughs = swing_points(h, l)
+    A, last_trough = check_uptrend(peaks, troughs, n, c[-1])
+    B = check_base_breakout(h, l, c, v, n)
+    supports = support_levels(peaks, last_trough, c, n)
+    C = check_pullback(A, supports, h, l, c)
+    D = check_retest(peaks, l, c, n)
+    candle = check_candle(o, h, l, c)
+    near_S = next((S for S in supports if S * 0.97 <= l[-2:].min() <= S * (1 + NEAR_SUPPORT_PCT / 100)), None)
+    E = bool(candle and (C or D or near_S is not None))
 
-    n_rows = len(df)
-    has200, has50 = n_rows >= 200, n_rows >= 50
-    trend_ok = (C > E20
-                and (E20 > E50 if has50 else True)
-                and (C > E200 if has200 else True))   # short history: unavailable EMAs are skipped and flagged
-    ext_ok = ext <= MAX_EXT_ABOVE_EMA20
-    rsi_ok = RSI_LO <= RSI <= RSI_HI
-    macd_ok = macd.iloc[-1] > sig.iloc[-1] and hist.iloc[-1] > hist.iloc[-2]
-    value_ok = value20_cr.iloc[-1] >= MIN_VALUE_CR  # universe rule for non-F&O stocks
+    ret1, ret3 = trailing_return(c, 21), trailing_return(c, 63)
+    G = bool(ret1 == ret1 and ret3 == ret3 and ret1 > nifty["ret_1m"] and ret3 > nifty["ret_3m"])
 
-    is_breakout = C > prior20_high and vol_ratio >= BREAKOUT_VOL_MULT and range_pos >= CLOSE_TOP_OF_RANGE
-    is_pullback = (not is_breakout) and pull_vol_ratio < 1 and vol_ratio >= TRIGGER_VOL_MULT and C > prev_high
-    setup = "Breakout" if is_breakout else ("Pullback trigger" if is_pullback else "")
+    vr_today = vol_ratio_at(v, n - 1)
+    trig_vr = B["vr"] if B else vr_today
+    VOL = bool(trig_vr == trig_vr and trig_vr >= VOL_MULT and (B or C or D or E))
 
-    # ---- levels, all from the TOP of the entry range
-    entry_low = H
-    entry_top = H * (1 + ENTRY_BUFFER)
-    t1, t2 = entry_top * (1 + T1_PCT), entry_top * (1 + T2_PCT)
-    min_dist = ATR_MULT_MIN_STOP * ATR
-    atr_too_high = min_dist / entry_top > MAX_STOP_PCT
-    cands = {
-        "5-day swing low": l.iloc[-5:].min(),
-        "10-day swing low": l.iloc[-10:].min(),
-        "20 EMA": E20,
-    }
-    stop, stop_basis = np.nan, ""
-    for name, lvl in sorted(cands.items(), key=lambda kv: -kv[1]):
-        dist = entry_top - lvl
-        if dist >= min_dist and dist / entry_top <= MAX_STOP_PCT:
-            stop, stop_basis = lvl, name
-            break
-    stop_pct = (entry_top - stop) / entry_top * 100 if not np.isnan(stop) else np.nan
-    rr1 = (t1 - entry_top) / (entry_top - stop) if not np.isnan(stop) else np.nan
-    rr2 = (t2 - entry_top) / (entry_top - stop) if not np.isnan(stop) else np.nan
-    res = nearest_resistance(df, entry_top)
-    targets_ok = bool(np.isnan(res) or t2 < res)
-    shares = math.floor(RISK_PER_LAKH / (entry_top - stop)) if not np.isnan(stop) else None
+    # ---- entry style and levels (priority: breakout > retest > pullback > candle)
+    if B:
+        style = "Breakout"
+        entry_low, entry_high = h[-1], h[-1] * (1 + ENTRY_BUFFER)
+        support = B["bh"]
+    elif D or C or E:
+        S = D["P"] if D else (C["S"] if C else near_S)
+        style = "Retest" if D else ("Pullback" if C else "Candle at support")
+        entry_low, entry_high = S, max(c[-1], S * 1.01)
+        support = S
+    else:
+        style = ""
+        entry_low, entry_high = np.nan, np.nan
+        support = supports[0] if supports else np.nan
+    entry_ref = entry_high if style else c[-1]
+    t1, t2 = entry_ref * (1 + T1_PCT), entry_ref * (1 + T2_PCT)
+    res = next_resistance(peaks, h, entry_ref)
+    room = pct(res, entry_ref) if res == res else np.nan
+    F = bool(res != res or room >= MIN_ROOM_PCT)
 
+    has_setup = bool(B or C or D or E)
+    eligible = has_setup and F
+    pats = {"A": bool(A), "B": bool(B), "C": bool(C), "D": bool(D), "E": E, "G": G, "VOL": VOL}
+    score = sum(SCORE[k] for k, on in pats.items() if on)
+    setups = "+".join({"VOL": "Vol"}.get(k, k) for k in ("B", "D", "C", "E", "A", "G", "VOL") if pats[k])
+
+    # ---- plain-English reason
+    why = []
+    if B:
+        s = f"Broke out of a {B['L']}-day base (₹{B['bl']:.2f}–₹{B['bh']:.2f}, {B['rng']:.1f}% range) on {fmt(B['bo'])}"
+        if B["vr"] == B["vr"]:
+            s += f" on {B['vr']:.1f}× normal volume"
+        why.append(s)
+    if D:
+        why.append(f"Retesting ₹{D['P']:.2f}, an old peak it broke on {fmt(D['b'])}, now holding as support")
+    if C:
+        why.append(f"Pulled back {C['off_high']:.1f}% from its 20-day high to support at ₹{C['S']:.2f} and holding")
+    if E:
+        why.append(f"{candle} at support")
+    if A:
+        why.append("Uptrend: higher highs and higher lows")
+    if G:
+        why.append(f"Beating Nifty: 1M {ret1:+.1f}% vs {nifty['ret_1m']:+.1f}%, 3M {ret3:+.1f}% vs {nifty['ret_3m']:+.1f}%")
+    if VOL and not B:
+        why.append(f"Volume {vr_today:.1f}× normal on the latest session")
+    if res == res:
+        why.append(f"Next resistance ₹{res:.2f} ({room:.1f}% above entry)")
+    else:
+        why.append("No resistance overhead (at or near its 52-week high)")
+
+    missing = []
+    if not has_setup:
+        missing.append("No entry setup (no breakout, retest, pullback or candle at support)")
+    if not F:
+        missing.append(f"Room to next resistance only {room:.1f}% (need {MIN_ROOM_PCT:.0f}%)")
+
+    # ---- warning flags (information only, never exclusions)
     band = bands.get(sym, "unknown")
-
-    # ---- Warning flags: shown to the user, NOT used to reject (user decides)
+    value20 = (c[-20:] * v[-20:]).mean() / 1e7
     flags = []
     if sym in banned:
         flags.append("F&O ban list (no new F&O positions; cash buying allowed)")
@@ -333,87 +468,52 @@ def analyse(sym, df, bands, banned, segment="F&O", surveillance=None, in_mid150=
             flags.append(f"On NSE {name} list (surveillance; higher margin / trade restrictions possible)")
     if band in ("2", "5", "2.0", "5.0"):
         flags.append(f"{band}% price band (daily move capped at {band}%)")
-    if not has200:
-        flags.append(f"Short history: {n_rows} sessions, 200 EMA check skipped"
-                     + ("" if has50 else ", 50 EMA check skipped too"))
-    if segment == "Midcap 150" and not value_ok:
-        flags.append(f"Thin liquidity: Rs {value20_cr.iloc[-1]:.0f} cr/day avg")
+    if n < SHORT_HISTORY_FLAG:
+        flags.append(f"Short history: {n} sessions, limited price structure")
+    if segment == "Midcap 150" and value20 < MIN_VALUE_CR:
+        flags.append(f"Thin liquidity: Rs {value20:.0f} cr/day avg")
 
-    # ---- Rule failures (reject)
-    reasons = []
-    if segment == "Cash (non-F&O)" and not value_ok:
-        reasons.append(f"Liquidity: 20-day avg traded value Rs {value20_cr.iloc[-1]:.0f} cr < 50 cr")
-    if not trend_ok:
-        reasons.append("Trend fail (need Close>20EMA>50EMA and >200EMA)")
-    if not ext_ok:
-        reasons.append(f"Extended {ext:.1f}% above 20 EMA")
-    if not rsi_ok:
-        reasons.append(f"RSI {RSI:.1f} outside 55-70")
-    if not macd_ok:
-        reasons.append("MACD not above signal with rising histogram")
-    if not setup:
-        reasons.append("No breakout/pullback trigger today")
-    if atr_too_high:
-        reasons.append(f"Too volatile: 0.75xATR = {min_dist / entry_top * 100:.2f}% > 2%")
-    elif np.isnan(stop):
-        reasons.append("No structural stop between 0.75xATR and 2%")
-    elif rr1 < MIN_RR_T1:
-        reasons.append(f"R:R to T1 {rr1:.2f} < 1.5")
-    if not targets_ok:
-        reasons.append(f"T2 not below resistance {res:.2f}")
-
+    hi52 = h[-252:].max()
     return {
-        "symbol": sym,
-        "segment": segment,
-        "in_midcap150": bool(in_mid150),
-        "date": df.index[-1].strftime("%Y-%m-%d"),
-        "passes_all_rules": len(reasons) == 0,
-        "n_fails": len(reasons),
-        "reject_reasons": "; ".join(reasons),
-        "flags": "; ".join(flags),
-        "n_flags": len(flags),
-        "history_sessions": n_rows,
-        "setup": setup,
-        "open": r2(df["Open"].iloc[-1]), "high": r2(H), "low": r2(L), "close": r2(C),
-        "chg_pct": r2((C / c.iloc[-2] - 1) * 100),
-        "volume": int(V), "avg_vol20": int(AV) if AV == AV else None,
-        "vol_ratio": r2(vol_ratio), "pullback_vol_ratio": r2(pull_vol_ratio),
-        "close_range_pos": r2(range_pos),
-        "ema20": r2(E20), "ema50": r2(E50) if has50 else None, "ema200": r2(E200) if has200 else None,
-        "pct_above_ema20": r2(ext),
-        "rsi14": r2(RSI), "macd": r2(macd.iloc[-1]), "macd_signal": r2(sig.iloc[-1]),
-        "macd_hist": r2(hist.iloc[-1]), "macd_hist_prev": r2(hist.iloc[-2]),
-        "atr14": r2(ATR), "atr_pct": r2(ATR / C * 100),
-        "avg_value20_cr": r2(value20_cr.iloc[-1]), "value_ok": bool(value_ok),
-        "high52": r2(hi52), "prior20_high": r2(prior20_high),
-        "swing_low5": r2(cands["5-day swing low"]), "swing_low10": r2(cands["10-day swing low"]),
-        "nearest_resistance": r2(res),
-        "entry_low": r2(entry_low), "entry_top": r2(entry_top),
-        "t1": r2(t1), "t2": r2(t2), "stop": r2(stop), "stop_basis": stop_basis,
-        "stop_pct": r2(stop_pct), "rr_t1": r2(rr1), "rr_t2": r2(rr2),
-        "shares_per_lakh": shares, "price_band": band,
-        "trend_ok": bool(trend_ok), "ext_ok": bool(ext_ok), "rsi_ok": bool(rsi_ok), "macd_ok": bool(macd_ok),
+        "symbol": sym, "segment": segment, "in_midcap150": bool(in_mid150),
+        "date": dates[-1].strftime("%Y-%m-%d"), "history_sessions": n,
+        "eligible": eligible, "score": score, "setups": setups, "entry_style": style,
+        "reason": "; ".join(why), "not_eligible_because": "; ".join(missing),
+        "flags": "; ".join(flags), "n_flags": len(flags),
+        "close": r2(c[-1]), "chg_pct": r2(pct(c[-1], c[-2])),
+        "entry_low": r2(entry_low), "entry_high": r2(entry_high),
+        "t1": r2(t1) if style else None, "t2": r2(t2) if style else None, "time_exit_days": TIME_EXIT_DAYS,
+        "support": r2(support), "resistance": r2(res), "room_pct": r2(room),
+        "pat_A_uptrend": pats["A"], "pat_B_base_breakout": pats["B"], "pat_C_pullback": pats["C"],
+        "pat_D_retest": pats["D"], "pat_E_candle": pats["E"], "pat_F_room": F, "pat_G_rel_strength": pats["G"],
+        "vol_ok": pats["VOL"], "vol_ratio_today": r2(vr_today), "trigger_vol_ratio": r2(trig_vr),
+        "candle": candle or "", "ret_1m": r2(ret1), "ret_3m": r2(ret3),
+        "rs_3m_vs_nifty": r2(ret3 - nifty["ret_3m"]) if ret3 == ret3 else None,
+        "high52": r2(hi52), "pct_below_high52": r2(pct(hi52, c[-1])),
+        "base_days": B["L"] if B else None, "base_high": r2(B["bh"]) if B else None,
+        "base_low": r2(B["bl"]) if B else None, "base_range_pct": r2(B["rng"]) if B else None,
+        "breakout_date": dates[B["bo"]].strftime("%Y-%m-%d") if B else None,
+        "retest_level": r2(D["P"]) if D else None,
+        "retest_break_date": dates[D["b"]].strftime("%Y-%m-%d") if D else None,
+        "pullback_support": r2(C["S"]) if C else None,
+        "last_swing_trough": r2(last_trough), "price_band": band, "avg_value20_cr": r2(value20),
     }
 
 
-def market_filter(frames):
-    out = {}
-    n = frames.get("^NSEI")
-    if n is not None:
-        c = n["Close"]
-        out["nifty_date"] = n.index[-1].strftime("%Y-%m-%d")
-        out["nifty_close"] = r2(c.iloc[-1])
-        out["nifty_ema20"] = r2(ema(c, 20).iloc[-1])
-        out["nifty_ema50"] = r2(ema(c, 50).iloc[-1])
-        out["nifty_above_20_50"] = bool(c.iloc[-1] > ema(c, 20).iloc[-1] and c.iloc[-1] > ema(c, 50).iloc[-1])
-    vx = frames.get("^INDIAVIX")
-    if vx is not None:
-        c = vx["Close"]
-        out["vix_close"] = r2(c.iloc[-1])
-        out["vix_5d_change_pct"] = r2((c.iloc[-1] / c.iloc[-6] - 1) * 100)
-        out["vix_ok"] = bool(c.iloc[-1] < 20 and (c.iloc[-1] / c.iloc[-6] - 1) * 100 < 15)
-    out["market_ok"] = bool(out.get("nifty_above_20_50") and out.get("vix_ok"))
-    return out
+def nifty_context(df):
+    """Nifty's own price action: returns, structure, distance from 52-week high (context only)."""
+    h, l, c = (df[k].to_numpy(dtype=float) for k in ("High", "Low", "Close"))
+    peaks, troughs = swing_points(h, l)
+    up, last_trough = check_uptrend(peaks, troughs, len(c), c[-1])
+    last_peak = peaks[-1][1] if peaks else np.nan
+    return {
+        "date": df.index[-1].strftime("%Y-%m-%d"), "close": r2(c[-1]),
+        "ret_1m": trailing_return(c, 21), "ret_3m": trailing_return(c, 63),
+        "uptrend_structure": bool(up),
+        "last_swing_peak": r2(last_peak), "last_swing_trough": r2(troughs[-1][1] if troughs else np.nan),
+        "above_last_trough": bool(troughs and c[-1] > troughs[-1][1]),
+        "pct_below_high52": r2(pct(h[-252:].max(), c[-1])),
+    }
 
 
 def main():
@@ -430,7 +530,6 @@ def main():
     mid_set = set(mid150)
     mid_only = [s for s in mid150 if s not in fno_set]
 
-    # Other stocks: EQ series, not F&O or Midcap 150; keep only liquid ones (price-band stocks are flagged, not dropped)
     others = [s for s in eq_syms if s not in fno_set and s not in mid_set]
     liquid, screened = liquid_non_fno(others) if others else ([], 0)
     print(f"F&O: {len(fno)} | Midcap 150 (non-F&O): {len(mid_only)} | others screened: {screened} "
@@ -440,14 +539,12 @@ def main():
     segment_of.update({s: "Midcap 150" for s in mid_only})
     segment_of.update({s: "Cash (non-F&O)" for s in liquid})
     universe = fno + mid_only + liquid
-    tickers = [s + ".NS" for s in universe] + ["^NSEI", "^INDIAVIX"]
-    frames = download(tickers)
-
-    # Retry the two indices on their own if the batch missed them
-    for idx in ("^NSEI", "^INDIAVIX"):
-        if idx not in frames:
-            f = download([idx])
-            frames.update(f)
+    frames = download([s + ".NS" for s in universe] + ["^NSEI"])
+    if "^NSEI" not in frames:
+        frames.update(download(["^NSEI"]))
+    if "^NSEI" not in frames:
+        raise SystemExit("Nifty 50 data unavailable; cannot compute relative strength")
+    nifty = nifty_context(frames["^NSEI"])
 
     rows, failed = [], []
     for s in universe:
@@ -456,52 +553,51 @@ def main():
             failed.append(s)
             continue
         try:
-            rows.append(analyse(s, df, bands, banned, segment=segment_of[s], surveillance=surveillance,
-                                in_mid150=s in mid_set))
+            rows.append(analyse(s, df, bands, banned, nifty, segment=segment_of[s],
+                                surveillance=surveillance, in_mid150=s in mid_set))
         except Exception as e:
             print("analyse failed", s, e)
             failed.append(s)
 
     table = pd.DataFrame(rows)
     if not table.empty:
-        table = table.sort_values(["passes_all_rules", "n_fails", "vol_ratio"], ascending=[False, True, False])
+        table = table.sort_values(["eligible", "score", "rs_3m_vs_nifty", "trigger_vol_ratio"],
+                                  ascending=[False, False, False, False], na_position="last")
         latest_date = table["date"].mode().iloc[0]
         table["stale"] = table["date"] != latest_date
+        table.insert(0, "rank", range(1, len(table) + 1))
     else:
         latest_date = None
-    table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False)
+    table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False, encoding="utf-8")
 
-    not_checked = ["upcoming events (results, board meetings, ex-dates)"]
-    if not (surv["asm"]["status"] == "ok" and surv["gsm"]["status"] == "ok"):
-        not_checked.insert(0, "ASM/GSM framework (NSE lists not downloaded)")
+    elig = table[table["eligible"]] if not table.empty else table
     meta = {
         "generated_at_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M"),
         "data_date": latest_date,
+        "method": "price action + volume only; no indicators; no stop-loss",
         "universe_source": (f"F&O: {fno_src}; Nifty Midcap 150: {mid150_src}; others: {eq_src} "
                             f"filtered to 20-day avg traded value >= Rs 50 cr"),
-        "fno_count": len(fno),
-        "midcap150_count": len(mid150),
-        "midcap150_non_fno_count": len(mid_only),
-        "liquid_non_fno_count": len(liquid),
-        "universe_count": len(universe),
-        "stocks_analysed": len(rows),
+        "fno_count": len(fno), "midcap150_count": len(mid150),
+        "midcap150_non_fno_count": len(mid_only), "liquid_non_fno_count": len(liquid),
+        "universe_count": len(universe), "stocks_analysed": len(rows),
         "stocks_failed_download": failed,
-        "note_failed": f"Listed fewer than {MIN_HISTORY} sessions ago or no Yahoo data - too little history to analyse",
-        "flags_not_rejections": ["F&O ban", "ASM/GSM list", "2%/5% price band", "short price history",
-                                 "thin liquidity (Midcap 150)"],
-        "valid_setups": int(table["passes_all_rules"].sum()) if not table.empty else 0,
-        "flagged_setups": int((table["passes_all_rules"] & (table["n_flags"] > 0)).sum()) if not table.empty else 0,
+        "note_failed": f"Listed fewer than {MIN_HISTORY} sessions ago or no Yahoo data",
+        "eligible_count": int(len(elig)),
+        "pattern_counts": {k: int(table[k].sum()) for k in table.columns if k.startswith("pat_") or k == "vol_ok"}
+        if not table.empty else {},
+        "score_points": SCORE, "targets_pct": [T1_PCT * 100, T2_PCT * 100], "time_exit_days": TIME_EXIT_DAYS,
+        "nifty": {k: (r2(v) if isinstance(v, float) else v) for k, v in nifty.items()},
         "fno_ban": ban,
         "asm_gsm": {k: {"status": v["status"], "count": len(v["symbols"])} for k, v in surv.items()},
         "price_band_source": "NSE sec_list.csv" if bands else "not available",
-        "market": market_filter(frames),
-        "rules_not_checked_here": not_checked,
+        "flags_not_rejections": ["F&O ban", "ASM/GSM list", "2%/5% price band", "short price history",
+                                 "thin liquidity (Midcap 150)"],
         "price_source": "Yahoo Finance via yfinance (unofficial)",
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
-        json.dump(meta, f, indent=2)
-    print(json.dumps({k: meta[k] for k in ("data_date", "fno_count", "midcap150_count", "liquid_non_fno_count",
-                                           "stocks_analysed", "valid_setups", "asm_gsm", "market")}, indent=2))
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+    print(json.dumps({k: meta[k] for k in ("data_date", "stocks_analysed", "eligible_count",
+                                           "pattern_counts", "nifty")}, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

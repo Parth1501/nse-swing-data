@@ -1,0 +1,36 @@
+{
+  "generated_at_ist": "2026-09-29 18:55",
+  "data_date": "2026-09-29",
+  "universe_source": "NSE fo_mktlots.csv",
+  "universe_count": 211,
+  "stocks_analysed": 210,
+  "stocks_failed_download": [
+    "NIFTYFPI"
+  ],
+  "valid_setups": 0,
+  "fno_ban": {
+    "status": "ok",
+    "header": "Securities in Ban For Trade Date 29-SEP-2026:",
+    "symbols": [
+      "LICHSGFIN",
+      "SAIL"
+    ]
+  },
+  "price_band_source": "NSE sec_list.csv",
+  "market": {
+    "nifty_date": "2026-09-29",
+    "nifty_close": 22716.2,
+    "nifty_ema20": 23377.78,
+    "nifty_ema50": 23722.62,
+    "nifty_above_20_50": false,
+    "vix_close": 13.41,
+    "vix_5d_change_pct": 21.93,
+    "vix_ok": false,
+    "market_ok": false
+  },
+  "rules_not_checked_here": [
+    "ASM/GSM framework",
+    "upcoming events (results, board meetings, ex-dates)"
+  ],
+  "price_source": "Yahoo Finance via yfinance (unofficial)"
+}

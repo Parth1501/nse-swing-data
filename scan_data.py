@@ -1,8 +1,9 @@
 """
 Daily NSE swing-scan data builder (runs on GitHub Actions).
 
-Downloads ~2 years of daily prices for the NSE F&O stock universe plus
-Nifty 50 and India VIX, calculates every indicator used by the swing-trade
+Downloads ~2 years of daily prices for NSE F&O stocks plus every other NSE EQ
+stock with 20-day average traded value >= Rs 50 crore, plus Nifty 50 and India VIX,
+calculates every indicator used by the swing-trade
 rules, applies the mechanical checks, and writes:
   data/latest.csv  - one row per stock with indicators, levels and pass/fail reasons
   data/meta.json   - data date, market filter numbers, F&O ban list, run stats
@@ -27,7 +28,7 @@ NSE_HEADERS = {
     "Accept": "*/*",
     "Referer": "https://www.nseindia.com/",
 }
-INDEX_SYMBOLS = {"NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50", "SENSEX", "BANKEX"}
+INDEX_SYMBOLS = {"NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50", "NIFTYFPI", "SENSEX", "BANKEX"}
 
 # ---- Rule parameters (from the trade plan) ----
 T1_PCT, T2_PCT = 0.03, 0.05
@@ -120,14 +121,59 @@ def get_price_bands():
         return {}
 
 
+def get_eq_symbols(bands):
+    """All NSE EQ-series symbols (normal rolling settlement). Uses sec_list if loaded, else EQUITY_L.csv."""
+    if len(bands) > 500:
+        return sorted(bands), "NSE sec_list.csv"
+    try:
+        txt = nse_get("https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv")
+        df = pd.read_csv(io.StringIO(txt))
+        df.columns = [c.strip().upper() for c in df.columns]
+        df = df[df["SERIES"].astype(str).str.strip() == "EQ"]
+        syms = sorted({str(x).strip() for x in df["SYMBOL"].dropna()})
+        if len(syms) > 500:
+            return syms, "NSE EQUITY_L.csv"
+    except Exception as e:
+        print("Equity list fetch failed:", e)
+    return [], "not available"
+
+
+def _collect_symbols(obj, out):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k.lower() == "symbol" and isinstance(v, str):
+                out.add(v.strip())
+            else:
+                _collect_symbols(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _collect_symbols(v, out)
+
+
+def get_asm_gsm():
+    """Best effort: NSE's ASM and GSM lists (JSON endpoints). Returns status per list."""
+    result = {}
+    for name, url in (("asm", "https://www.nseindia.com/api/reportASM"),
+                      ("gsm", "https://www.nseindia.com/api/reportGSM")):
+        try:
+            syms = set()
+            _collect_symbols(json.loads(nse_get(url)), syms)
+            result[name] = {"status": "ok" if syms else "empty or unreadable", "symbols": sorted(syms)}
+        except Exception as e:
+            print(f"{name.upper()} list fetch failed:", e)
+            result[name] = {"status": "not available", "symbols": []}
+    return result
+
+
 # ---------------------------------------------------------------- prices
-def download(tickers, retries=3):
+def download(tickers, period="2y", min_rows=210, chunk_size=40, retries=3):
     frames = {}
-    for i in range(0, len(tickers), 40):
-        chunk = tickers[i:i + 40]
+    for i in range(0, len(tickers), chunk_size):
+        chunk = tickers[i:i + chunk_size]
+        raw = None
         for attempt in range(retries):
             try:
-                raw = yf.download(chunk, period="2y", interval="1d", group_by="ticker",
+                raw = yf.download(chunk, period=period, interval="1d", group_by="ticker",
                                   auto_adjust=False, threads=True, progress=False)
                 break
             except Exception as e:
@@ -140,12 +186,23 @@ def download(tickers, retries=3):
             try:
                 df = raw[t] if isinstance(raw.columns, pd.MultiIndex) else raw
                 df = df[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"])
-                if len(df) >= 210:
+                if len(df) >= min_rows:
                     frames[t] = df
             except Exception:
                 pass
         time.sleep(1)
     return frames
+
+
+def liquid_non_fno(symbols):
+    """Quick 3-month download of non-F&O stocks; keep those with 20-day avg traded value >= Rs 50 cr."""
+    frames = download([s + ".NS" for s in symbols], period="3mo", min_rows=20, chunk_size=100)
+    keep = []
+    for t, df in frames.items():
+        val_cr = (df["Close"] * df["Volume"]).iloc[-20:].mean() / 1e7
+        if val_cr >= MIN_VALUE_CR:
+            keep.append(t[:-3])
+    return sorted(keep), len(frames)
 
 
 # ---------------------------------------------------------------- indicators
@@ -184,7 +241,7 @@ def r2(x):
     return None if x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else round(float(x), 2)
 
 
-def analyse(sym, df, bands, banned):
+def analyse(sym, df, bands, banned, is_fno=True, surveillance=frozenset()):
     c, h, l, v = df["Close"], df["High"], df["Low"], df["Volume"]
     e20, e50, e200 = ema(c, 20), ema(c, 50), ema(c, 200)
     r = rsi(c)
@@ -213,7 +270,7 @@ def analyse(sym, df, bands, banned):
     ext_ok = ext <= MAX_EXT_ABOVE_EMA20
     rsi_ok = RSI_LO <= RSI <= RSI_HI
     macd_ok = macd.iloc[-1] > sig.iloc[-1] and hist.iloc[-1] > hist.iloc[-2]
-    value_ok = value20_cr.iloc[-1] >= MIN_VALUE_CR  # info only: F&O stocks pass the universe rule anyway
+    value_ok = value20_cr.iloc[-1] >= MIN_VALUE_CR  # universe rule for non-F&O stocks
 
     is_breakout = C > prior20_high and vol_ratio >= BREAKOUT_VOL_MULT and range_pos >= CLOSE_TOP_OF_RANGE
     is_pullback = (not is_breakout) and pull_vol_ratio < 1 and vol_ratio >= TRIGGER_VOL_MULT and C > prev_high
@@ -245,6 +302,10 @@ def analyse(sym, df, bands, banned):
 
     band = bands.get(sym, "unknown")
     reasons = []
+    if not is_fno and not value_ok:
+        reasons.append(f"Liquidity: 20-day avg traded value Rs {value20_cr.iloc[-1]:.0f} cr < 50 cr")
+    if sym in surveillance:
+        reasons.append("On NSE ASM/GSM list")
     if sym in banned:
         reasons.append("In F&O ban list")
     if band in ("2", "5", "2.0", "5.0"):
@@ -270,6 +331,7 @@ def analyse(sym, df, bands, banned):
 
     return {
         "symbol": sym,
+        "segment": "F&O" if is_fno else "Cash (non-F&O)",
         "date": df.index[-1].strftime("%Y-%m-%d"),
         "passes_all_rules": len(reasons) == 0,
         "n_fails": len(reasons),
@@ -318,11 +380,21 @@ def market_filter(frames):
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
-    universe, universe_src = get_fno_universe()
+    fno, fno_src = get_fno_universe()
+    fno_set = set(fno)
     ban = get_ban_list()
     banned = set(ban["symbols"])
     bands = get_price_bands()
+    eq_syms, eq_src = get_eq_symbols(bands)
+    surv = get_asm_gsm()
+    surveillance = set(surv["asm"]["symbols"]) | set(surv["gsm"]["symbols"])
 
+    # Non-F&O stocks: EQ series, not already in F&O, not in a 2%/5% band, then keep only liquid ones
+    others = [s for s in eq_syms if s not in fno_set and bands.get(s, "") not in ("2", "5", "2.0", "5.0")]
+    liquid, screened = liquid_non_fno(others) if others else ([], 0)
+    print(f"F&O: {len(fno)} | non-F&O screened: {screened} | liquid non-F&O: {len(liquid)}")
+
+    universe = fno + liquid
     tickers = [s + ".NS" for s in universe] + ["^NSEI", "^INDIAVIX"]
     frames = download(tickers)
 
@@ -339,7 +411,7 @@ def main():
             failed.append(s)
             continue
         try:
-            rows.append(analyse(s, df, bands, banned))
+            rows.append(analyse(s, df, bands, banned, is_fno=s in fno_set, surveillance=surveillance))
         except Exception as e:
             print("analyse failed", s, e)
             failed.append(s)
@@ -353,23 +425,30 @@ def main():
         latest_date = None
     table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False)
 
+    not_checked = ["upcoming events (results, board meetings, ex-dates)"]
+    if not (surv["asm"]["status"] == "ok" and surv["gsm"]["status"] == "ok"):
+        not_checked.insert(0, "ASM/GSM framework (NSE lists not downloaded)")
     meta = {
         "generated_at_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M"),
         "data_date": latest_date,
-        "universe_source": universe_src,
+        "universe_source": f"F&O: {fno_src}; non-F&O: {eq_src} filtered to 20-day avg traded value >= Rs 50 cr",
+        "fno_count": len(fno),
+        "liquid_non_fno_count": len(liquid),
         "universe_count": len(universe),
         "stocks_analysed": len(rows),
         "stocks_failed_download": failed,
         "valid_setups": int(table["passes_all_rules"].sum()) if not table.empty else 0,
         "fno_ban": ban,
+        "asm_gsm": {k: {"status": v["status"], "count": len(v["symbols"])} for k, v in surv.items()},
         "price_band_source": "NSE sec_list.csv" if bands else "not available",
         "market": market_filter(frames),
-        "rules_not_checked_here": ["ASM/GSM framework", "upcoming events (results, board meetings, ex-dates)"],
+        "rules_not_checked_here": not_checked,
         "price_source": "Yahoo Finance via yfinance (unofficial)",
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    print(json.dumps({k: meta[k] for k in ("data_date", "stocks_analysed", "valid_setups", "market")}, indent=2))
+    print(json.dumps({k: meta[k] for k in ("data_date", "fno_count", "liquid_non_fno_count", "stocks_analysed",
+                                           "valid_setups", "asm_gsm", "market")}, indent=2))
 
 
 if __name__ == "__main__":

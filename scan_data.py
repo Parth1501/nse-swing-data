@@ -1018,22 +1018,35 @@ def main():
 
     table = pd.DataFrame(rows)
     if not table.empty:
-        table = table.sort_values(["eligible", "score", "rs_3m_vs_nifty", "trigger_vol_ratio"],
-                                  ascending=[False, False, False, False], na_position="last")
         latest_date = table["date"].mode().iloc[0]
-        prev_date = None
+        table["stale"] = table["date"] != latest_date
+        prev_date, prev_fresh = None, 0.0
         try:
             with open(os.path.join(OUT_DIR, "meta.json")) as f:
                 prev_date = json.load(f).get("data_date")
+            old = pd.read_csv(os.path.join(OUT_DIR, "latest.csv"), usecols=["date"])
+            prev_fresh = float((old["date"].astype(str) == str(prev_date)).mean())
         except Exception:
             pass
+        new_fresh = float((~table["stale"]).mean())
+        # Yahoo sometimes drops the last session for some or all stocks for a few hours after
+        # midnight IST. Never replace good saved data with older or patchier data.
         if prev_date and str(latest_date) < str(prev_date):
-            # Yahoo sometimes drops the last session for a few hours after midnight IST.
-            # Never replace good data with older data: keep the saved files and stop.
             print(f"STALE: Yahoo returned data up to {latest_date}, but the saved files are from "
                   f"{prev_date}. Keeping the saved files; nothing written.")
             return
-        table["stale"] = table["date"] != latest_date
+        if prev_date and str(latest_date) == str(prev_date) and new_fresh < prev_fresh - 0.02:
+            print(f"PATCHY: only {new_fresh:.0%} of stocks have {latest_date} prices this run vs "
+                  f"{prev_fresh:.0%} in the saved files. Keeping the saved files; nothing written.")
+            return
+        # A stock whose latest price is missing is judged on old prices, so it can't be on today's list.
+        gap = table["stale"] & table["eligible"]
+        table.loc[gap, "not_eligible_because"] = (f"price for {latest_date} missing from Yahoo, "
+                                                  f"so the setup can't be confirmed")
+        table.loc[gap, "eligible"] = False
+        print(f"Stocks with {latest_date} prices: {new_fresh:.0%}; eligible but dropped for missing price: {int(gap.sum())}")
+        table = table.sort_values(["eligible", "score", "rs_3m_vs_nifty", "trigger_vol_ratio"],
+                                  ascending=[False, False, False, False], na_position="last")
         table.insert(0, "rank", range(1, len(table) + 1))
         try:                                   # sectors for stocks outside the index list
             extra, sector_lookup = fill_missing_sectors(list(table["symbol"]), industry)

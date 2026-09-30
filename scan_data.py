@@ -67,6 +67,7 @@ SHORT_HISTORY_FLAG = 120
 PICKS_FILE = os.path.join("data", "picks_log.csv")
 TOP_N = 10                           # the daily list = top 10 eligible
 ENTRY_WINDOW = 3                     # a pick can be bought within the first 3 sessions after the list date
+BAD_LIST_DATES = {"2026-09-28"}      # a run just after midnight got stale Yahoo data and logged these by mistake
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
                "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
 MIN_SECTOR_STOCKS = 3                # need at least 3 stocks to judge a sector
@@ -910,6 +911,7 @@ def update_track_record(table, frames, data_date):
     if os.path.exists(PICKS_FILE):
         log = pd.read_csv(PICKS_FILE, dtype={"list_date": str})
         log = log[[c for c in PICK_STATIC if c in log.columns]]
+        log = log[~log["list_date"].isin(BAD_LIST_DATES)]
     else:
         log = pd.DataFrame(columns=PICK_STATIC)
     if data_date and not table.empty:
@@ -1019,6 +1021,18 @@ def main():
         table = table.sort_values(["eligible", "score", "rs_3m_vs_nifty", "trigger_vol_ratio"],
                                   ascending=[False, False, False, False], na_position="last")
         latest_date = table["date"].mode().iloc[0]
+        prev_date = None
+        try:
+            with open(os.path.join(OUT_DIR, "meta.json")) as f:
+                prev_date = json.load(f).get("data_date")
+        except Exception:
+            pass
+        if prev_date and str(latest_date) < str(prev_date):
+            # Yahoo sometimes drops the last session for a few hours after midnight IST.
+            # Never replace good data with older data: keep the saved files and stop.
+            print(f"STALE: Yahoo returned data up to {latest_date}, but the saved files are from "
+                  f"{prev_date}. Keeping the saved files; nothing written.")
+            return
         table["stale"] = table["date"] != latest_date
         table.insert(0, "rank", range(1, len(table) + 1))
         try:                                   # sectors for stocks outside the index list

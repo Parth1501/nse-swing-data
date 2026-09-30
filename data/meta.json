@@ -1,5 +1,5 @@
 {
-  "generated_at_ist": "2026-09-30 18:52",
+  "generated_at_ist": "2026-09-30 20:04",
   "data_date": "2026-09-30",
   "method": "price action + volume only; no indicators; no stop-loss",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",

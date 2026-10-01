@@ -99,17 +99,17 @@ def draw(sym, df, row, peaks, troughs, path):
     zs = slice(z0, n)
     zn = n - z0
 
-    fig = plt.figure(figsize=(6.4, 9.0), dpi=120)
+    fig = plt.figure(figsize=(4.4, 6.8), dpi=170)
     gs = fig.add_gridspec(3, 1, height_ratios=[2.1, 5.2, 1.5], hspace=0.12,
-                          left=0.03, right=0.80, top=0.925, bottom=0.085)
+                          left=0.03, right=0.775, top=0.905, bottom=0.10)
     ax1, ax2, ax3 = (fig.add_subplot(gs[i]) for i in range(3))
 
     rank = f"#{int(g['rank'])} " if g["rank"] else ""
     score = f" · score {int(g['score'])}" if g["score"] is not None else ""
-    fig.text(0.03, 0.975, f"{rank}{sym}", fontsize=17, fontweight="bold", color=INK, va="center")
-    fig.text(0.97, 0.975, f"{style or 'Watch'}{score}", fontsize=12, color=INK2, ha="right", va="center")
-    fig.text(0.03, 0.947, f"Close ₹{_fmt(c[-1])} on {dates[-1].strftime('%d %b %Y')} · daily candles",
-             fontsize=10.5, color=INK2, va="center")
+    fig.text(0.03, 0.972, f"{rank}{sym}", fontsize=14, fontweight="bold", color=INK, va="center")
+    fig.text(0.97, 0.972, f"{style or 'Watch'}{score}", fontsize=8.5, color=INK2, ha="right", va="center")
+    fig.text(0.03, 0.937, f"Close ₹{_fmt(c[-1])} on {dates[-1].strftime('%d %b %Y')} · daily candles",
+             fontsize=8.5, color=INK2, va="center")
 
     # ---- top strip: 1 year
     y0 = max(0, n - YEAR)
@@ -122,10 +122,10 @@ def draw(sym, df, row, peaks, troughs, path):
         _hline(ax1, g["resistance"], y0, n + 2, C_RES, "--", lw=1.1)
     k52 = y0 + int(np.argmax(h[y0:]))
     ax1.annotate(f"52w high {_fmt(h[k52])}", (k52, h[k52]), xytext=(-6, 2), textcoords="offset points",
-                 fontsize=9, color=INK2, ha="right", va="bottom", zorder=9)
+                 fontsize=8, color=INK2, ha="right", va="bottom", zorder=9)
     ax1.set_xlim(y0 - 1, n + 2)
     ax1.set_ylim(lo1 - (hi1 - lo1) * 0.05, hi1 + (hi1 - lo1) * 0.18)
-    ax1.text(0.01, 0.95, "1 year", transform=ax1.transAxes, fontsize=10, color=INK2, va="top", fontweight="bold")
+    ax1.text(0.01, 0.95, "1 year", transform=ax1.transAxes, fontsize=8.5, color=INK2, va="top", fontweight="bold")
     ticks1 = [i for i in range(y0, n) if i == y0 or dates[i].month != dates[i - 1].month][1::2]
     ax1.set_xticks(ticks1, [dates[i].strftime("%b") for i in ticks1])
 
@@ -164,19 +164,19 @@ def draw(sym, df, row, peaks, troughs, path):
             _hline(ax2, g["resistance"], z0, xr, C_RES, "--", lw=1.5)
             right_tags.append((g["resistance"], f"Wall {_fmt(g['resistance'])}", C_RES))
         else:
-            _tag(ax2, xr, ax2.get_ylim()[1], f"Wall {_fmt(g['resistance'])} ↑", C_RES, size=9.5, ha="right",
+            _tag(ax2, xr, ax2.get_ylim()[1], f"Wall {_fmt(g['resistance'])} ↑", C_RES, size=8.5, ha="right",
                  va="top")
     else:
-        _tag(ax2, xr, ax2.get_ylim()[1], "No wall overhead", C_RES, size=9.5, ha="right", va="top")
+        _tag(ax2, xr, ax2.get_ylim()[1], "No wall overhead", C_RES, size=8.5, ha="right", va="top")
 
     # base box (breakout) or old peak (retest)
     if bo is not None and g["base_high"] and g["base_low"] and g["base_days"]:
         bs = bo - int(g["base_days"])
         ax2.add_patch(Rectangle((bs - 0.5, g["base_low"]), bo - bs, g["base_high"] - g["base_low"],
                                 fc=C_BASE, alpha=0.07, ec=C_BASE, lw=1.6, ls="--", zorder=2))
-        _tag(ax2, bs, g["base_high"], f"{int(g['base_days'])}-day base", C_BASE, size=9.5, va="bottom")
+        _tag(ax2, bs, g["base_high"], f"{int(g['base_days'])}-day base", C_BASE, size=8.5, va="bottom")
         ax2.annotate("Breakout", (bo, l[bo]), xytext=(0, -26), textcoords="offset points", ha="center",
-                     fontsize=9.5, color=C_BASE, fontweight="bold", zorder=9,
+                     fontsize=8.5, color=C_BASE, fontweight="bold", zorder=9,
                      arrowprops=dict(arrowstyle="-|>", color=C_BASE, lw=1.2))
     if g["retest_level"]:
         pk = next((i for i, p in reversed(peaks) if abs(p - g["retest_level"]) < 0.01 * g["retest_level"]), None)
@@ -186,22 +186,22 @@ def draw(sym, df, row, peaks, troughs, path):
             ax2.annotate("Broke old peak", (rb, l[rb]), xytext=(0, -44), textcoords="offset points",
                          ha="center", fontsize=9, color=C_BASE, fontweight="bold", zorder=9,
                          arrowprops=dict(arrowstyle="-|>", color=C_BASE, lw=1.1))
-        _tag(ax2, n - 2, g["retest_level"], "Retest", C_BASE, size=9.5, ha="right", va="top")
+        _tag(ax2, n - 2, g["retest_level"], "Retest", C_BASE, size=8.5, ha="right", va="top")
 
     # SMC zones
     if obk is not None and g["ob_low"] and g["ob_high"]:
         ax2.add_patch(Rectangle((obk - 0.5, g["ob_low"]), n - 0.5 - obk, g["ob_high"] - g["ob_low"],
                                 fc=C_OB, alpha=0.16, ec=C_OB, lw=1.1, zorder=1))
-        _tag(ax2, obk, g["ob_low"], "Order block", C_OB, size=9.5, va="top")
+        _tag(ax2, obk, g["ob_low"], "Order block", C_OB, size=8.5, va="top")
     if fvi is not None and g["fvg_low"] and g["fvg_high"]:
         ax2.add_patch(Rectangle((fvi - 0.5, g["fvg_low"]), n - 0.5 - fvi, g["fvg_high"] - g["fvg_low"],
                                 fc=C_FVG, alpha=0.16, ec=C_FVG, lw=1.1, ls=":", zorder=1))
-        _tag(ax2, fvi, g["fvg_high"], "Fair value gap", C_FVG, size=9.5, va="bottom")
+        _tag(ax2, fvi, g["fvg_high"], "Fair value gap", C_FVG, size=8.5, va="bottom")
     if g["sweep_level"]:
         k = n - 3 + int(np.argmin(l[-3:]))
         _hline(ax2, g["sweep_level"], max(z0, n - 25), n - 1, C_SWEEP, ":", lw=1.4, z=3)
         ax2.annotate("Sweep", (k, l[k]), xytext=(-18, -24), textcoords="offset points", ha="center",
-                     fontsize=9.5, color=C_SWEEP, fontweight="bold", zorder=9,
+                     fontsize=8.5, color=C_SWEEP, fontweight="bold", zorder=9,
                      arrowprops=dict(arrowstyle="-|>", color=C_SWEEP, lw=1.2))
     if g["choch_level"]:
         _hline(ax2, g["choch_level"], max(z0, n - 30), n - 1, C_CHOCH, (0, (2, 2)), lw=1.6, z=3)
@@ -211,13 +211,13 @@ def draw(sym, df, row, peaks, troughs, path):
     # swing highs / lows in view: HH / LH and HL / LL against the previous swing
     for pts, above in ((peaks, True), (troughs, False)):
         for j, (i, p) in enumerate(pts):
-            if i < z0 or j == 0:
+            if i < z0 or j == 0 or j < len(pts) - 2:      # the last 2 swing highs and lows: what the trend check uses
                 continue
             prev = pts[j - 1][1]
             txt = ("HH" if p > prev else "LH") if above else ("HL" if p > prev else "LL")
             good = txt in ("HH", "HL")
             ax2.annotate(txt, (i, p), xytext=(0, 7 if above else -7), textcoords="offset points",
-                         ha="center", va="bottom" if above else "top", fontsize=9.5, fontweight="bold",
+                         ha="center", va="bottom" if above else "top", fontsize=8.5, fontweight="bold",
                          color=UP if good else DOWN, zorder=8)
 
     # right-margin price labels, nudged apart so they never overlap
@@ -227,9 +227,9 @@ def draw(sym, df, row, peaks, troughs, path):
     for y, txt, col in sorted(right_tags, key=lambda t: t[0]):
         yy = max(y, placed[-1] + gap) if placed else y
         placed.append(yy)
-        ax2.text(1.012, (yy - ymin) / (ymax - ymin), txt, transform=ax2.transAxes, fontsize=9.5, color=col,
+        ax2.text(1.012, (yy - ymin) / (ymax - ymin), txt, transform=ax2.transAxes, fontsize=8.5, color=col,
                  fontweight="bold", va="center", ha="left", clip_on=False)
-    ax2.text(0.01, 0.985, "Last 3 months", transform=ax2.transAxes, fontsize=10, color=INK2, va="top",
+    ax2.text(0.01, 0.985, "Last 3 months", transform=ax2.transAxes, fontsize=8.5, color=INK2, va="top",
              fontweight="bold")
 
     # ---- volume
@@ -243,16 +243,16 @@ def draw(sym, df, row, peaks, troughs, path):
     ax3.set_ylim(0, vv.max() * 1.3 if vv.max() > 0 else 1)
     if trig >= z0 and g["trigger_vol_ratio"]:
         when = "breakout day" if trig != n - 1 else "last day"
-        ax3.text(trig, v[trig], f"{when} {g['trigger_vol_ratio']:.1f}× usual", fontsize=9.5, color="#0969da",
+        ax3.text(trig, v[trig], f"{when} {g['trigger_vol_ratio']:.1f}× usual", fontsize=8.5, color="#0969da",
                  fontweight="bold", ha="right" if trig > n - 6 else "center", va="bottom", zorder=9)
-    ax3.text(0.01, 0.95, "Volume", transform=ax3.transAxes, fontsize=10, color=INK2, va="top", fontweight="bold")
+    ax3.text(0.01, 0.95, "Volume", transform=ax3.transAxes, fontsize=8.5, color=INK2, va="top", fontweight="bold")
     ticks = [i for i in range(z0, n) if i == z0 or dates[i].month != dates[i - 1].month]
     ticks = [i for i in ticks if i - z0 > 3]
     ax3.set_xticks(ticks, [dates[i].strftime("%b") for i in ticks])
 
     for ax in (ax1, ax2, ax3):
         ax.yaxis.tick_right()
-        ax.tick_params(axis="both", labelsize=9, colors=MUTED, length=0)
+        ax.tick_params(axis="both", labelsize=7.5, colors=MUTED, length=0)
         ax.grid(axis="y", color=GRID, linewidth=0.8, zorder=0)
         for s in ax.spines.values():
             s.set_visible(False)
@@ -268,12 +268,12 @@ def draw(sym, df, row, peaks, troughs, path):
             Line2D([], [], color=C_SUP, lw=1.6, label="support"),
             Line2D([], [], color=C_RES, lw=1.6, ls="--", label="next wall"),
             Patch(fc="#ddf4ff", label="zoomed part")]
-    fig.legend(handles=keys, loc="lower left", bbox_to_anchor=(0.02, 0.022), ncol=5, fontsize=8, frameon=False,
+    fig.legend(handles=keys, loc="lower left", bbox_to_anchor=(0.01, 0.02), ncol=3, fontsize=7.5, frameon=False,
                handlelength=1.3, columnspacing=0.9, handletextpad=0.4)
-    fig.text(0.03, 0.012, "Price action + volume only, no indicators. Research, not advice.",
-             fontsize=8, color=MUTED)
+    fig.text(0.03, 0.008, "Price action + volume only, no indicators. Research, not advice.",
+             fontsize=6.5, color=MUTED)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    fig.savefig(path, dpi=120, facecolor="white")
+    fig.savefig(path, dpi=170, facecolor="white")
     plt.close(fig)
     _shrink(path)
     return path

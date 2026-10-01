@@ -2,6 +2,11 @@ name: Daily NSE data
 
 on:
   workflow_dispatch:           # started by the Claude routine at 6:45 PM IST (Mon-Fri), or by hand from the Actions tab
+    inputs:
+      scan_end:
+        description: "Optional: re-run a past day, prices up to (not including) this date, e.g. 2026-10-01"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -21,6 +26,8 @@ jobs:
           python-version: "3.12"
       - run: pip install yfinance pandas numpy requests
       - run: python scan_data.py
+        env:
+          SCAN_END: ${{ inputs.scan_end }}
       - name: Save data
         run: |
           git config user.name "github-actions[bot]"

@@ -386,14 +386,22 @@ def drop_unfinished_day(df, now=None):
     return df[df.index.strftime("%Y-%m-%d") != today]
 
 
+SCAN_END = os.environ.get("SCAN_END", "").strip()   # one-off re-run of a past day: prices up to (not incl.) this date
+PERIOD_DAYS = {"2y": 731, "6mo": 184, "3mo": 92}
+
+
 def download(tickers, period="2y", min_rows=MIN_HISTORY, chunk_size=40, retries=3):
     frames = {}
+    span = {"period": period}
+    if SCAN_END:
+        end = datetime.strptime(SCAN_END, "%Y-%m-%d")
+        span = {"start": (end - timedelta(days=PERIOD_DAYS[period])).strftime("%Y-%m-%d"), "end": SCAN_END}
     for i in range(0, len(tickers), chunk_size):
         chunk = tickers[i:i + chunk_size]
         raw = None
         for attempt in range(retries):
             try:
-                raw = yf.download(chunk, period=period, interval="1d", group_by="ticker",
+                raw = yf.download(chunk, **span, interval="1d", group_by="ticker",
                                   auto_adjust=False, threads=True, progress=False)
                 break
             except Exception as e:

@@ -20,6 +20,9 @@ for sym in os.environ.get("CHART_SYMBOLS", "").split():
     rows = table[table["symbol"] == sym]
     row = rows.iloc[0].to_dict() if len(rows) else {"symbol": sym}
     row["history_sessions"] = len(df)
+    row = {k: ("" if isinstance(v, float) and v != v else v) for k, v in row.items()}
+    row.setdefault("entry_style", "")
+    row["entry_style"] = row["entry_style"] or "No setup"
     peaks, troughs = scan_data.swing_points(df["High"].to_numpy(dtype=float), df["Low"].to_numpy(dtype=float))
     path = os.path.join("data", "charts", df.index[-1].strftime("%Y-%m-%d"), f"{sym}.png")
     charts.draw(sym, df, row, peaks, troughs, path)

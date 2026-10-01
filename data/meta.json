@@ -1,5 +1,5 @@
 {
-  "generated_at_ist": "2026-10-01 11:39",
+  "generated_at_ist": "2026-10-01 14:06",
   "data_date": "2026-09-30",
   "method": "price action + volume only; no indicators; no stop-loss",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
@@ -37,8 +37,8 @@
     "pat_G_rel_strength": 243,
     "vol_ok": 19,
     "smc_sweep": 45,
-    "smc_order_block": 54,
-    "smc_fvg": 16,
+    "smc_order_block": 55,
+    "smc_fvg": 17,
     "smc_choch": 46
   },
   "score_points": {
@@ -299,5 +299,10 @@
       "vs_nifty_3m": -3.83,
       "tag": "Improving"
     }
-  ]
+  ],
+  "charts": {
+    "count": 12,
+    "base_url": "https://raw.githubusercontent.com/Parth1501/nse-swing-data/main/",
+    "note": "latest.csv column 'chart' = path under base_url; 1-year candles + last 3 months zoomed"
+  }
 }

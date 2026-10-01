@@ -5,7 +5,6 @@ list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_
 2026-09-30,7,NAZARA,Cash (non-F&O),Breakout,401.9,405.92,418.1,430.27,,Media Entertainment & Publication,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-30
 2026-09-30,8,SAILIFE,Cash (non-F&O),Pullback,1494.4,1539.23,1585.41,1631.59,,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-30
 2026-09-30,9,WOCKPHARMA,Cash (non-F&O),Pullback,2067.7,2129.73,2193.62,2257.51,,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-30
-2026-09-30,10,GNA,Cash (non-F&O),Retest,592.0,609.76,628.05,646.35,ASM,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-30
 2026-09-29,1,MANINDS,Cash (non-F&O),Retest,944.0,972.32,1001.49,1030.66,ASM,Unknown,No data,Running,2026-09-30,962.0,,,,,,-5.68,-5.68,0.0,Bought,2026-09-30
 2026-09-29,2,LIQUID1,Cash (non-F&O),Retest,1123.29,1156.99,1191.7,1226.41,5% band,Unknown,No data,Running,2026-09-30,1124.68,,,,,,0.01,0.0,0.0,Bought,2026-09-30
 2026-09-29,3,SANSERA,Cash (non-F&O),Pullback,4040.4,4161.61,4286.46,4411.31,ASM,Automobile and Auto Components,Weakening,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
@@ -13,6 +12,6 @@ list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_
 2026-09-29,5,CENTUM,Cash (non-F&O),Candle at support,4450.0,4583.5,4721.01,4858.51,ASM,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
 2026-09-29,6,ENGINERSIN,Cash (non-F&O),Pullback,289.65,298.34,307.29,316.24,,Construction,Lagging,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
 2026-09-29,7,ZYDUSLIFE,F&O,Breakout,1232.1,1244.42,1281.75,1319.09,,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
-2026-09-29,8,GESHIP,Cash (non-F&O),Breakout,1582.0,1597.82,1645.75,1693.69,,Services,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
-2026-09-29,9,PTCIL,Cash (non-F&O),Candle at support,22055.0,22716.65,23398.15,24079.65,,Capital Goods,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
+2026-09-29,8,GESHIP,Cash (non-F&O),Breakout,1582.0,1597.82,1645.75,1693.69,,Services,Leading,Running,2026-09-30,1582.0,,,,,,-1.39,-1.39,0.0,Bought,2026-09-30
+2026-09-29,9,PTCIL,Cash (non-F&O),Candle at support,22055.0,22716.65,23398.15,24079.65,,Capital Goods,Leading,Running,2026-09-30,22535.0,,,,,,-1.53,-1.53,0.0,Bought,2026-09-30
 2026-09-29,10,WABAG,Cash (non-F&O),Candle at support,2010.1,2070.4,2132.52,2194.63,,Utilities,No data,Running,2026-09-30,2070.4,,,,,,-0.43,-0.43,0.0,Bought,2026-09-30

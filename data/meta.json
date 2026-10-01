@@ -1,5 +1,5 @@
 {
-  "generated_at_ist": "2026-10-01 11:39",
+  "generated_at_ist": "2026-10-01 14:14",
   "data_date": "2026-09-30",
   "method": "price action + volume only; no indicators; no stop-loss",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
@@ -28,18 +28,18 @@
   "note_failed": "Listed fewer than 40 sessions ago or no Yahoo data",
   "eligible_count": 21,
   "pattern_counts": {
-    "pat_A_uptrend": 90,
+    "pat_A_uptrend": 91,
     "pat_B_base_breakout": 8,
-    "pat_C_pullback": 44,
+    "pat_C_pullback": 45,
     "pat_D_retest": 37,
     "pat_E_candle": 18,
     "pat_F_room": 143,
     "pat_G_rel_strength": 243,
     "vol_ok": 19,
-    "smc_sweep": 45,
-    "smc_order_block": 54,
-    "smc_fvg": 16,
-    "smc_choch": 46
+    "smc_sweep": 63,
+    "smc_order_block": 78,
+    "smc_fvg": 25,
+    "smc_choch": 58
   },
   "score_points": {
     "B": 3,
@@ -99,11 +99,11 @@
   "price_source": "Yahoo Finance via yfinance (unofficial)",
   "track_record": {
     "since": "2026-09-29",
-    "picks": 17,
-    "bought": 4,
+    "picks": 16,
+    "bought": 6,
     "not_bought": 0,
-    "waiting_for_entry": 13,
-    "running": 4,
+    "waiting_for_entry": 10,
+    "running": 6,
     "running_t1_hit": 0,
     "full_wins_t2": 0,
     "partial_wins_t1": 0,
@@ -113,19 +113,19 @@
     "full_win_rate_t2_pct": null,
     "avg_return_closed_pct": null,
     "avg_max_dip_closed_pct": null,
-    "new_events_today": 11,
+    "new_events_today": 12,
     "file": "data/picks_log.csv"
   },
   "sector_source": "https://nsearchives.nseindia.com/content/indices/ind_niftytotalmarket_list.csv; stocks outside it: NSE stock quote page (cached in data/sector_map.csv)",
   "sector_lookup": {
-    "outside_index_list": 68,
+    "outside_index_list": 66,
     "from_cache": 0,
     "looked_up": 5,
     "found": 0,
     "not_found": [],
     "errors": 5,
     "stopped_early": true,
-    "left_for_next_run": 63
+    "left_for_next_run": 61
   },
   "sectors": [
     {
@@ -165,22 +165,22 @@
       "tag": "Leading"
     },
     {
-      "sector": "Capital Goods",
-      "stocks": 72,
-      "median_1m": -2.54,
-      "median_3m": -0.56,
-      "vs_nifty_1m": 3.53,
-      "vs_nifty_3m": 5.87,
+      "sector": "Consumer Durables",
+      "stocks": 20,
+      "median_1m": -4.84,
+      "median_3m": 2.7,
+      "vs_nifty_1m": 1.22,
+      "vs_nifty_3m": 9.13,
       "tag": "Leading"
     },
     {
-      "sector": "Consumer Durables",
-      "stocks": 19,
-      "median_1m": -6.22,
-      "median_3m": 2.82,
-      "vs_nifty_1m": -0.16,
-      "vs_nifty_3m": 9.25,
-      "tag": "Weakening"
+      "sector": "Capital Goods",
+      "stocks": 72,
+      "median_1m": -2.23,
+      "median_3m": -0.56,
+      "vs_nifty_1m": 3.84,
+      "vs_nifty_3m": 5.87,
+      "tag": "Leading"
     },
     {
       "sector": "Oil Gas & Consumable Fuels",
@@ -256,11 +256,11 @@
     },
     {
       "sector": "Information Technology",
-      "stocks": 20,
-      "median_1m": -11.76,
-      "median_3m": -0.2,
-      "vs_nifty_1m": -5.7,
-      "vs_nifty_3m": 6.23,
+      "stocks": 21,
+      "median_1m": -11.46,
+      "median_3m": -1.1,
+      "vs_nifty_1m": -5.4,
+      "vs_nifty_3m": 5.33,
       "tag": "Weakening"
     },
     {
@@ -299,5 +299,10 @@
       "vs_nifty_3m": -3.83,
       "tag": "Improving"
     }
-  ]
+  ],
+  "charts": {
+    "count": 12,
+    "base_url": "https://raw.githubusercontent.com/Parth1501/nse-swing-data/main/",
+    "note": "latest.csv column 'chart' = path under base_url; 1-year candles + last 3 months zoomed"
+  }
 }

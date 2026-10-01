@@ -33,6 +33,8 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+import charts
+
 IST = timezone(timedelta(hours=5, minutes=30))
 OUT_DIR = "data"
 NSE_HEADERS = {
@@ -87,6 +89,9 @@ TOP_N = 10                           # the list shows the top 10 eligible stocks
 ENTRY_WINDOW_SESSIONS = 3            # a pick counts as bought if the entry is reached within 3 sessions
 PICKS_LOG = os.path.join(OUT_DIR, "picks_log.csv")        # permanent diary of every day's top 10
 PICKS_STATUS = os.path.join(OUT_DIR, "picks_status.csv")  # re-evaluated every run from real prices
+CHART_DIR = os.path.join(OUT_DIR, "charts")  # one folder per data date: charts/<YYYY-MM-DD>/<SYMBOL>.png
+CHART_N = 12                         # top 12 eligible: the list's 10 plus spares for the teardown's ETF skips
+CHART_KEEP_DAYS = 45
 
 FALLBACK_FNO = """ABB ABCAPITAL ADANIENSOL ADANIENT ADANIGREEN ADANIPORTS ALKEM AMBER AMBUJACEM ANGELONE
 APLAPOLLO APOLLOHOSP ASHOKLEY ASIANPAINT ASTRAL AUBANK AUROPHARMA AXISBANK BAJAJ-AUTO BAJAJFINSV
@@ -789,7 +794,9 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "smc_sweep": pats["SWEEP"], "smc_order_block": pats["OB"], "smc_fvg": pats["FVG"], "smc_choch": pats["CHOCH"],
         "sweep_level": r2(SW["L"]) if SW else None,
         "ob_low": r2(OB["zl"]) if OB else None, "ob_high": r2(OB["zh"]) if OB else None,
+        "ob_date": dates[OB["k"]].strftime("%Y-%m-%d") if OB else None,
         "fvg_low": r2(FV["bot"]) if FV else None, "fvg_high": r2(FV["top"]) if FV else None,
+        "fvg_date": dates[FV["i"]].strftime("%Y-%m-%d") if FV else None,
         "choch_level": r2(CH["L"]) if CH else None, "vol_ratio_today": r2(vr_today), "trigger_vol_ratio": r2(trig_vr),
         "candle": candle or "", "ret_1m": r2(ret1), "ret_3m": r2(ret3),
         "rs_3m_vs_nifty": r2(ret3 - nifty["ret_3m"]) if ret3 == ret3 else None,
@@ -1066,6 +1073,30 @@ def update_track_record(table, frames, data_date):
     }
 
 
+def draw_charts(table, frames, data_date):
+    """Annotated candlestick PNG for the top eligible stocks; the path goes in the "chart" column.
+    A chart that fails is skipped: charts never block the daily list."""
+    table["chart"] = ""
+    for idx, r in table[table["eligible"]].head(CHART_N).iterrows():
+        df = frames.get(r["symbol"] + ".NS")
+        if df is None:
+            continue
+        try:
+            h, l = df["High"].to_numpy(dtype=float), df["Low"].to_numpy(dtype=float)
+            peaks, troughs = swing_points(h, l)
+            path = os.path.join(CHART_DIR, str(data_date), f"{r['symbol']}.png")
+            charts.draw(r["symbol"], df, r.to_dict(), peaks, troughs, path)
+            table.at[idx, "chart"] = path.replace(os.sep, "/")
+        except Exception as e:
+            print("chart failed", r["symbol"], e)
+    try:
+        charts.prune(CHART_DIR, CHART_KEEP_DAYS, data_date)
+    except Exception as e:
+        print("chart prune failed:", e)
+    print(f"Charts drawn: {int((table['chart'] != '').sum())}")
+    return table
+
+
 def nifty_context(df):
     """Nifty's own price action: returns, structure, distance from 52-week high (context only)."""
     h, l, c = (df[k].to_numpy(dtype=float) for k in ("High", "Low", "Close"))
@@ -1183,6 +1214,7 @@ def main():
         sector_of = {**extra, **industry}
         table.insert(4, "sector", table["symbol"].map(sector_of).fillna("Unknown"))
         table, sector_stats = add_sector_strength(table, nifty)
+        table = draw_charts(table, frames, latest_date)
     else:
         latest_date, sector_stats, sector_lookup = None, [], {}
     table.to_csv(os.path.join(OUT_DIR, "latest.csv"), index=False, encoding="utf-8")
@@ -1221,6 +1253,9 @@ def main():
                           f"(cached in data/sector_map.csv)"),
         "sector_lookup": sector_lookup,
         "sectors": sector_stats,
+        "charts": {"count": int((table["chart"] != "").sum()) if "chart" in table else 0,
+                   "base_url": "https://raw.githubusercontent.com/Parth1501/nse-swing-data/main/",
+                   "note": "latest.csv column 'chart' = path under base_url; 1-year candles + last 3 months zoomed"},
     }
     with open(os.path.join(OUT_DIR, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)

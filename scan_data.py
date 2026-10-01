@@ -1138,6 +1138,23 @@ def main():
             prev_fresh = float((old["date"].astype(str) == str(prev_date)).mean())
         except Exception:
             pass
+        if SCAN_END and prev_date == latest_date and table["stale"].any():
+            # Re-run of a past day: Yahoo leaves out that day for some stocks during market hours.
+            # Keep their saved rows (old scoring) instead of throwing the whole re-run away.
+            try:
+                saved = pd.read_csv(os.path.join(OUT_DIR, "latest.csv"), dtype={"date": str})
+                saved = saved[saved["date"] == str(prev_date)].set_index("symbol")
+                swap = table["stale"] & table["symbol"].isin(saved.index)
+                keep = [k for k in table.columns if k in saved.columns]
+                old_rows = saved.loc[table.loc[swap, "symbol"], keep].reset_index()
+                for k in table.columns:
+                    if k.startswith("smc_"):
+                        old_rows[k] = False
+                table = pd.concat([table[~swap], old_rows], ignore_index=True)
+                table["stale"] = table["date"].astype(str) != str(latest_date)
+                print(f"Re-run: kept saved rows for {int(swap.sum())} stocks Yahoo left without {latest_date} prices")
+            except Exception as e:
+                print("re-run merge failed:", e)
         new_fresh = float((~table["stale"]).mean())
         # Yahoo sometimes drops the last session for some or all stocks for a few hours after
         # midnight IST. Never replace good saved data with older or patchier data.

@@ -58,7 +58,12 @@ MAX_PULLBACK_PCT = 15.0              # C/D/E: a drop of more than 15% from the 2
 BUY_ZONE_PCT = 3.0                   # support-style buy zone = support .. +3%
 VOL_MULT = 1.5
 ENTRY_BUFFER = 0.01                  # breakout entry: trigger high .. +1%
-SCORE = {"B": 3, "D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1}
+SCORE = {"B": 3, "D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1,
+         "SWEEP": 2, "OB": 2, "FVG": 1, "CHOCH": -2}   # Smart Money Concepts: points only, never eligibility
+SMC_LOOKBACK = 60                    # SMC zones are searched in the last 60 sessions (about 3 months)
+SWEEP_MAX_PCT = 3.0                  # sweep: a dip of at most 3% under the low; deeper is a breakdown
+OB_MOVE_PCT = 5.0                    # order block: the move after it must clear its high by 5% within 3 sessions
+FVG_MIN_PCT = 1.0                    # fair value gap must be at least 1% of price
 MIN_VALUE_CR = 50
 MIN_HISTORY = 40                     # shorter histories can't show any structure
 SHORT_HISTORY_FLAG = 120
@@ -560,6 +565,66 @@ def next_resistance(peaks, h, above):
     return min(levels) if levels else np.nan
 
 
+# ---------------------------------------------------------------- Smart Money Concepts (points only)
+def check_sweep(troughs, supports, l, c, n):
+    """SWEEP (liquidity grab): in the last 3 sessions the low dipped under a known low (swing trough or support)
+    by at most 3%, and the latest close is back above it. The level had held until then."""
+    levels = {tv for ti, tv in troughs if n - 250 <= ti <= n - 6} | {S for S in supports}
+    best = None
+    for L in levels:
+        if (c[max(0, n - 60):n - 3] < L).any():            # it had already broken before: not a fresh sweep
+            continue
+        dip = l[-3:].min()
+        if dip < L * 0.998 and pct(L, dip) <= SWEEP_MAX_PCT and c[-1] > L:
+            if best is None or L > best["L"]:
+                best = {"L": L, "depth": pct(L, dip)}
+    return best
+
+
+def check_order_block(o, h, l, c, v, n):
+    """OB (demand zone): the last red candle before a strong move up (closes 5%+ above its high within 3 sessions,
+    with 1.5x volume on one of those days). Price has dipped back to the zone in the last 3 sessions and holds above it."""
+    for k in range(n - 5, max(0, n - SMC_LOOKBACK) - 1, -1):       # most recent zone first
+        if c[k] >= o[k]:
+            continue
+        nxt = range(k + 1, min(k + 4, n - 3))
+        if not nxt or max(c[j] for j in nxt) < h[k] * (1 + OB_MOVE_PCT / 100):
+            continue
+        if max((vol_ratio_at(v, j) for j in nxt), default=0) < VOL_MULT:
+            continue
+        zl, zh = l[k], h[k]
+        if (c[k + 1:] < zl).any():                                 # zone already broken
+            return None
+        if l[-3:].min() <= zh * (1 + NEAR_SUPPORT_PCT / 100) and c[-1] >= zl:
+            return {"k": k, "zl": zl, "zh": zh}
+        return None                                                # nearest zone not being tested
+    return None
+
+
+def check_fvg(h, l, c, n):
+    """FVG: a bullish fair value gap (day 3's low at least 1% above day 1's high) left in the last 60 sessions.
+    Price ran at least 3% above it, came back into the gap for the first time in the last 3 sessions and holds above its bottom."""
+    for i in range(n - 6, max(1, n - SMC_LOOKBACK) - 1, -1):
+        bot, top = h[i - 1], l[i + 1]
+        if top <= bot or pct(top, bot) < FVG_MIN_PCT:
+            continue
+        if l[i + 2:n - 3].min() <= top or h[i + 1:n - 3].max() < top * (1 + NEAR_SUPPORT_PCT / 100):
+            continue                                               # already filled before, or never left it
+        if l[-3:].min() <= top and l[-3:].min() >= bot * 0.995 and c[-1] >= bot:
+            return {"i": i, "bot": bot, "top": top}
+    return None
+
+
+def check_choch(troughs, c):
+    """CHOCH (minus points): after higher lows, the latest close is below the last higher low: the uptrend may be ending."""
+    if len(troughs) < 2:
+        return None
+    (_, t1), (_, t2) = troughs[-2], troughs[-1]
+    if t2 > t1 and c[-1] < t2:
+        return {"L": t2}
+    return None
+
+
 def trailing_return(c, days):
     return pct(c[-1], c[-days - 1]) if len(c) > days else np.nan
 
@@ -589,6 +654,13 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     deep_drop = bool(drop_from_high > MAX_PULLBACK_PCT and (C or D or E))
     if deep_drop:
         C, D, E = None, None, False
+
+    SW = check_sweep(troughs, supports, l, c, n)
+    OB = check_order_block(o, h, l, c, v, n)
+    FV = None if OB else check_fvg(h, l, c, n)       # an order block and its gap are one zone: count it once
+    CH = check_choch(troughs, c)
+    if deep_drop:
+        SW, OB, FV = None, None, None                # a fall, not a dip: no buy-side SMC points either
 
     ret1, ret3 = trailing_return(c, 21), trailing_return(c, 63)
     G = bool(ret1 == ret1 and ret3 == ret3 and ret1 > nifty["ret_1m"] and ret3 > nifty["ret_3m"])
@@ -622,9 +694,12 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
 
     has_setup = bool(B or C or D or E)
     eligible = has_setup and F
-    pats = {"A": bool(A), "B": bool(B), "C": bool(C), "D": bool(D), "E": E, "G": G, "VOL": VOL}
+    pats = {"A": bool(A), "B": bool(B), "C": bool(C), "D": bool(D), "E": E, "G": G, "VOL": VOL,
+            "SWEEP": bool(SW), "OB": bool(OB), "FVG": bool(FV), "CHOCH": bool(CH)}
     score = sum(SCORE[k] for k, on in pats.items() if on)
-    setups = "+".join({"VOL": "Vol"}.get(k, k) for k in ("B", "D", "C", "E", "A", "G", "VOL") if pats[k])
+    names = {"VOL": "Vol", "SWEEP": "Sweep", "CHOCH": "CHoCH"}
+    setups = "+".join(names.get(k, k) for k in ("B", "D", "C", "E", "A", "G", "VOL", "SWEEP", "OB", "FVG", "CHOCH")
+                      if pats[k])
 
     # ---- plain-English reason
     why = []
@@ -645,6 +720,14 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         why.append(f"Beating Nifty: 1M {ret1:+.1f}% vs {nifty['ret_1m']:+.1f}%, 3M {ret3:+.1f}% vs {nifty['ret_3m']:+.1f}%")
     if VOL and not B:
         why.append(f"Volume {vr_today:.1f}× normal on the latest session")
+    if SW:
+        why.append(f"Liquidity sweep: dipped {SW['depth']:.1f}% under ₹{SW['L']:.2f} and closed back above it")
+    if OB:
+        why.append(f"Back at a demand zone (order block) ₹{OB['zl']:.2f}–₹{OB['zh']:.2f} from {fmt(OB['k'])} and holding")
+    if FV:
+        why.append(f"Filling a fair value gap ₹{FV['bot']:.2f}–₹{FV['top']:.2f} from {fmt(FV['i'])} and holding")
+    if CH:
+        why.append(f"Change of character: closed below its last higher low ₹{CH['L']:.2f} (minus {-SCORE['CHOCH']} points)")
     if res == res:
         why.append(f"Next resistance ₹{res:.2f} ({room:.1f}% above entry)")
     else:
@@ -694,7 +777,12 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "support": r2(support), "resistance": r2(res), "room_pct": r2(room),
         "pat_A_uptrend": pats["A"], "pat_B_base_breakout": pats["B"], "pat_C_pullback": pats["C"],
         "pat_D_retest": pats["D"], "pat_E_candle": pats["E"], "pat_F_room": F, "pat_G_rel_strength": pats["G"],
-        "vol_ok": pats["VOL"], "vol_ratio_today": r2(vr_today), "trigger_vol_ratio": r2(trig_vr),
+        "vol_ok": pats["VOL"],
+        "smc_sweep": pats["SWEEP"], "smc_order_block": pats["OB"], "smc_fvg": pats["FVG"], "smc_choch": pats["CHOCH"],
+        "sweep_level": r2(SW["L"]) if SW else None,
+        "ob_low": r2(OB["zl"]) if OB else None, "ob_high": r2(OB["zh"]) if OB else None,
+        "fvg_low": r2(FV["bot"]) if FV else None, "fvg_high": r2(FV["top"]) if FV else None,
+        "choch_level": r2(CH["L"]) if CH else None, "vol_ratio_today": r2(vr_today), "trigger_vol_ratio": r2(trig_vr),
         "candle": candle or "", "ret_1m": r2(ret1), "ret_3m": r2(ret3),
         "rs_3m_vs_nifty": r2(ret3 - nifty["ret_3m"]) if ret3 == ret3 else None,
         "high52": r2(hi52), "pct_below_high52": r2(pct(hi52, c[-1])),
@@ -1093,7 +1181,7 @@ def main():
         "stocks_failed_download": failed,
         "note_failed": f"Listed fewer than {MIN_HISTORY} sessions ago or no Yahoo data",
         "eligible_count": int(len(elig)),
-        "pattern_counts": {k: int(table[k].sum()) for k in table.columns if k.startswith("pat_") or k == "vol_ok"}
+        "pattern_counts": {k: int(table[k].sum()) for k in table.columns if k.startswith(("pat_", "smc_")) or k == "vol_ok"}
         if not table.empty else {},
         "score_points": SCORE, "targets_pct": [T1_PCT * 100, T2_PCT * 100], "time_exit_days": TIME_EXIT_DAYS,
         "nifty": {k: (r2(v) if isinstance(v, float) else v) for k, v in nifty.items()},

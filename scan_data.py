@@ -368,6 +368,19 @@ def get_asm_gsm():
 
 
 # ---------------------------------------------------------------- prices
+MARKET_DONE_IST = (16, 0)            # before 4:00 PM IST on a weekday, today's prices are live and unfinished
+
+
+def drop_unfinished_day(df, now=None):
+    """A weekday run that starts before 4:00 PM IST must not use today's live, half-day candle
+    (the 6:45 AM run on 30 Sep started at 12:09 PM and saved half-day data)."""
+    now = now or datetime.now(IST)
+    if df.empty or now.weekday() >= 5 or (now.hour, now.minute) >= MARKET_DONE_IST:
+        return df
+    today = now.strftime("%Y-%m-%d")
+    return df[df.index.strftime("%Y-%m-%d") != today]
+
+
 def download(tickers, period="2y", min_rows=MIN_HISTORY, chunk_size=40, retries=3):
     frames = {}
     for i in range(0, len(tickers), chunk_size):
@@ -388,6 +401,7 @@ def download(tickers, period="2y", min_rows=MIN_HISTORY, chunk_size=40, retries=
             try:
                 df = raw[t] if isinstance(raw.columns, pd.MultiIndex) else raw
                 df = df[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"])
+                df = drop_unfinished_day(df)
                 if len(df) >= min_rows:
                     frames[t] = df
             except Exception:

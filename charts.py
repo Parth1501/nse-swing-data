@@ -205,7 +205,7 @@ def draw(sym, df, row, peaks, troughs, path):
                      arrowprops=dict(arrowstyle="-|>", color=C_SWEEP, lw=1.2))
     if g["choch_level"]:
         _hline(ax2, g["choch_level"], max(z0, n - 30), n - 1, C_CHOCH, (0, (2, 2)), lw=1.6, z=3)
-        _tag(ax2, max(z0, n - 30), g["choch_level"], "CHoCH (trend may be ending)", C_CHOCH, size=9,
+        _tag(ax2, max(z0, n - 30), g["choch_level"], "CHoCH", C_CHOCH, size=9,
              va="bottom")
 
     # swing highs / lows in view: HH / LH and HL / LL against the previous swing
@@ -243,8 +243,9 @@ def draw(sym, df, row, peaks, troughs, path):
     ax3.set_ylim(0, vv.max() * 1.3 if vv.max() > 0 else 1)
     if trig >= z0 and g["trigger_vol_ratio"]:
         when = "breakout day" if trig != n - 1 else "last day"
-        ax3.text(trig, v[trig], f"{when} {g['trigger_vol_ratio']:.1f}× usual", fontsize=8.5, color="#0969da",
-                 fontweight="bold", ha="right" if trig > n - 6 else "center", va="bottom", zorder=9)
+        ax3.text(trig, ax3.get_ylim()[1] * 0.97, f"{when} {g['trigger_vol_ratio']:.1f}× usual", fontsize=8.5,
+                 color="#0969da", fontweight="bold", ha="right" if trig > n - 6 else "center", va="top", zorder=9,
+                 bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
     ax3.text(0.01, 0.95, "Volume", transform=ax3.transAxes, fontsize=8.5, color=INK2, va="top", fontweight="bold")
     ticks = [i for i in range(z0, n) if i == z0 or dates[i].month != dates[i - 1].month]
     ticks = [i for i in ticks if i - z0 > 3]

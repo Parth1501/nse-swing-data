@@ -183,7 +183,7 @@ def draw(sym, df, row, peaks, troughs, path):
         x_from = max(z0, pk) if pk is not None else z0
         _hline(ax2, g["retest_level"], x_from, n - 1, C_BASE, (0, (5, 3)), lw=1.6, z=3)
         if rb is not None and rb >= z0:
-            ax2.annotate("Broke old peak", (rb, l[rb]), xytext=(0, -26), textcoords="offset points",
+            ax2.annotate("Broke old peak", (rb, l[rb]), xytext=(0, -44), textcoords="offset points",
                          ha="center", fontsize=9, color=C_BASE, fontweight="bold", zorder=9,
                          arrowprops=dict(arrowstyle="-|>", color=C_BASE, lw=1.1))
         _tag(ax2, n - 2, g["retest_level"], "Retest", C_BASE, size=9.5, ha="right", va="top")
@@ -242,7 +242,8 @@ def draw(sym, df, row, peaks, troughs, path):
     ax3.set_xlim(ax2.get_xlim())
     ax3.set_ylim(0, vv.max() * 1.3 if vv.max() > 0 else 1)
     if trig >= z0 and g["trigger_vol_ratio"]:
-        ax3.text(trig, v[trig], f"{g['trigger_vol_ratio']:.1f}× normal", fontsize=9.5, color="#0969da",
+        when = "breakout day" if trig != n - 1 else "last day"
+        ax3.text(trig, v[trig], f"{when} {g['trigger_vol_ratio']:.1f}× usual", fontsize=9.5, color="#0969da",
                  fontweight="bold", ha="right" if trig > n - 6 else "center", va="bottom", zorder=9)
     ax3.text(0.01, 0.95, "Volume", transform=ax3.transAxes, fontsize=10, color=INK2, va="top", fontweight="bold")
     ticks = [i for i in range(z0, n) if i == z0 or dates[i].month != dates[i - 1].month]
@@ -259,7 +260,7 @@ def draw(sym, df, row, peaks, troughs, path):
     ax2.set_yticklabels([])
     ax2.set_xticks([])
     ax3.set_yticks([])
-    ax1.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda y, _: _fmt(y)))
+    ax1.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda y, _: f"{y:,.0f}"))
 
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch

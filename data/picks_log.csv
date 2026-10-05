@@ -1,22 +1,30 @@
 list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_listing,sector,sector_tag,status,fill_date,fill_price,t1_date,t2_date,close_date,exit_price,return_pct,current_pct,max_dip_pct,days_held,last_event,last_event_date
-2026-10-01,3,SSWL,Cash (non-F&O),Retest,384.15,395.67,407.54,419.41,,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-01
+2026-10-05,2,PCJEWELLER,Cash (non-F&O),Pullback,12.66,13.04,13.43,13.82,ASM,Consumer Durables,Weakening,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,3,LIQUIDPLUS,Cash (non-F&O),Retest,1103.37,1136.47,1170.57,1204.66,5% band,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,4,SMCGLOBAL,Cash (non-F&O),Pullback,94.9,97.75,100.68,103.61,,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,5,AEROFLEX,Cash (non-F&O),Pullback,521.9,537.56,553.68,569.81,,Capital Goods,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,6,NRBBEARING,Cash (non-F&O),Pullback,503.9,519.02,534.59,550.16,,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,7,SMSPHARMA,Cash (non-F&O),Pullback,447.8,461.23,475.07,488.91,,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,8,LGEINDIA,Midcap 150,Breakout,1825.0,1843.25,1898.55,1953.85,,Consumer Durables,Weakening,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-05,10,LIQUIDCASE,Cash (non-F&O),Breakout,116.24,117.4,120.92,124.45,5% band,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-05
+2026-10-01,3,SSWL,Cash (non-F&O),Retest,384.15,395.67,407.54,419.41,,Unknown,No data,Running (T1 hit),2026-10-05,393.5,2026-10-05,,,,,4.33,0.0,0.0,T1 hit (+3%),2026-10-05
 2026-10-01,4,UNIMECH,Cash (non-F&O),Pullback,1652.8,1702.38,1753.46,1804.53,,Capital Goods,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-10-01
 2026-10-01,6,LALPATHLAB,Cash (non-F&O),Breakout,2027.6,2047.88,2109.31,2170.75,,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-10-01
-2026-10-01,8,SYNCOMF,Cash (non-F&O),Pullback,22.59,23.27,23.97,24.66,ASM,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-10-01
+2026-10-01,8,SYNCOMF,Cash (non-F&O),Pullback,22.59,23.27,23.97,24.66,ASM,Unknown,No data,Running,2026-10-05,23.27,,,,,,-0.56,-0.56,0.0,Bought,2026-10-05
 2026-10-01,9,SMLMAH,Cash (non-F&O),Retest,5987.9,6167.54,6352.56,6537.59,5% band,Capital Goods,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-10-01
-2026-09-30,1,YATHARTH,Cash (non-F&O),Retest,1024.85,1055.6,1087.26,1118.93,,Healthcare,Leading,Running,2026-10-01,1024.85,,,,,,0.86,0.0,0.0,Bought,2026-10-01
-2026-09-30,2,ACMESOLAR,Cash (non-F&O),Retest,430.5,443.42,456.72,470.02,,Power,Improving,Running,2026-10-01,442.0,,,,,,-2.14,-2.14,0.0,Bought,2026-10-01
-2026-09-30,3,ELLEN,Cash (non-F&O),Retest,343.95,354.27,364.9,375.52,,Chemicals,Improving,Running,2026-10-01,354.27,,,,,,-3.55,-3.55,0.0,Bought,2026-10-01
+2026-09-30,1,YATHARTH,Cash (non-F&O),Retest,1024.85,1055.6,1087.26,1118.93,,Healthcare,Leading,Running,2026-10-01,1024.85,,,,,,-2.13,-2.91,4.0,Bought,2026-10-01
+2026-09-30,2,ACMESOLAR,Cash (non-F&O),Retest,430.5,443.42,456.72,470.02,,Power,Improving,Running,2026-10-01,442.0,,,,,,-3.25,-4.19,4.0,Bought,2026-10-01
+2026-09-30,3,ELLEN,Cash (non-F&O),Retest,343.95,354.27,364.9,375.52,,Chemicals,Improving,Running,2026-10-01,354.27,,,,,,-6.13,-6.57,4.0,Bought,2026-10-01
 2026-09-30,7,NAZARA,Cash (non-F&O),Breakout,401.9,405.92,418.1,430.27,,Media Entertainment & Publication,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-30
-2026-09-30,8,SAILIFE,Cash (non-F&O),Pullback,1494.4,1539.23,1585.41,1631.59,,Healthcare,Leading,Running,2026-10-01,1516.0,,,,,,1.66,0.0,0.0,Bought,2026-10-01
-2026-09-30,9,WOCKPHARMA,Cash (non-F&O),Pullback,2067.7,2129.73,2193.62,2257.51,,Healthcare,Leading,Running,2026-10-01,2110.0,,,,,,-1.24,-1.24,0.0,Bought,2026-10-01
-2026-09-29,1,MANINDS,Cash (non-F&O),Retest,944.0,972.32,1001.49,1030.66,ASM,Unknown,No data,Running,2026-09-30,962.0,,,,,,-4.2,-9.73,1.0,Bought,2026-09-30
-2026-09-29,2,LIQUID1,Cash (non-F&O),Retest,1123.29,1156.99,1191.7,1226.41,5% band,Unknown,No data,Running,2026-09-30,1124.68,,,,,,0.06,-0.06,1.0,Bought,2026-09-30
-2026-09-29,3,SANSERA,Cash (non-F&O),Pullback,4040.4,4161.61,4286.46,4411.31,ASM,Automobile and Auto Components,Weakening,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
-2026-09-29,4,KIRIINDUS,Cash (non-F&O),Pullback,525.9,541.68,557.93,574.18,ASM,Unknown,No data,Running,2026-09-30,541.68,,,,,,0.54,-1.69,1.0,Bought,2026-09-30
-2026-09-29,5,CENTUM,Cash (non-F&O),Candle at support,4450.0,4583.5,4721.01,4858.51,ASM,Unknown,No data,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
-2026-09-29,6,ENGINERSIN,Cash (non-F&O),Pullback,289.65,298.34,307.29,316.24,,Construction,Lagging,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
-2026-09-29,7,ZYDUSLIFE,F&O,Breakout,1232.1,1244.42,1281.75,1319.09,,Healthcare,Leading,Waiting for entry,,,,,,,,,,,Listed,2026-09-29
-2026-09-29,8,GESHIP,Cash (non-F&O),Breakout,1582.0,1597.82,1645.75,1693.69,,Services,Leading,Running,2026-09-30,1582.0,,,,,,-3.25,-4.05,1.0,Bought,2026-09-30
-2026-09-29,9,PTCIL,Cash (non-F&O),Candle at support,22055.0,22716.65,23398.15,24079.65,,Capital Goods,Leading,Running,2026-09-30,22535.0,,,,,,-2.26,-3.62,1.0,Bought,2026-09-30
-2026-09-29,10,WABAG,Cash (non-F&O),Candle at support,2010.1,2070.4,2132.52,2194.63,,Utilities,No data,Running,2026-09-30,2070.4,,,,,,-3.16,-5.33,1.0,Bought,2026-09-30
+2026-09-30,8,SAILIFE,Cash (non-F&O),Pullback,1494.4,1539.23,1585.41,1631.59,,Healthcare,Leading,Running,2026-10-01,1516.0,,,,,,-0.31,-0.99,4.0,Bought,2026-10-01
+2026-09-30,9,WOCKPHARMA,Cash (non-F&O),Pullback,2067.7,2129.73,2193.62,2257.51,,Healthcare,Leading,Running,2026-10-01,2110.0,,,,,,-2.2,-5.07,4.0,Bought,2026-10-01
+2026-09-29,1,MANINDS,Cash (non-F&O),Retest,944.0,972.32,1001.49,1030.66,ASM,Unknown,No data,Running,2026-09-30,962.0,,,,,,-7.67,-9.73,5.0,Bought,2026-09-30
+2026-09-29,2,LIQUID1,Cash (non-F&O),Retest,1123.29,1156.99,1191.7,1226.41,5% band,Unknown,No data,Running,2026-09-30,1124.68,,,,,,0.07,-0.22,5.0,Bought,2026-09-30
+2026-09-29,3,SANSERA,Cash (non-F&O),Pullback,4040.4,4161.61,4286.46,4411.31,ASM,Automobile and Auto Components,Weakening,Not bought,,,,,,,,,,,Not bought (entry never reached),2026-10-05
+2026-09-29,4,KIRIINDUS,Cash (non-F&O),Pullback,525.9,541.68,557.93,574.18,ASM,Unknown,No data,Running (T1 hit),2026-09-30,541.68,2026-10-05,,,,,0.13,-1.69,5.0,T1 hit (+3%),2026-10-05
+2026-09-29,5,CENTUM,Cash (non-F&O),Candle at support,4450.0,4583.5,4721.01,4858.51,ASM,Unknown,No data,Running,2026-10-05,4583.5,,,,,,0.01,0.0,0.0,Bought,2026-10-05
+2026-09-29,6,ENGINERSIN,Cash (non-F&O),Pullback,289.65,298.34,307.29,316.24,,Construction,Lagging,Not bought,,,,,,,,,,,Not bought (entry never reached),2026-10-05
+2026-09-29,7,ZYDUSLIFE,F&O,Breakout,1232.1,1244.42,1281.75,1319.09,,Healthcare,Leading,Not bought,,,,,,,,,,,Not bought (entry never reached),2026-10-05
+2026-09-29,8,GESHIP,Cash (non-F&O),Breakout,1582.0,1597.82,1645.75,1693.69,,Services,Leading,Running,2026-09-30,1582.0,,,,,,-1.43,-4.05,5.0,Bought,2026-09-30
+2026-09-29,9,PTCIL,Cash (non-F&O),Candle at support,22055.0,22716.65,23398.15,24079.65,,Capital Goods,Leading,Running,2026-09-30,22535.0,,,,,,-0.02,-3.86,5.0,Bought,2026-09-30
+2026-09-29,10,WABAG,Cash (non-F&O),Candle at support,2010.1,2070.4,2132.52,2194.63,,Utilities,No data,Running,2026-09-30,2070.4,,,,,,-3.42,-5.33,5.0,Bought,2026-09-30

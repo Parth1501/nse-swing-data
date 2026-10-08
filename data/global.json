@@ -1,5 +1,5 @@
 {
- "generated_at_ist": "2026-10-08 10:20",
+ "generated_at_ist": "2026-10-08 18:48",
  "items": [
   {
    "name": "S&P 500",
@@ -35,82 +35,82 @@
   },
   {
    "name": "Nikkei 225",
-   "value": 69451.35,
+   "value": 69042.11,
    "for_date": "2026-10-08",
-   "change_pct": -0.83,
+   "change_pct": -1.42,
    "source": "Yahoo Finance ^N225",
    "source_url": "https://finance.yahoo.com/quote/^N225",
    "check_source": "CNBC .N225",
-   "check_value": 69451.35,
+   "check_value": 69042.11,
    "agree": true,
    "errors": [],
    "prev_close": 70035.71,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/.N225",
-   "check_date": "2026-10-08T13:35:05.000+0900"
+   "check_date": "2026-10-08T15:45:03.000+0900"
   },
   {
    "name": "Hang Seng",
-   "value": 23963.31,
+   "value": 23785.79,
    "for_date": "2026-10-08",
-   "change_pct": -0.69,
+   "change_pct": -1.43,
    "source": "Yahoo Finance ^HSI",
    "source_url": "https://finance.yahoo.com/quote/^HSI",
    "check_source": "CNBC .HSI",
-   "check_value": 23963.31,
+   "check_value": 23785.79,
    "agree": true,
    "errors": [],
    "prev_close": 24130.5,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/.HSI",
-   "check_date": "2026-10-08T12:05:00.000+0800"
+   "check_date": "2026-10-08T16:08:40.000+0800"
   },
   {
    "name": "Brent crude (front-month future, $/bbl)",
-   "value": 102.35,
+   "value": 104.42,
    "for_date": "2026-10-08",
-   "change_pct": 2.15,
+   "change_pct": 4.21,
    "source": "Yahoo Finance BZ=F",
    "source_url": "https://finance.yahoo.com/quote/BZ=F",
    "check_source": "CNBC @LCO.1",
-   "check_value": 102.36,
+   "check_value": 104.42,
    "agree": true,
    "errors": [],
    "prev_close": 100.2,
    "prev_date": "2026-10-07",
-   "change_1m_pct": 4.52,
+   "change_1m_pct": 6.64,
    "check_url": "https://www.cnbc.com/quotes/@LCO.1",
-   "check_date": "2026-10-08T05:40:03.000+0100"
+   "check_date": "2026-10-08T14:08:18.000+0100"
   },
   {
    "name": "USD/INR",
-   "value": 96.7325,
+   "value": 96.78,
    "for_date": "2026-10-08",
-   "change_pct": 0.38,
+   "change_pct": 0.43,
    "source": "Yahoo Finance INR=X",
    "source_url": "https://finance.yahoo.com/quote/INR=X",
    "check_source": "CNBC INR=",
-   "check_value": 96.7375,
+   "check_value": 96.78,
    "agree": true,
    "errors": [],
    "prev_close": 96.3704,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/INR=",
-   "check_date": "2026-10-08T00:49:00.000-0400"
+   "check_date": "2026-10-08T06:02:00.000-0400"
   },
   {
    "name": "US 10-yr yield (%)",
-   "value": 5.277,
-   "for_date": "2026-10-07",
-   "change_pct": 0.15,
+   "value": 5.316,
+   "for_date": "2026-10-08",
+   "change_pct": 0.74,
    "source": "Yahoo Finance ^TNX",
    "source_url": "https://finance.yahoo.com/quote/^TNX",
    "check_source": "US Treasury par yield curve",
    "check_value": 5.28,
    "agree": true,
    "errors": [],
-   "prev_close": 5.269,
-   "prev_date": "2026-10-06",
+   "prev_close": 5.277,
+   "prev_date": "2026-10-07",
    "check_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&page&_format=csv",
    "check_date": "2026-10-07"
   }
@@ -120,31 +120,31 @@
   "source_url": "https://www.nseindia.com/reports/fii-dii",
   "all_exchanges": {
    "DII": {
-    "net_cr": 4596.57,
-    "buy_cr": 18707.03,
-    "sell_cr": 14110.46,
-    "date": "2026-10-07"
+    "net_cr": 10703.11,
+    "buy_cr": 22987.97,
+    "sell_cr": 12284.86,
+    "date": "2026-10-08"
    },
    "FII/FPI": {
-    "net_cr": -6121.37,
-    "buy_cr": 12577.96,
-    "sell_cr": 18699.33,
-    "date": "2026-10-07"
+    "net_cr": -12943.58,
+    "buy_cr": 15725.45,
+    "sell_cr": 28669.03,
+    "date": "2026-10-08"
    },
    "api_url": "https://www.nseindia.com/api/fiidiiTradeReact"
   },
   "nse_only": {
    "DII": {
-    "net_cr": 3376.7,
-    "buy_cr": 15565.61,
-    "sell_cr": 12188.91,
-    "date": "2026-10-07"
+    "net_cr": 5505.91,
+    "buy_cr": 16114.22,
+    "sell_cr": 10608.31,
+    "date": "2026-10-08"
    },
    "FII/FPI": {
-    "net_cr": -5093.11,
-    "buy_cr": 11536.12,
-    "sell_cr": 16629.23,
-    "date": "2026-10-07"
+    "net_cr": -8027.71,
+    "buy_cr": 10388.27,
+    "sell_cr": 18415.98,
+    "date": "2026-10-08"
    },
    "api_url": "https://www.nseindia.com/api/fiidiiTradeNse"
   }

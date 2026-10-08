@@ -729,7 +729,9 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     F = bool(res != res or room >= MIN_ROOM_PCT)
 
     has_setup = bool(C or D or E)
-    eligible = has_setup and F
+    # a bounce off weekly support that has already run past T1 is a missed trade, not a setup
+    ran_away = bool(has_setup and c[-1] > t1)
+    eligible = has_setup and F and not ran_away
     # which weekly support the trade is built on (for the reason, the report and the chart)
     if D:
         sup_info = {"level": D["P"], "kind": "old weekly high", "wk": D["wk"], "broke_wk": D["bwk"]}
@@ -783,6 +785,8 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         missing.append(f"Fell {drop_from_high:.1f}% from its 20-day high (more than {MAX_PULLBACK_PCT:.0f}%: a fall, not a dip)")
     if not has_setup and not deep_drop:
         missing.append("Not at a weekly support (no retest, pullback or candle at weekly support)")
+    if ran_away:
+        missing.append(f"Already bounced to ₹{c[-1]:.2f}, above T1 ₹{t1:.2f}: the move off weekly support is done")
     if not F:
         missing.append(f"Room to next resistance only {room:.1f}% (need {MIN_ROOM_PCT:.0f}%)")
 

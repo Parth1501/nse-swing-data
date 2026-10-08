@@ -8,9 +8,10 @@ the date/time the value is for, and a second feed's value as a cross-check where
 
 Feeds:
   Yahoo Finance (yfinance)   S&P 500, Nasdaq, Nikkei, Hang Seng, Brent, USD/INR, US 10-yr
-  Stooq (CSV)                second feed for the same, where it has the instrument
+  CNBC (quote JSON)          second feed for the same (CNBC is on the trusted-sources list)
   US Treasury (CSV)          official US 10-yr par yield
-  NSE (JSON API)             provisional FII/FPI and DII net cash-market flows
+  NSE (JSON API)             provisional FII/FPI and DII net cash-market flows, both the
+                             all-exchange total (NSE+BSE+MSEI, what the news quotes) and NSE only
 Nothing here is invented: an item that a feed doesn't return is written with value null and
 the error, so the morning list shows "not verified today" for it.
 """
@@ -29,15 +30,15 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 AGREE_PCT = 1.0                       # two feeds agree when within 1% (same rule as the morning list)
 
-# name -> (Yahoo symbol, Stooq symbol or None, decimals)
+# name -> (Yahoo symbol, CNBC symbol or None, decimals)
 MARKETS = {
-    "S&P 500": ("^GSPC", "^spx", 2),
-    "Nasdaq Composite": ("^IXIC", "^ndq", 2),
-    "Nikkei 225": ("^N225", "^nkx", 2),
-    "Hang Seng": ("^HSI", "^hsi", 2),
-    "Brent crude (front-month future, $/bbl)": ("BZ=F", "cb.f", 2),
-    "USD/INR": ("INR=X", "usdinr", 4),
-    "US 10-yr yield (%)": ("^TNX", "10usy.b", 3),
+    "S&P 500": ("^GSPC", ".SPX", 2),
+    "Nasdaq Composite": ("^IXIC", ".IXIC", 2),
+    "Nikkei 225": ("^N225", ".N225", 2),
+    "Hang Seng": ("^HSI", ".HSI", 2),
+    "Brent crude (front-month future, $/bbl)": ("BZ=F", "@LCO.1", 2),
+    "USD/INR": ("INR=X", "INR=", 4),
+    "US 10-yr yield (%)": ("^TNX", "US10Y", 3),
 }
 
 
@@ -62,16 +63,21 @@ def yahoo(sym):
     }
 
 
-def stooq(sym):
-    r = requests.get(f"https://stooq.com/q/l/?s={sym}&f=sd2t2c&h&e=csv",
-                     headers={"User-Agent": UA}, timeout=20)
+def cnbc(symbols):
+    """Latest quotes for several symbols from CNBC's quote service: {symbol: {value, time}}."""
+    url = ("https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol"
+           f"?symbols={'|'.join(symbols)}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json")
+    r = requests.get(url, headers={"User-Agent": UA}, timeout=20)
     r.raise_for_status()
-    df = pd.read_csv(io.StringIO(r.text))
-    row = df.iloc[0]
-    c = row.get("Close")
-    if pd.isna(c) or str(c).upper() == "N/D":
-        raise ValueError(f"no data: {r.text.strip()[:120]}")
-    return {"value": float(c), "date": str(row.get("Date")), "time": str(row.get("Time"))}
+    quotes = r.json()["FormattedQuoteResult"]["FormattedQuote"]
+    out = {}
+    for q in quotes if isinstance(quotes, list) else [quotes]:
+        last = str(q.get("last", "")).replace(",", "").rstrip("%")
+        try:
+            out[q["symbol"]] = {"value": float(last), "time": q.get("last_time")}
+        except ValueError:
+            pass
+    return out
 
 
 def treasury_10y():
@@ -90,33 +96,43 @@ def treasury_10y():
 
 
 def nse_fii_dii():
+    """{"all_exchanges": {...}, "nse_only": {...}} from NSE's two FII/DII endpoints."""
     s = requests.Session()
     s.headers.update({"User-Agent": UA, "Accept": "*/*", "Referer": "https://www.nseindia.com/reports/fii-dii"})
     try:
         s.get("https://www.nseindia.com/reports/fii-dii", timeout=15)
     except Exception:
         pass
-    url = "https://www.nseindia.com/api/fiidiiTradeReact"
-    r = s.get(url, timeout=30)
-    r.raise_for_status()
     out = {}
-    for row in r.json():
-        cat = str(row.get("category", "")).upper()
-        key = "FII/FPI" if "FII" in cat or "FPI" in cat else "DII" if "DII" in cat else None
-        if key:
-            out[key] = {"net_cr": float(str(row["netValue"]).replace(",", "")),
-                        "buy_cr": float(str(row["buyValue"]).replace(",", "")),
-                        "sell_cr": float(str(row["sellValue"]).replace(",", "")),
-                        "date": datetime.strptime(row["date"], "%d-%b-%Y").strftime("%Y-%m-%d")}
-    if not out:
-        raise ValueError("no FII/DII rows")
-    return out, url
+    for key, url in (("all_exchanges", "https://www.nseindia.com/api/fiidiiTradeReact"),
+                     ("nse_only", "https://www.nseindia.com/api/fiidiiTradeNse")):
+        try:
+            r = s.get(url, timeout=30)
+            r.raise_for_status()
+            rows = {}
+            for row in r.json():
+                cat = str(row.get("category", "")).upper()
+                who = "FII/FPI" if "FII" in cat or "FPI" in cat else "DII" if "DII" in cat else None
+                if who:
+                    rows[who] = {"net_cr": float(str(row["netValue"]).replace(",", "")),
+                                 "buy_cr": float(str(row["buyValue"]).replace(",", "")),
+                                 "sell_cr": float(str(row["sellValue"]).replace(",", "")),
+                                 "date": datetime.strptime(row["date"], "%d-%b-%Y").strftime("%Y-%m-%d")}
+            out[key] = rows or {"error": "no FII/DII rows"}
+            out[key]["api_url"] = url
+        except Exception as e:
+            out[key] = {"error": str(e), "api_url": url}
+    return out
 
 
 def main():
     now = datetime.now(IST)
     items = []
-    for name, (ysym, ssym, dp) in MARKETS.items():
+    try:
+        live, cnbc_err = cnbc([m[1] for m in MARKETS.values() if m[1]]), None
+    except Exception as e:
+        live, cnbc_err = {}, str(e)
+    for name, (ysym, csym, dp) in MARKETS.items():
         it = {"name": name, "value": None, "for_date": None, "change_pct": None,
               "source": f"Yahoo Finance {ysym}", "source_url": f"https://finance.yahoo.com/quote/{ysym}",
               "check_source": None, "check_value": None, "agree": None, "errors": []}
@@ -128,18 +144,17 @@ def main():
                 it["change_1m_pct"] = pct(y["value"], y["month_ago"])
         except Exception as e:
             it["errors"].append(f"Yahoo: {e}")
-        if ssym:
-            try:
-                s = stooq(ssym)
-                it.update(check_source=f"Stooq {ssym}", check_value=s["value"],
-                          check_url=f"https://stooq.com/q/?s={ssym}", check_date=f'{s["date"]} {s["time"]}')
-            except Exception as e:
-                it["errors"].append(f"Stooq: {e}")
+        c = live.get(csym) if csym else None
+        if c:
+            it.update(check_source=f"CNBC {csym}", check_value=c["value"],
+                      check_url=f"https://www.cnbc.com/quotes/{csym}", check_date=c["time"])
+        elif csym:
+            it["errors"].append(f"CNBC: {cnbc_err or 'no quote'}")
         if it["value"] is not None and it["check_value"] is not None:
             it["agree"] = abs(pct(it["value"], it["check_value"])) <= AGREE_PCT
         items.append(it)
 
-    try:                                   # official US Treasury yield replaces the Stooq cross-check
+    try:                                   # the official US Treasury yield is the better cross-check
         t = treasury_10y()
         it = next(i for i in items if i["name"].startswith("US 10-yr"))
         it.update(check_source="US Treasury par yield curve", check_value=t["value"],
@@ -150,12 +165,7 @@ def main():
         next(i for i in items if i["name"].startswith("US 10-yr"))["errors"].append(f"Treasury: {e}")
 
     fii = {"source": "NSE provisional FII/DII (cash market)", "source_url": "https://www.nseindia.com/reports/fii-dii"}
-    try:
-        rows, url = nse_fii_dii()
-        fii.update(rows)
-        fii["api_url"] = url
-    except Exception as e:
-        fii["error"] = str(e)
+    fii.update(nse_fii_dii())
 
     out = {"generated_at_ist": now.strftime("%Y-%m-%d %H:%M"), "items": items, "fii_dii": fii}
     os.makedirs("data", exist_ok=True)
@@ -164,7 +174,7 @@ def main():
     for it in items:
         print(f'{it["name"]:42} {it["value"]!s:>12} {it["for_date"]!s:>11} chk={it["check_value"]!s:>12} '
               f'agree={it["agree"]} {"; ".join(it["errors"])}')
-    print("FII/DII:", json.dumps({k: v for k, v in fii.items() if k in ("FII/FPI", "DII", "error")}))
+    print("FII/DII:", json.dumps({k: fii[k] for k in ("all_exchanges", "nse_only")}))
 
 
 if __name__ == "__main__":

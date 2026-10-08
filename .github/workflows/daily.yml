@@ -7,6 +7,10 @@ on:
         description: "Optional: re-run a past day, prices up to (not including) this date, e.g. 2026-10-01"
         required: false
         default: ""
+      global_only:
+        description: "Only refresh data/global.json (skip the stock scan)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -25,7 +29,23 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install yfinance pandas numpy requests matplotlib
+      - name: Global numbers
+        run: python global_data.py
+        continue-on-error: true      # a feed outage must never stop the stock scan
+      - name: Probe GIFT Nifty / FBIL feeds (test only)
+        if: inputs.global_only != ''
+        continue-on-error: true
+        run: |
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
+          for u in "https://priceapi.moneycontrol.com/pricefeed/notapplicable/inidicesindia/in%3Bgsx" \
+                   "https://www.fbil.org.in/wasdm/refrates/fetchfiltered?authenticated=false&fromDate=$(date -d '-5 day' +%Y-%m-%d)&toDate=$(date +%Y-%m-%d)&reqFor=ALL" \
+                   "https://www.nseix.com/" \
+                   "https://www.moneycontrol.com/stocks/marketstats/fii_dii_activity/index.php" \
+                   "https://www.investing.com/indices/sgx-nifty-50-futures"; do
+            echo "== $u"; curl -s -m 20 -A "$UA" -w "\nHTTP %{http_code}\n" "$u" | head -c 600; echo
+          done
       - run: python scan_data.py
+        if: inputs.global_only == ''
         env:
           SCAN_END: ${{ inputs.scan_end }}
       - name: Save data

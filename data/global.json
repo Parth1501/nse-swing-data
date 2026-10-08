@@ -1,0 +1,137 @@
+{
+ "generated_at_ist": "2026-10-08 09:40",
+ "items": [
+  {
+   "name": "S&P 500",
+   "value": 7801.77,
+   "for_date": "2026-10-07",
+   "change_pct": -0.22,
+   "source": "Yahoo Finance ^GSPC",
+   "source_url": "https://finance.yahoo.com/quote/^GSPC",
+   "check_source": null,
+   "check_value": null,
+   "agree": null,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=%5Espx&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 7818.93,
+   "prev_date": "2026-10-06"
+  },
+  {
+   "name": "Nasdaq Composite",
+   "value": 27538.69,
+   "for_date": "2026-10-07",
+   "change_pct": -0.22,
+   "source": "Yahoo Finance ^IXIC",
+   "source_url": "https://finance.yahoo.com/quote/^IXIC",
+   "check_source": null,
+   "check_value": null,
+   "agree": null,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=%5Endq&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 27599.79,
+   "prev_date": "2026-10-06"
+  },
+  {
+   "name": "Nikkei 225",
+   "value": 69248.52,
+   "for_date": "2026-10-08",
+   "change_pct": -1.12,
+   "source": "Yahoo Finance ^N225",
+   "source_url": "https://finance.yahoo.com/quote/^N225",
+   "check_source": null,
+   "check_value": null,
+   "agree": null,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=%5Enkx&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 70035.71,
+   "prev_date": "2026-10-07"
+  },
+  {
+   "name": "Hang Seng",
+   "value": 23958.8,
+   "for_date": "2026-10-08",
+   "change_pct": -0.71,
+   "source": "Yahoo Finance ^HSI",
+   "source_url": "https://finance.yahoo.com/quote/^HSI",
+   "check_source": null,
+   "check_value": null,
+   "agree": null,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=%5Ehsi&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 24130.5,
+   "prev_date": "2026-10-07"
+  },
+  {
+   "name": "Brent crude (front-month future, $/bbl)",
+   "value": 102.28,
+   "for_date": "2026-10-08",
+   "change_pct": 2.08,
+   "source": "Yahoo Finance BZ=F",
+   "source_url": "https://finance.yahoo.com/quote/BZ=F",
+   "check_source": null,
+   "check_value": null,
+   "agree": null,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=cb.f&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 100.2,
+   "prev_date": "2026-10-07",
+   "change_1m_pct": 4.45
+  },
+  {
+   "name": "USD/INR",
+   "value": 96.72,
+   "for_date": "2026-10-08",
+   "change_pct": 0.36,
+   "source": "Yahoo Finance INR=X",
+   "source_url": "https://finance.yahoo.com/quote/INR=X",
+   "check_source": null,
+   "check_value": null,
+   "agree": null,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=usdinr&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 96.3704,
+   "prev_date": "2026-10-07"
+  },
+  {
+   "name": "US 10-yr yield (%)",
+   "value": 5.277,
+   "for_date": "2026-10-07",
+   "change_pct": 0.15,
+   "source": "Yahoo Finance ^TNX",
+   "source_url": "https://finance.yahoo.com/quote/^TNX",
+   "check_source": "US Treasury par yield curve",
+   "check_value": 5.28,
+   "agree": true,
+   "errors": [
+    "Stooq: 404 Client Error: Not Found for url: https://stooq.com/q/l/?s=10usy.b&f=sd2t2c&h&e=csv"
+   ],
+   "prev_close": 5.269,
+   "prev_date": "2026-10-06",
+   "check_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&page&_format=csv",
+   "check_date": "2026-10-07"
+  }
+ ],
+ "fii_dii": {
+  "source": "NSE provisional FII/DII (cash market)",
+  "source_url": "https://www.nseindia.com/reports/fii-dii",
+  "DII": {
+   "net_cr": 4596.57,
+   "buy_cr": 18707.03,
+   "sell_cr": 14110.46,
+   "date": "2026-10-07"
+  },
+  "FII/FPI": {
+   "net_cr": -6121.37,
+   "buy_cr": 12577.96,
+   "sell_cr": 18699.33,
+   "date": "2026-10-07"
+  },
+  "api_url": "https://www.nseindia.com/api/fiidiiTradeReact"
+ }
+}

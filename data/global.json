@@ -1,5 +1,5 @@
 {
- "generated_at_ist": "2026-10-08 10:20",
+ "generated_at_ist": "2026-10-08 14:01",
  "items": [
   {
    "name": "S&P 500",
@@ -35,68 +35,68 @@
   },
   {
    "name": "Nikkei 225",
-   "value": 69451.35,
+   "value": 69042.11,
    "for_date": "2026-10-08",
-   "change_pct": -0.83,
+   "change_pct": -1.42,
    "source": "Yahoo Finance ^N225",
    "source_url": "https://finance.yahoo.com/quote/^N225",
    "check_source": "CNBC .N225",
-   "check_value": 69451.35,
+   "check_value": 69042.11,
    "agree": true,
    "errors": [],
    "prev_close": 70035.71,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/.N225",
-   "check_date": "2026-10-08T13:35:05.000+0900"
+   "check_date": "2026-10-08T15:45:03.000+0900"
   },
   {
    "name": "Hang Seng",
-   "value": 23963.31,
+   "value": 23785.79,
    "for_date": "2026-10-08",
-   "change_pct": -0.69,
+   "change_pct": -1.43,
    "source": "Yahoo Finance ^HSI",
    "source_url": "https://finance.yahoo.com/quote/^HSI",
    "check_source": "CNBC .HSI",
-   "check_value": 23963.31,
+   "check_value": 23785.79,
    "agree": true,
    "errors": [],
    "prev_close": 24130.5,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/.HSI",
-   "check_date": "2026-10-08T12:05:00.000+0800"
+   "check_date": "2026-10-08T16:08:40.000+0800"
   },
   {
    "name": "Brent crude (front-month future, $/bbl)",
-   "value": 102.35,
+   "value": 103.95,
    "for_date": "2026-10-08",
-   "change_pct": 2.15,
+   "change_pct": 3.74,
    "source": "Yahoo Finance BZ=F",
    "source_url": "https://finance.yahoo.com/quote/BZ=F",
    "check_source": "CNBC @LCO.1",
-   "check_value": 102.36,
+   "check_value": 103.97,
    "agree": true,
    "errors": [],
    "prev_close": 100.2,
    "prev_date": "2026-10-07",
-   "change_1m_pct": 4.52,
+   "change_1m_pct": 6.16,
    "check_url": "https://www.cnbc.com/quotes/@LCO.1",
-   "check_date": "2026-10-08T05:40:03.000+0100"
+   "check_date": "2026-10-08T09:21:06.000+0100"
   },
   {
    "name": "USD/INR",
-   "value": 96.7325,
+   "value": 96.775,
    "for_date": "2026-10-08",
-   "change_pct": 0.38,
+   "change_pct": 0.42,
    "source": "Yahoo Finance INR=X",
    "source_url": "https://finance.yahoo.com/quote/INR=X",
    "check_source": "CNBC INR=",
-   "check_value": 96.7375,
+   "check_value": 96.77,
    "agree": true,
    "errors": [],
    "prev_close": 96.3704,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/INR=",
-   "check_date": "2026-10-08T00:49:00.000-0400"
+   "check_date": "2026-10-08T04:30:00.000-0400"
   },
   {
    "name": "US 10-yr yield (%)",

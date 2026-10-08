@@ -158,7 +158,7 @@ def draw(sym, df, row, peaks, troughs, path):
 
     if g["support"]:
         _hline(ax2, g["support"], z0, xr, C_SUP, lw=1.5)
-        right_tags.append((g["support"], f"Supp {_fmt(g['support'])}", C_SUP))
+        right_tags.append((g["support"], f"Wk supp {_fmt(g['support'])}", C_SUP))
     if g["resistance"]:
         if g["resistance"] <= ax2.get_ylim()[1]:
             _hline(ax2, g["resistance"], z0, xr, C_RES, "--", lw=1.5)
@@ -266,7 +266,7 @@ def draw(sym, df, row, peaks, troughs, path):
     from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
     keys = [Patch(fc=C_ZONE, alpha=0.35, label="buy zone"), Patch(fc=C_TGT, alpha=0.45, label="T1→T2"),
-            Line2D([], [], color=C_SUP, lw=1.6, label="support"),
+            Line2D([], [], color=C_SUP, lw=1.6, label="weekly support"),
             Line2D([], [], color=C_RES, lw=1.6, ls="--", label="next wall"),
             Patch(fc="#ddf4ff", label="zoomed part")]
     fig.legend(handles=keys, loc="lower left", bbox_to_anchor=(0.01, 0.02), ncol=3, fontsize=7.5, frameon=False,

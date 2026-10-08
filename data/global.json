@@ -1,5 +1,5 @@
 {
- "generated_at_ist": "2026-10-08 12:30",
+ "generated_at_ist": "2026-10-08 12:35",
  "items": [
   {
    "name": "S&P 500",
@@ -51,42 +51,42 @@
   },
   {
    "name": "Hang Seng",
-   "value": 23874.43,
+   "value": 23852.95,
    "for_date": "2026-10-08",
-   "change_pct": -1.06,
+   "change_pct": -1.15,
    "source": "Yahoo Finance ^HSI",
    "source_url": "https://finance.yahoo.com/quote/^HSI",
    "check_source": "CNBC .HSI",
-   "check_value": 23874.43,
+   "check_value": 23852.95,
    "agree": true,
    "errors": [],
    "prev_close": 24130.5,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/.HSI",
-   "check_date": "2026-10-08T14:45:46.000+0800"
+   "check_date": "2026-10-08T14:50:28.000+0800"
   },
   {
    "name": "Brent crude (front-month future, $/bbl)",
-   "value": 103.29,
+   "value": 103.35,
    "for_date": "2026-10-08",
-   "change_pct": 3.08,
+   "change_pct": 3.14,
    "source": "Yahoo Finance BZ=F",
    "source_url": "https://finance.yahoo.com/quote/BZ=F",
    "check_source": "CNBC @LCO.1",
-   "check_value": 103.3,
+   "check_value": 103.36,
    "agree": true,
    "errors": [],
    "prev_close": 100.2,
    "prev_date": "2026-10-07",
-   "change_1m_pct": 5.48,
+   "change_1m_pct": 5.55,
    "check_url": "https://www.cnbc.com/quotes/@LCO.1",
-   "check_date": "2026-10-08T07:50:45.000+0100"
+   "check_date": "2026-10-08T07:55:29.000+0100"
   },
   {
    "name": "USD/INR",
-   "value": 96.78,
+   "value": 96.7775,
    "for_date": "2026-10-08",
-   "change_pct": 0.43,
+   "change_pct": 0.42,
    "source": "Yahoo Finance INR=X",
    "source_url": "https://finance.yahoo.com/quote/INR=X",
    "check_source": "CNBC INR=",
@@ -96,7 +96,7 @@
    "prev_close": 96.3704,
    "prev_date": "2026-10-07",
    "check_url": "https://www.cnbc.com/quotes/INR=",
-   "check_date": "2026-10-08T03:00:00.000-0400"
+   "check_date": "2026-10-08T03:04:00.000-0400"
   },
   {
    "name": "US 10-yr yield (%)",

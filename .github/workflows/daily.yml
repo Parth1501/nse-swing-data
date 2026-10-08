@@ -37,6 +37,10 @@ jobs:
         if: inputs.global_only == ''
         env:
           SCAN_END: ${{ inputs.scan_end }}
+      - name: Trade feedback
+        run: python feedback.py
+        if: inputs.global_only == ''
+        continue-on-error: true      # the evening review's numbers must never stop the data save
       - name: Save data
         run: |
           git config user.name "github-actions[bot]"

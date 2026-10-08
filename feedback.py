@@ -39,7 +39,7 @@ FEATURE_COLS = [
     "vol_ok", "smc_sweep", "smc_order_block", "smc_fvg", "smc_choch", "vol_ratio_today",
     "trigger_vol_ratio", "candle", "ret_1m", "ret_3m", "rs_3m_vs_nifty", "pct_below_high52",
     "base_days", "base_range_pct", "warning", "n_flags", "price_band", "avg_value20_cr",
-    "segment", "in_midcap150", "sector_tag",
+    "segment", "in_midcap150", "sector_tag", "support_kind",
 ]
 
 CLOSED = ["Full win (T2)", "Partial win (T1)", "Failed"]
@@ -131,6 +131,9 @@ def add_groups(df):
     if "pct_below_high52" in df:
         g["below 52W high"] = bucket(df["pct_below_high52"], [-1, 5, 15, 999],
                                      ["within 5%", "5-15%", "over 15%"])
+    if "support_kind" in df:                                  # weekly support picks (from 8 Oct)
+        k = df["support_kind"].fillna("").astype(str).str.split(",").str[0].str.strip()
+        g["support kind"] = k.where(k != "", None)
     if "zone_status" in df:
         z = df["zone_status"].fillna("").astype(str)
         g["zone at listing"] = z.where(~z.str.startswith("Above"), "Above zone").replace("", "n/a")

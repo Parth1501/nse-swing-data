@@ -4,12 +4,14 @@ Daily NSE price-action swing list builder (runs on GitHub Actions).
 Universe: NSE F&O stocks + Nifty Midcap 150 + every other NSE EQ stock with a
 20-day average traded value >= Rs 50 crore.
 
-No indicators (no moving averages, RSI, MACD or ATR). Only price structure and volume:
-  A  Uptrend structure    - last 2 swing peaks and last 2 swing troughs each higher
-  B  Base breakout        - 2-6 week sideways base (range <= 12%) broken on a close
-  C  Pullback to support  - in an uptrend, price back within 3% of support and holding
-  D  Retest               - an old peak broken in the last month, revisited, holding as support
-  E  Candle at support    - hammer / bullish engulfing / inside-day breakout near support
+No indicators (no moving averages, RSI, MACD or ATR). Only price structure and volume.
+SUPPORT TRADES ONLY (user's choice, 8 Oct 2026): no breakout setups, and support is read from WEEKLY candles.
+Weekly support = a weekly swing low (last 2 years) no weekly close has broken since, or an old weekly swing
+high that price has closed above and held (old resistance turned support).
+  A  Uptrend structure    - weekly: last 2 weekly swing peaks and last 2 weekly swing troughs each higher
+  C  Pullback to support  - in a weekly uptrend, price back within 3% of a weekly support and holding
+  D  Retest               - an old weekly peak broken 1-4 weeks ago, revisited, holding as support
+  E  Candle at support    - daily hammer / bullish engulfing / inside-day breakout at a weekly support
   F  Room to run          - next resistance at least 6% above entry (REQUIRED)
   G  Relative strength    - beat Nifty over 1 and 3 months
   Volume check            - trigger day volume >= 1.5x its prior 20-day average
@@ -49,18 +51,18 @@ INDEX_SYMBOLS = {"NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50", "
 T1_PCT, T2_PCT = 0.03, 0.06          # exits: +3% and +6% from the entry reference
 TIME_EXIT_DAYS = 30                  # calendar days
 MIN_ROOM_PCT = 6.0                   # F: next resistance must be >= 6% above entry
-PIVOT_W = 5                          # swing point = highest/lowest of 5 days either side
-BASE_LENGTHS = (30, 20, 15, 10)      # B: 6, 4, 3, 2 week bases (longest preferred)
-BASE_MAX_RANGE_PCT = 12.0
-BREAKOUT_MAX_EXT_PCT = 5.0           # B: skip if price already > 5% above the base top
+PIVOT_W = 5                          # daily swing point = highest/lowest of 5 days either side
+WEEKLY_PIVOT_W = 2                   # weekly swing point = highest/lowest of 2 weeks either side
+WEEKLY_LOOKBACK = 104                # weekly supports come from the last 2 years
+WEEKLY_HOLD_TOL_PCT = 1.0            # a weekly close up to 1% under a level doesn't break it
+SUPPORT_TOUCH_DAYS = 5               # C/E: the low came to the weekly support within the last week (5 sessions)
 NEAR_SUPPORT_PCT = 3.0               # C/E: within 3% of support
 RETEST_NEAR_PCT = 2.0                # D: came back within 2% of the broken level
 RETEST_MAX_ABOVE_PCT = 5.0           # D: price must still be within 5% of the level (else it has run away)
 MAX_PULLBACK_PCT = 15.0              # C/D/E: a drop of more than 15% from the 20-day high is a fall, not a dip
 BUY_ZONE_PCT = 3.0                   # support-style buy zone = support .. +3%
 VOL_MULT = 1.5
-ENTRY_BUFFER = 0.01                  # breakout entry: trigger high .. +1%
-SCORE = {"B": 3, "D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1,
+SCORE = {"D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1,
          "SWEEP": 2, "OB": 2, "FVG": 1, "CHOCH": -2}   # Smart Money Concepts: points only, never eligibility
 SMC_LOOKBACK = 60                    # SMC zones are searched in the last 60 sessions (about 3 months)
 SWEEP_MAX_PCT = 3.0                  # sweep: a dip of at most 3% under the low; deeper is a breakdown
@@ -474,80 +476,100 @@ def vol_ratio_at(v, k):
     return v[k] / prior.mean()
 
 
-def check_uptrend(peaks, troughs, n, close):
-    """A: last 2 peaks and last 2 troughs (within ~6 months) each higher; structure still intact."""
-    rp = [p for p in peaks if p[0] >= n - 120]
-    rt = [t for t in troughs if t[0] >= n - 120]
+def check_uptrend(peaks, troughs, n, close, window=120, recent_bars=63):
+    """A: last 2 peaks and last 2 troughs (within ~6 months) each higher; structure still intact.
+    On weekly candles the scan passes window=26, recent_bars=13 (the same ~6 and ~3 months)."""
+    rp = [p for p in peaks if p[0] >= n - window]
+    rt = [t for t in troughs if t[0] >= n - window]
     if len(rp) < 2 or len(rt) < 2:
         return False, None
     p1, p2 = rp[-2][1], rp[-1][1]
     t1, t2 = rt[-2][1], rt[-1][1]
-    recent = max(rp[-1][0], rt[-1][0]) >= n - 63
+    recent = max(rp[-1][0], rt[-1][0]) >= n - recent_bars
     return bool(p2 > p1 and t2 > t1 and close > t2 and recent), t2
 
 
-def check_base_breakout(h, l, c, v, n):
-    """B: close above a 2-6 week base whose range is <= 12%, in the last 3 sessions, still holding."""
-    for bo in (n - 1, n - 2, n - 3):
-        for L in BASE_LENGTHS:
-            s = bo - L
-            if s < 0:
-                continue
-            bh, bl = h[s:bo].max(), l[s:bo].min()
-            rng = pct(bh, bl)
-            if rng > BASE_MAX_RANGE_PCT or c[bo] <= bh:
-                continue
-            if (c[bo:] < bh).any():
-                continue
-            if pct(c[-1], bh) > BREAKOUT_MAX_EXT_PCT:
-                continue
-            return {"bo": bo, "L": L, "bh": bh, "bl": bl, "rng": rng, "vr": vol_ratio_at(v, bo)}
-    return None
+def weekly_bars(df):
+    """Daily candles -> weekly candles (Monday-Friday; the current week may still be in progress).
+    Also returns, for every daily row, the index of its week."""
+    idx = pd.DatetimeIndex(df.index)
+    if idx.tz is not None:
+        idx = idx.tz_localize(None)
+    monday = (idx - pd.to_timedelta(idx.weekday, unit="D")).normalize()
+    w = df[["Open", "High", "Low", "Close", "Volume"]].groupby(monday.values).agg(
+        {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+    week_of_day = np.searchsorted(w.index.values, monday.values)
+    return w, week_of_day
 
 
-def support_levels(peaks, last_trough, c, n):
-    """Support = last swing trough + old peaks (last year) that price has since closed above."""
-    levels = []
-    if last_trough is not None and last_trough < c[-1]:
-        levels.append(last_trough)
-    for pi, pv in peaks:
-        if pi >= n - 250 and pv < c[-1] and (c[pi + 1:] > pv).any():
-            levels.append(pv)
-    return sorted(set(levels), reverse=True)
-
-
-def check_pullback(uptrend, supports, h, l, c):
-    """C: in an uptrend, >= 3% off the 20-day high, low came within 3% of support, closes holding."""
-    if not uptrend:
-        return None
-    recent_high = h[-20:].max()
-    off_high = pct(recent_high, c[-1])
-    if off_high < 3:
-        return None
-    for S in supports:
-        if l[-3:].min() <= S * (1 + NEAR_SUPPORT_PCT / 100) and c[-3:].min() >= S * 0.995:
-            return {"S": S, "off_high": off_high}
-    return None
-
-
-def check_retest(peaks, l, c, n):
-    """D: an old peak broken 3-20 sessions ago, price came back within 2% of it, still closing above."""
-    best = None
-    for pi, pv in peaks:
-        above = np.where(c[pi + 1:] > pv)[0]
+def weekly_supports(wpeaks, wtroughs, wc, close):
+    """Weekly support levels below the latest close, highest first. Each is a dict:
+    level, kind ("weekly low" / "old weekly high"), wk (the week of the swing), broke_wk (old highs only).
+    - weekly low: a weekly swing low from the last 2 years that no weekly close has broken since
+    - old weekly high: a weekly swing high price has since closed above, and no weekly close has lost it"""
+    nw, tol = len(wc), 1 - WEEKLY_HOLD_TOL_PCT / 100
+    out = []
+    for ti, tv in wtroughs:
+        if ti >= nw - WEEKLY_LOOKBACK and tv < close and (wc[ti + 1:] >= tv * tol).all():
+            out.append({"level": tv, "kind": "weekly low", "wk": ti, "broke_wk": None})
+    for pi, pv in wpeaks:
+        if pi < nw - WEEKLY_LOOKBACK or pv >= close:
+            continue
+        above = np.where(wc[pi + 1:] > pv)[0]
         if len(above) == 0:
             continue
         b = pi + 1 + above[0]
-        if not (n - 21 <= b <= n - 4) or pi < b - 250:
+        if (wc[b:] >= pv * tol).all():
+            out.append({"level": pv, "kind": "old weekly high", "wk": pi, "broke_wk": b})
+    out.sort(key=lambda x: -x["level"])
+    dedup = []                                              # two levels within 0.5% are one level
+    for x in out:
+        if not dedup or x["level"] < dedup[-1]["level"] * 0.995:
+            dedup.append(x)
+    return dedup
+
+
+def at_support(wsup, l, c):
+    """The highest weekly support the daily low came to in the last week (within 3% above it, at most 3% under it)
+    while the last 3 daily closes held it."""
+    lo = l[-SUPPORT_TOUCH_DAYS:].min()
+    for s in wsup:
+        S = s["level"]
+        if S * 0.97 <= lo <= S * (1 + NEAR_SUPPORT_PCT / 100) and c[-3:].min() >= S * 0.995:
+            return s
+    return None
+
+
+def check_pullback(uptrend, touched, h, c):
+    """C: in a weekly uptrend, >= 3% off the 20-day high, and back at a weekly support that is holding."""
+    if not uptrend or touched is None:
+        return None
+    off_high = pct(h[-20:].max(), c[-1])
+    if off_high < 3:
+        return None
+    return {"S": touched["level"], "off_high": off_high, "sup": touched}
+
+
+def check_retest(wpeaks, wl, wc, close):
+    """D: an old weekly peak broken (first weekly close above it) 1-4 weeks before this week; a weekly low came
+    back within 2% of it since, weekly closes never lost it by more than 2%, and price is no more than 5% above it."""
+    nw = len(wc)
+    best = None
+    for pi, pv in wpeaks:
+        above = np.where(wc[pi + 1:] > pv)[0]
+        if len(above) == 0:
             continue
-        if l[b + 1:].min() > pv * (1 + RETEST_NEAR_PCT / 100):
+        b = pi + 1 + above[0]
+        if not (nw - 5 <= b <= nw - 2) or pi < b - WEEKLY_LOOKBACK:
             continue
-        if c[-1] < pv or c[b:].min() < pv * 0.98:
+        if wl[b + 1:].min() > pv * (1 + RETEST_NEAR_PCT / 100):
             continue
-        if pct(c[-1], pv) > RETEST_MAX_ABOVE_PCT:      # ran away from the level: no longer a retest
+        if close < pv or wc[b:].min() < pv * 0.98:
+            continue
+        if pct(close, pv) > RETEST_MAX_ABOVE_PCT:      # ran away from the level: no longer a retest
             continue
         if best is None or pv > best["P"]:
-            best = {"P": pv, "b": b}
+            best = {"P": pv, "wk": pi, "bwk": b}
     return best
 
 
@@ -650,16 +672,21 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     dates = df.index
     fmt = lambda i: dates[i].strftime("%d %b")  # noqa: E731
 
-    peaks, troughs = swing_points(h, l)
-    A, last_trough = check_uptrend(peaks, troughs, n, c[-1])
-    B = check_base_breakout(h, l, c, v, n)
-    supports = support_levels(peaks, last_trough, c, n)
-    C = check_pullback(A, supports, h, l, c)
-    D = check_retest(peaks, l, c, n)
-    if B and D and B["bl"] <= D["P"] <= B["bh"] * 1.01:
-        D = None                                    # same level as the base just broken: don't count it twice
+    peaks, troughs = swing_points(h, l)                     # daily swings: resistance, SMC, chart
+    wk, week_of_day = weekly_bars(df)
+    wh, wl, wc = (wk[k].to_numpy(dtype=float) for k in ("High", "Low", "Close"))
+    nw = len(wc)
+    wdates = wk.index
+    wfmt = lambda k: "week of " + wdates[k].strftime("%d %b %Y")  # noqa: E731
+    wpeaks, wtroughs = swing_points(wh, wl, WEEKLY_PIVOT_W)
+    A, last_trough = check_uptrend(wpeaks, wtroughs, nw, c[-1], window=26, recent_bars=13)
+    wsup = weekly_supports(wpeaks, wtroughs, wc, c[-1])
+    supports = [x["level"] for x in wsup]
+    touched = at_support(wsup, l, c)
+    C = check_pullback(A, touched, h, c)
+    D = check_retest(wpeaks, wl, wc, c[-1])
     candle = check_candle(o, h, l, c)
-    near_S = next((S for S in supports if S * 0.97 <= l[-2:].min() <= S * (1 + NEAR_SUPPORT_PCT / 100)), None)
+    near_S = touched["level"] if touched else None
     E = bool(candle and (C or D or near_S is not None))
 
     # A fall of more than 15% from the 20-day high is not a dip: dip-style setups (C, D, E) don't count
@@ -679,16 +706,12 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     G = bool(ret1 == ret1 and ret3 == ret3 and ret1 > nifty["ret_1m"] and ret3 > nifty["ret_3m"])
 
     vr_today = vol_ratio_at(v, n - 1)
-    trig_vr = B["vr"] if B else vr_today
-    VOL = bool(trig_vr == trig_vr and trig_vr >= VOL_MULT and (B or C or D or E))
+    trig_vr = vr_today
+    VOL = bool(trig_vr == trig_vr and trig_vr >= VOL_MULT and (C or D or E))
 
-    # ---- entry style and levels (priority: breakout > retest > pullback > candle)
+    # ---- entry style and levels (support trades only; priority: retest > pullback > candle)
     zone_status = ""
-    if B:
-        style = "Breakout"
-        entry_low, entry_high = h[-1], h[-1] * (1 + ENTRY_BUFFER)
-        support = B["bh"]
-    elif D or C or E:
+    if D or C or E:
         S = D["P"] if D else (C["S"] if C else near_S)
         style = "Retest" if D else ("Pullback" if C else "Candle at support")
         entry_low, entry_high = S, S * (1 + BUY_ZONE_PCT / 100)     # buy near support only
@@ -705,33 +728,42 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     room = pct(res, entry_ref) if res == res else np.nan
     F = bool(res != res or room >= MIN_ROOM_PCT)
 
-    has_setup = bool(B or C or D or E)
+    has_setup = bool(C or D or E)
     eligible = has_setup and F
-    pats = {"A": bool(A), "B": bool(B), "C": bool(C), "D": bool(D), "E": E, "G": G, "VOL": VOL,
+    # which weekly support the trade is built on (for the reason, the report and the chart)
+    if D:
+        sup_info = {"level": D["P"], "kind": "old weekly high", "wk": D["wk"], "broke_wk": D["bwk"]}
+    elif style:
+        sup_info = (C["sup"] if C else touched)
+    else:
+        sup_info = wsup[0] if wsup else None
+    if sup_info:
+        support_kind = (f"weekly swing low, {wfmt(sup_info['wk'])}" if sup_info["kind"] == "weekly low" else
+                        f"old weekly high, {wfmt(sup_info['wk'])}, broken {wfmt(sup_info['broke_wk'])}")
+    else:
+        support_kind = ""
+    pats = {"A": bool(A), "C": bool(C), "D": bool(D), "E": E, "G": G, "VOL": VOL,
             "SWEEP": bool(SW), "OB": bool(OB), "FVG": bool(FV), "CHOCH": bool(CH)}
     score = sum(SCORE[k] for k, on in pats.items() if on)
     names = {"VOL": "Vol", "SWEEP": "Sweep", "CHOCH": "CHoCH"}
-    setups = "+".join(names.get(k, k) for k in ("B", "D", "C", "E", "A", "G", "VOL", "SWEEP", "OB", "FVG", "CHOCH")
+    setups = "+".join(names.get(k, k) for k in ("D", "C", "E", "A", "G", "VOL", "SWEEP", "OB", "FVG", "CHOCH")
                       if pats[k])
 
     # ---- plain-English reason
     why = []
-    if B:
-        s = f"Broke out of a {B['L']}-day base (₹{B['bl']:.2f}–₹{B['bh']:.2f}, {B['rng']:.1f}% range) on {fmt(B['bo'])}"
-        if B["vr"] == B["vr"]:
-            s += f" on {B['vr']:.1f}× normal volume"
-        why.append(s)
     if D:
-        why.append(f"Retesting ₹{D['P']:.2f}, an old peak it broke on {fmt(D['b'])}, now holding as support")
+        why.append(f"Retesting ₹{D['P']:.2f}, an old weekly high ({wfmt(D['wk'])}) it broke in the "
+                   f"{wfmt(D['bwk'])}, now holding as weekly support")
     if C:
-        why.append(f"Pulled back {C['off_high']:.1f}% from its 20-day high to support at ₹{C['S']:.2f} and holding")
+        why.append(f"Pulled back {C['off_high']:.1f}% from its 20-day high to weekly support at ₹{C['S']:.2f} "
+                   f"({support_kind}) and holding")
     if E:
-        why.append(f"{candle} at support")
+        why.append(f"{candle} at weekly support")
     if A:
-        why.append("Uptrend: higher highs and higher lows")
+        why.append("Weekly uptrend: higher weekly highs and higher weekly lows")
     if G:
         why.append(f"Beating Nifty: 1M {ret1:+.1f}% vs {nifty['ret_1m']:+.1f}%, 3M {ret3:+.1f}% vs {nifty['ret_3m']:+.1f}%")
-    if VOL and not B:
+    if VOL:
         why.append(f"Volume {vr_today:.1f}× normal on the latest session")
     if SW:
         why.append(f"Liquidity sweep: dipped {SW['depth']:.1f}% under ₹{SW['L']:.2f} and closed back above it")
@@ -750,7 +782,7 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     if deep_drop:
         missing.append(f"Fell {drop_from_high:.1f}% from its 20-day high (more than {MAX_PULLBACK_PCT:.0f}%: a fall, not a dip)")
     if not has_setup and not deep_drop:
-        missing.append("No entry setup (no breakout, retest, pullback or candle at support)")
+        missing.append("Not at a weekly support (no retest, pullback or candle at weekly support)")
     if not F:
         missing.append(f"Room to next resistance only {room:.1f}% (need {MIN_ROOM_PCT:.0f}%)")
 
@@ -787,8 +819,9 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "close": r2(c[-1]), "chg_pct": r2(pct(c[-1], c[-2])),
         "entry_low": r2(entry_low), "entry_high": r2(entry_high),
         "t1": r2(t1) if style else None, "t2": r2(t2) if style else None, "time_exit_days": TIME_EXIT_DAYS,
-        "support": r2(support), "resistance": r2(res), "room_pct": r2(room),
-        "pat_A_uptrend": pats["A"], "pat_B_base_breakout": pats["B"], "pat_C_pullback": pats["C"],
+        "support": r2(support), "support_kind": support_kind, "resistance": r2(res), "room_pct": r2(room),
+        "weekly_supports": " ".join(f"{x['level']:.2f}" for x in wsup[:5]),
+        "pat_A_uptrend": pats["A"], "pat_C_pullback": pats["C"],
         "pat_D_retest": pats["D"], "pat_E_candle": pats["E"], "pat_F_room": F, "pat_G_rel_strength": pats["G"],
         "vol_ok": pats["VOL"],
         "smc_sweep": pats["SWEEP"], "smc_order_block": pats["OB"], "smc_fvg": pats["FVG"], "smc_choch": pats["CHOCH"],
@@ -801,13 +834,11 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "candle": candle or "", "ret_1m": r2(ret1), "ret_3m": r2(ret3),
         "rs_3m_vs_nifty": r2(ret3 - nifty["ret_3m"]) if ret3 == ret3 else None,
         "high52": r2(hi52), "pct_below_high52": r2(pct(hi52, c[-1])),
-        "base_days": B["L"] if B else None, "base_high": r2(B["bh"]) if B else None,
-        "base_low": r2(B["bl"]) if B else None, "base_range_pct": r2(B["rng"]) if B else None,
-        "breakout_date": dates[B["bo"]].strftime("%Y-%m-%d") if B else None,
         "retest_level": r2(D["P"]) if D else None,
-        "retest_break_date": dates[D["b"]].strftime("%Y-%m-%d") if D else None,
+        "retest_break_date": (dates[np.where((week_of_day == D["bwk"]) & (c > D["P"]))[0][0]].strftime("%Y-%m-%d")
+                              if D else None),
         "pullback_support": r2(C["S"]) if C else None,
-        "last_swing_trough": r2(last_trough), "price_band": band, "avg_value20_cr": r2(value20),
+        "last_swing_trough": r2(last_trough), "last_weekly_swing_low": r2(wtroughs[-1][1]) if wtroughs else None, "price_band": band, "avg_value20_cr": r2(value20),
     }
 
 
@@ -1229,7 +1260,8 @@ def main():
     meta = {
         "generated_at_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M"),
         "data_date": latest_date,
-        "method": "price action + volume only; no indicators; no stop-loss",
+        "method": ("price action + volume only; no indicators; no stop-loss; support trades only "
+                   "(no breakouts), support read from weekly candles"),
         "universe_source": (f"F&O: {fno_src}; Nifty Midcap 150: {mid150_src}; others: {eq_src} "
                             f"filtered to 20-day avg traded value >= Rs 50 cr"),
         "fno_count": len(fno), "midcap150_count": len(mid150),

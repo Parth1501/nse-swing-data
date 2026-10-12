@@ -208,6 +208,131 @@ def todays_events(df, data_date):
     return json.loads(ev.to_json(orient="records"))
 
 
+# ---------------------------------------------------------------- completed wins
+def completed_trades(df):
+    """Every closed winner (T2, or T1 by day 30) with buy and sell price and days held,
+    plus open trades that have already booked T1 (half sold at T1). Newest first."""
+    out = {"closed": [], "t1_booked_open": []}
+    if "status" not in df:
+        return out
+    won = df[df["status"].isin(["Full win (T2)", "Partial win (T1)"])].copy()
+    for _, p in won.sort_values("close_date", ascending=False).iterrows():
+        sell_date = p["t2_date"] if p["status"] == "Full win (T2)" else p["t1_date"]
+        out["closed"].append({
+            "symbol": p["symbol"], "entry_style": p["entry_style"], "list_date": p["list_date"],
+            "result": p["status"], "buy_date": p["fill_date"], "buy_price": r2(p["fill_price"]),
+            "sell_date": sell_date, "sell_price": r2(p["exit_price"]), "return_pct": r2(p["return_pct"]),
+            "days_held": int((pd.Timestamp(sell_date) - pd.Timestamp(p["fill_date"])).days),
+            "closed_on": p["close_date"]})
+    t1o = df[df["status"] == "Running (T1 hit)"]
+    for _, p in t1o.sort_values("t1_date", ascending=False).iterrows():
+        out["t1_booked_open"].append({
+            "symbol": p["symbol"], "entry_style": p["entry_style"], "list_date": p["list_date"],
+            "buy_date": p["fill_date"], "buy_price": r2(p["fill_price"]), "t1_date": p["t1_date"],
+            "t1_price": r2(p["t1"]), "t1_gain_pct": r2((p["t1"] / p["fill_price"] - 1) * 100),
+            "days_to_t1": int((pd.Timestamp(p["t1_date"]) - pd.Timestamp(p["fill_date"])).days),
+            "current_pct": r2(p["current_pct"])})
+    return out
+
+
+# ---------------------------------------------------------------- missed and better entries
+# A fixed, small set of other entry rules, replayed on every support-style pick with the tracker's own
+# replay (same 3-session entry window, same T1/T2 price levels, same 30-day exit). Only the buy price
+# changes. The set is decided here once, not tuned to the data, so the review cannot curve-fit.
+WHATIFS = {
+    "Zone bottom only": lambda p: {**p, "entry_high": p["entry_low"]},
+    "Zone up to 2% above top": lambda p: {**p, "entry_high": round(p["entry_high"] * 1.02, 2)},
+    "Next day's open": lambda p: {**p, "entry_low": 0.0, "entry_high": 1e12},
+}
+
+
+def load_prices(symbols):
+    """Daily prices for the picks, the same Yahoo source the tracker uses. Empty on any failure."""
+    try:
+        import scan_data
+        return scan_data, scan_data.download([s + ".NS" for s in symbols], period="6mo", min_rows=1)
+    except Exception as e:                                    # no network / module: the review goes on without it
+        print("missed-entry prices unavailable:", e)
+        return None, {}
+
+
+def entry_window(p, df, n):
+    """The first n sessions after the list date."""
+    idx = df.index.tz_localize(None) if getattr(df.index, "tz", None) is not None else df.index
+    d = df.copy()
+    d.index = idx
+    return d[d.index > pd.Timestamp(p["list_date"])].iloc[:n], d
+
+
+def missed_entries(df):
+    """Per pick: how close the price came to the zone, what a better buy price was, and what the
+    fixed what-if entry rules would have done. Plus a table of each rule over all support picks."""
+    picks = df[df["status"].astype(str) != "Price data unavailable"]
+    sd, frames = load_prices(sorted(picks["symbol"].unique()))
+    if sd is None or not frames:
+        return None
+    per, rows = [], {name: [] for name in ["As listed"] + list(WHATIFS)}
+    base_cols = ["list_date", "symbol", "entry_style", "entry_low", "entry_high", "t1", "t2"]
+    for _, p in picks.iterrows():
+        prices = frames.get(p["symbol"] + ".NS")
+        if prices is None or prices.empty:
+            continue
+        win, full = entry_window(p, prices, sd.ENTRY_WINDOW)
+        if win.empty:
+            continue
+        base = {c: p[c] for c in base_cols}
+        hi, lo = float(p["entry_high"]), float(p["entry_low"])
+        win_low = float(win["Low"].min())
+        rec = {"list_date": p["list_date"], "symbol": p["symbol"], "entry_style": p["entry_style"],
+               "status": p["status"], "entry_low": r2(lo), "entry_high": r2(hi),
+               "window_sessions": int(len(win)), "window_low": r2(win_low),
+               "window_low_vs_zone_top_pct": r2((win_low / hi - 1) * 100)}
+        if pd.notna(p.get("fill_price")):
+            fill = float(p["fill_price"])
+            rec["fill_price"] = r2(fill)
+            rec["fill_vs_zone_bottom_pct"] = r2((fill / lo - 1) * 100)
+            rec["better_buy_in_window_pct"] = r2(max(0.0, (fill / win_low - 1) * 100))
+        else:
+            # not bought (or still waiting): what the stock did over the next 30 days from the first session
+            after = full[(full.index >= win.index[0]) &
+                         (full.index <= win.index[0] + pd.Timedelta(days=sd.TIME_EXIT_DAYS))]
+            rec["high_30d_vs_zone_top_pct"] = r2((float(after["High"].max()) / hi - 1) * 100)
+        rec["whatif"] = {}
+        for name, rule in WHATIFS.items():
+            res = sd.replay_pick(rule(base), prices)
+            rec["whatif"][name] = {k: res.get(k) for k in ["status", "fill_date", "fill_price", "t1_date",
+                                                         "max_dip_pct", "return_pct", "current_pct"]}
+            if p["entry_style"] != "Breakout":
+                rows[name].append({**base, **res})
+        if p["entry_style"] != "Breakout":
+            rows["As listed"].append(sd.replay_pick(base, prices) | base)
+        per.append(rec)
+
+    table = []
+    for name, rs in rows.items():
+        if not rs:
+            continue
+        r = pd.DataFrame(rs)
+        s = stats(r)
+        bought = r[r["fill_date"].notna()]
+        s["avg_buy_vs_zone_top_pct"] = r2(((bought["fill_price"].astype(float) /
+                                            bought["entry_high"].astype(float)) - 1).mean() * 100) if len(bought) else None
+        table.append({"rule": name, **s})
+    missed_winners = [m for m in per if m["status"] == "Not bought"
+                      and m["whatif"]["Next day's open"]["t1_date"]]
+    return {
+        "note": ("Support-style picks only (old breakouts left out). Each rule is replayed like the tracker: "
+                 f"same {sd.ENTRY_WINDOW}-session entry window, same T1/T2 price levels, same "
+                 f"{sd.TIME_EXIT_DAYS}-day exit; only the buy price changes. A rule needs {MIN_GROUP} decided "
+                 "trades and a clear gap that holds over reviews before it is worth proposing."),
+        "rules": table,
+        "missed_winners": {"count": len(missed_winners),
+                           "not_bought": sum(m["status"] == "Not bought" for m in per),
+                           "symbols": [m["symbol"] for m in missed_winners]},
+        "picks": per,
+    }
+
+
 def main():
     rebuild = "--rebuild" in sys.argv
     if not os.path.exists(PICKS):
@@ -233,6 +358,8 @@ def main():
         "signals": signals,
         "groups": table,
         "picks_missing_setup_details": missing,
+        "completed_trades": completed_trades(df),
+        "missed_entries": missed_entries(picks),
         "files": {"features": FEATURES, "picks": PICKS},
     }
     with open(OUT, "w", encoding="utf-8") as f:

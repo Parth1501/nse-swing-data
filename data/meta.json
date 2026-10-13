@@ -1,14 +1,14 @@
 {
-  "generated_at_ist": "2026-10-12 19:06",
-  "data_date": "2026-10-12",
+  "generated_at_ist": "2026-10-13 18:56",
+  "data_date": "2026-10-13",
   "method": "price action + volume only; no indicators; no stop-loss; support trades only (no breakouts), support read from weekly candles",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
   "fno_count": 213,
   "midcap150_count": 150,
   "midcap150_non_fno_count": 58,
-  "liquid_non_fno_count": 232,
-  "universe_count": 503,
-  "stocks_analysed": 488,
+  "liquid_non_fno_count": 235,
+  "universe_count": 506,
+  "stocks_analysed": 491,
   "stocks_failed_download": [
     "AUGMONT",
     "BLEL",
@@ -27,19 +27,19 @@
     "TEMPSENS"
   ],
   "note_failed": "Listed fewer than 40 sessions ago or no Yahoo data",
-  "eligible_count": 10,
+  "eligible_count": 23,
   "pattern_counts": {
-    "pat_A_uptrend": 136,
-    "pat_C_pullback": 45,
-    "pat_D_retest": 12,
-    "pat_E_candle": 17,
-    "pat_F_room": 160,
-    "pat_G_rel_strength": 214,
-    "vol_ok": 5,
-    "smc_sweep": 68,
-    "smc_order_block": 70,
-    "smc_fvg": 13,
-    "smc_choch": 48
+    "pat_A_uptrend": 135,
+    "pat_C_pullback": 42,
+    "pat_D_retest": 8,
+    "pat_E_candle": 67,
+    "pat_F_room": 158,
+    "pat_G_rel_strength": 188,
+    "vol_ok": 10,
+    "smc_sweep": 83,
+    "smc_order_block": 78,
+    "smc_fvg": 17,
+    "smc_choch": 47
   },
   "score_points": {
     "D": 3,
@@ -59,30 +59,28 @@
   ],
   "time_exit_days": 30,
   "nifty": {
-    "date": "2026-10-12",
-    "close": 22363.35,
-    "ret_1m": -4.56,
-    "ret_3m": -7.63,
+    "date": "2026-10-13",
+    "close": 22721.95,
+    "ret_1m": -3.22,
+    "ret_3m": -5.53,
     "uptrend_structure": false,
     "last_swing_peak": 24378.6,
     "last_swing_trough": 23116.1,
     "above_last_trough": false,
-    "pct_below_high52": 17.93
+    "pct_below_high52": 16.07
   },
   "fno_ban": {
     "status": "ok",
-    "header": "Securities in Ban For Trade Date 13-OCT-2026:",
+    "header": "Securities in Ban For Trade Date 14-OCT-2026:",
     "symbols": [
       "AMBUJACEM",
-      "BANDHANBNK",
-      "KAYNES",
-      "LICHSGFIN"
+      "KAYNES"
     ]
   },
   "asm_gsm": {
     "asm": {
       "status": "ok",
-      "count": 198
+      "count": 202
     },
     "gsm": {
       "status": "ok",
@@ -100,11 +98,11 @@
   "price_source": "Yahoo Finance via yfinance (unofficial)",
   "track_record": {
     "since": "2026-09-29",
-    "picks": 54,
-    "bought": 37,
+    "picks": 57,
+    "bought": 39,
     "not_bought": 10,
-    "waiting_for_entry": 7,
-    "running": 31,
+    "waiting_for_entry": 8,
+    "running": 33,
     "running_t1_hit": 7,
     "full_wins_t2": 6,
     "partial_wins_t1": 0,
@@ -114,195 +112,195 @@
     "full_win_rate_t2_pct": 100.0,
     "avg_return_closed_pct": 6.41,
     "avg_max_dip_closed_pct": -2.21,
-    "new_events_today": 9,
+    "new_events_today": 10,
     "file": "data/picks_log.csv"
   },
   "sector_source": "https://nsearchives.nseindia.com/content/indices/ind_niftytotalmarket_list.csv; stocks outside it: NSE stock quote page (cached in data/sector_map.csv)",
   "sector_lookup": {
-    "outside_index_list": 65,
+    "outside_index_list": 67,
     "from_cache": 0,
     "looked_up": 5,
     "found": 0,
     "not_found": [],
     "errors": 5,
     "stopped_early": true,
-    "left_for_next_run": 60
+    "left_for_next_run": 62
   },
   "sectors": [
     {
       "sector": "Media Entertainment & Publication",
       "stocks": 5,
-      "median_1m": 8.09,
-      "median_3m": 25.89,
-      "vs_nifty_1m": 12.65,
-      "vs_nifty_3m": 33.52,
-      "tag": "Leading"
-    },
-    {
-      "sector": "Textiles",
-      "stocks": 3,
-      "median_1m": 4.27,
-      "median_3m": -2.4,
-      "vs_nifty_1m": 8.83,
-      "vs_nifty_3m": 5.23,
-      "tag": "Leading"
-    },
-    {
-      "sector": "Capital Goods",
-      "stocks": 66,
-      "median_1m": -1.64,
-      "median_3m": 0.17,
-      "vs_nifty_1m": 2.92,
-      "vs_nifty_3m": 7.81,
-      "tag": "Leading"
-    },
-    {
-      "sector": "Consumer Services",
-      "stocks": 18,
-      "median_1m": -1.5,
-      "median_3m": -0.6,
-      "vs_nifty_1m": 3.05,
-      "vs_nifty_3m": 7.03,
-      "tag": "Leading"
-    },
-    {
-      "sector": "Services",
-      "stocks": 13,
-      "median_1m": -0.6,
-      "median_3m": -1.62,
-      "vs_nifty_1m": 3.96,
-      "vs_nifty_3m": 6.01,
+      "median_1m": 6.96,
+      "median_3m": 27.34,
+      "vs_nifty_1m": 10.18,
+      "vs_nifty_3m": 32.87,
       "tag": "Leading"
     },
     {
       "sector": "Information Technology",
       "stocks": 22,
-      "median_1m": -1.51,
-      "median_3m": -2.4,
-      "vs_nifty_1m": 3.05,
-      "vs_nifty_3m": 5.24,
+      "median_1m": 2.98,
+      "median_3m": 2.58,
+      "vs_nifty_1m": 6.2,
+      "vs_nifty_3m": 8.11,
       "tag": "Leading"
     },
     {
-      "sector": "Healthcare",
-      "stocks": 39,
-      "median_1m": -5.03,
-      "median_3m": -0.8,
-      "vs_nifty_1m": -0.47,
-      "vs_nifty_3m": 6.83,
+      "sector": "Textiles",
+      "stocks": 3,
+      "median_1m": 4.82,
+      "median_3m": -1.75,
+      "vs_nifty_1m": 8.04,
+      "vs_nifty_3m": 3.78,
+      "tag": "Leading"
+    },
+    {
+      "sector": "Consumer Services",
+      "stocks": 18,
+      "median_1m": -0.09,
+      "median_3m": 0.58,
+      "vs_nifty_1m": 3.13,
+      "vs_nifty_3m": 6.12,
+      "tag": "Leading"
+    },
+    {
+      "sector": "Capital Goods",
+      "stocks": 65,
+      "median_1m": -2.22,
+      "median_3m": 2.32,
+      "vs_nifty_1m": 1.0,
+      "vs_nifty_3m": 7.85,
+      "tag": "Leading"
+    },
+    {
+      "sector": "Services",
+      "stocks": 13,
+      "median_1m": -0.29,
+      "median_3m": -1.78,
+      "vs_nifty_1m": 2.93,
+      "vs_nifty_3m": 3.75,
+      "tag": "Leading"
+    },
+    {
+      "sector": "Consumer Durables",
+      "stocks": 20,
+      "median_1m": -3.42,
+      "median_3m": -2.96,
+      "vs_nifty_1m": -0.2,
+      "vs_nifty_3m": 2.57,
       "tag": "Weakening"
     },
     {
       "sector": "Automobile and Auto Components",
       "stocks": 28,
-      "median_1m": -5.75,
-      "median_3m": -3.0,
-      "vs_nifty_1m": -1.2,
-      "vs_nifty_3m": 4.63,
+      "median_1m": -5.79,
+      "median_3m": -1.66,
+      "vs_nifty_1m": -2.57,
+      "vs_nifty_3m": 3.88,
       "tag": "Weakening"
     },
     {
-      "sector": "Consumer Durables",
-      "stocks": 20,
-      "median_1m": -4.67,
-      "median_3m": -4.5,
-      "vs_nifty_1m": -0.11,
-      "vs_nifty_3m": 3.13,
+      "sector": "Healthcare",
+      "stocks": 39,
+      "median_1m": -5.82,
+      "median_3m": -2.72,
+      "vs_nifty_1m": -2.6,
+      "vs_nifty_3m": 2.81,
       "tag": "Weakening"
-    },
-    {
-      "sector": "Chemicals",
-      "stocks": 19,
-      "median_1m": -3.16,
-      "median_3m": -6.52,
-      "vs_nifty_1m": 1.4,
-      "vs_nifty_3m": 1.11,
-      "tag": "Leading"
-    },
-    {
-      "sector": "Fast Moving Consumer Goods",
-      "stocks": 22,
-      "median_1m": -1.29,
-      "median_3m": -9.26,
-      "vs_nifty_1m": 3.27,
-      "vs_nifty_3m": -1.62,
-      "tag": "Improving"
     },
     {
       "sector": "Financial Services",
       "stocks": 89,
-      "median_1m": -4.29,
-      "median_3m": -7.37,
-      "vs_nifty_1m": 0.27,
-      "vs_nifty_3m": 0.26,
-      "tag": "Leading"
+      "median_1m": -2.44,
+      "median_3m": -6.28,
+      "vs_nifty_1m": 0.78,
+      "vs_nifty_3m": -0.75,
+      "tag": "Improving"
     },
     {
-      "sector": "Oil Gas & Consumable Fuels",
-      "stocks": 16,
-      "median_1m": -6.04,
-      "median_3m": -5.74,
-      "vs_nifty_1m": -1.48,
-      "vs_nifty_3m": 1.9,
+      "sector": "Chemicals",
+      "stocks": 19,
+      "median_1m": -4.29,
+      "median_3m": -5.26,
+      "vs_nifty_1m": -1.07,
+      "vs_nifty_3m": 0.27,
       "tag": "Weakening"
+    },
+    {
+      "sector": "Fast Moving Consumer Goods",
+      "stocks": 23,
+      "median_1m": 0.08,
+      "median_3m": -10.09,
+      "vs_nifty_1m": 3.3,
+      "vs_nifty_3m": -4.56,
+      "tag": "Improving"
     },
     {
       "sector": "Telecommunication",
       "stocks": 6,
-      "median_1m": -4.09,
-      "median_3m": -8.76,
-      "vs_nifty_1m": 0.46,
-      "vs_nifty_3m": -1.13,
+      "median_1m": -3.06,
+      "median_3m": -7.92,
+      "vs_nifty_1m": 0.16,
+      "vs_nifty_3m": -2.38,
       "tag": "Improving"
+    },
+    {
+      "sector": "Oil Gas & Consumable Fuels",
+      "stocks": 16,
+      "median_1m": -5.27,
+      "median_3m": -5.79,
+      "vs_nifty_1m": -2.05,
+      "vs_nifty_3m": -0.26,
+      "tag": "Lagging"
     },
     {
       "sector": "Construction Materials",
       "stocks": 6,
-      "median_1m": -5.46,
-      "median_3m": -9.68,
-      "vs_nifty_1m": -0.9,
-      "vs_nifty_3m": -2.05,
+      "median_1m": -3.88,
+      "median_3m": -8.12,
+      "vs_nifty_1m": -0.66,
+      "vs_nifty_3m": -2.58,
       "tag": "Lagging"
     },
     {
       "sector": "Realty",
       "stocks": 8,
-      "median_1m": -6.37,
-      "median_3m": -11.23,
-      "vs_nifty_1m": -1.81,
-      "vs_nifty_3m": -3.6,
+      "median_1m": -4.02,
+      "median_3m": -9.8,
+      "vs_nifty_1m": -0.8,
+      "vs_nifty_3m": -4.27,
       "tag": "Lagging"
     },
     {
       "sector": "Metals & Mining",
       "stocks": 16,
-      "median_1m": -11.07,
-      "median_3m": -6.79,
-      "vs_nifty_1m": -6.52,
-      "vs_nifty_3m": 0.85,
-      "tag": "Weakening"
+      "median_1m": -10.09,
+      "median_3m": -6.23,
+      "vs_nifty_1m": -6.88,
+      "vs_nifty_3m": -0.7,
+      "tag": "Lagging"
     },
     {
       "sector": "Power",
       "stocks": 15,
-      "median_1m": -7.26,
-      "median_3m": -12.94,
-      "vs_nifty_1m": -2.7,
-      "vs_nifty_3m": -5.31,
+      "median_1m": -7.03,
+      "median_3m": -12.41,
+      "vs_nifty_1m": -3.81,
+      "vs_nifty_3m": -6.88,
       "tag": "Lagging"
     },
     {
       "sector": "Construction",
-      "stocks": 10,
-      "median_1m": -7.67,
-      "median_3m": -15.68,
-      "vs_nifty_1m": -3.11,
-      "vs_nifty_3m": -8.04,
+      "stocks": 11,
+      "median_1m": -7.66,
+      "median_3m": -14.79,
+      "vs_nifty_1m": -4.44,
+      "vs_nifty_3m": -9.26,
       "tag": "Lagging"
     }
   ],
   "charts": {
-    "count": 10,
+    "count": 12,
     "base_url": "https://raw.githubusercontent.com/Parth1501/nse-swing-data/main/",
     "note": "latest.csv column 'chart' = path under base_url; 1-year candles + last 3 months zoomed"
   }

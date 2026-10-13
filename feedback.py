@@ -159,6 +159,8 @@ def stats(df):
         "failed": int(failed.sum()),
         "open_no_t1": int(len(bought) - len(decided)),
         "t1_rate_decided_pct": r2(100 * t1.sum() / len(decided)) if len(decided) else None,
+        "running": int(bought["status"].astype(str).str.startswith("Running").sum()),
+        "success_pct": r2(100 * (bought["status"] == "Full win (T2)").sum() / len(bought)) if len(bought) else None,
         "decided": int(len(decided)),
         "avg_worst_dip_pct": r2(bought["max_dip_pct"].mean()) if len(bought) else None,
         "avg_days_to_t1": r2(days_t1.mean()) if len(days_t1) else None,

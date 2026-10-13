@@ -1,5 +1,5 @@
 {
- "generated_at_ist": "2026-10-14 02:23",
+ "generated_at_ist": "2026-10-14 02:29",
  "items": [
   {
    "name": "S&P 500",
@@ -31,7 +31,7 @@
    "prev_close": 27245.9,
    "prev_date": "2026-10-12",
    "check_url": "https://www.cnbc.com/quotes/.IXIC",
-   "check_date": "2026-10-13T16:53:52.000-0400"
+   "check_date": "2026-10-13T16:59:28.000-0400"
   },
   {
    "name": "Nikkei 225",
@@ -67,20 +67,20 @@
   },
   {
    "name": "Brent crude (front-month future, $/bbl)",
-   "value": 106.48,
+   "value": 106.37,
    "for_date": "2026-10-13",
-   "change_pct": -0.16,
+   "change_pct": -0.26,
    "source": "Yahoo Finance BZ=F",
    "source_url": "https://finance.yahoo.com/quote/BZ=F",
    "check_source": "CNBC @LCO.1",
-   "check_value": 106.5,
+   "check_value": 106.37,
    "agree": true,
    "errors": [],
    "prev_close": 106.65,
    "prev_date": "2026-10-12",
-   "change_1m_pct": 1.79,
+   "change_1m_pct": 1.68,
    "check_url": "https://www.cnbc.com/quotes/@LCO.1",
-   "check_date": "2026-10-13T21:43:49.000+0100"
+   "check_date": "2026-10-13T21:49:24.000+0100"
   },
   {
    "name": "USD/INR",

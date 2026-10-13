@@ -1216,6 +1216,11 @@ def main():
                 for k in table.columns:
                     if k.startswith("smc_"):
                         old_rows[k] = False
+                # saved rows were scored by an earlier run, maybe under older rules (e.g. breakouts before
+                # 8 Oct 2026), so they can't go on the list or into the picks log
+                old_rows["eligible"] = False
+                old_rows["not_eligible_because"] = (f"Yahoo had no fresh {latest_date} prices in this re-run, "
+                                                    f"so it wasn't re-scored with the current rules")
                 table = pd.concat([table[~swap], old_rows], ignore_index=True)
                 table["stale"] = table["date"].astype(str) != str(latest_date)
                 print(f"Re-run: kept saved rows for {int(swap.sum())} stocks Yahoo left without {latest_date} prices")

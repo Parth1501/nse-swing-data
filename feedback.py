@@ -148,7 +148,6 @@ def stats(df):
     t1 = bought["t1_date"].notna()
     failed = bought["status"] == "Failed"
     decided = bought[t1 | bought["status"].isin(CLOSED)]
-    closed = bought[bought["status"].isin(CLOSED)]           # T2 hit, or closed at 30 days
     days_t1 = (pd.to_datetime(bought.loc[t1, "t1_date"]) - pd.to_datetime(bought.loc[t1, "fill_date"])).dt.days
     return {
         "picks": int(len(df)),
@@ -160,8 +159,8 @@ def stats(df):
         "failed": int(failed.sum()),
         "open_no_t1": int(len(bought) - len(decided)),
         "t1_rate_decided_pct": r2(100 * t1.sum() / len(decided)) if len(decided) else None,
-        "closed": int(len(closed)),
-        "t2_rate_closed_pct": r2(100 * (closed["status"] == "Full win (T2)").sum() / len(closed)) if len(closed) else None,
+        "running": int(bought["status"].astype(str).str.startswith("Running").sum()),
+        "success_pct": r2(100 * (bought["status"] == "Full win (T2)").sum() / len(bought)) if len(bought) else None,
         "decided": int(len(decided)),
         "avg_worst_dip_pct": r2(bought["max_dip_pct"].mean()) if len(bought) else None,
         "avg_days_to_t1": r2(days_t1.mean()) if len(days_t1) else None,

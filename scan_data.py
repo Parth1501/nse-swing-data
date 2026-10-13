@@ -12,6 +12,9 @@ high that price has closed above and held (old resistance turned support).
   C  Pullback to support  - in a weekly uptrend, price back within 3% of a weekly support and holding
   D  Retest               - an old weekly peak broken 1-4 weeks ago, revisited, holding as support
   E  Candle at support    - daily hammer / bullish engulfing / inside-day breakout at a weekly support
+                            (a hammer is also graded 0-100 on its shape; a strong one earns an extra point)
+  W  Weekly reversal      - a week that made a new 13-week low at a weekly support, then closed above the
+                            previous week's high (cancelled if a later weekly close goes under that low)
   F  Room to run          - next resistance at least 6% above entry (REQUIRED)
   G  Relative strength    - beat Nifty over 1 and 3 months
   Volume check            - trigger day volume >= 1.5x its prior 20-day average
@@ -59,10 +62,12 @@ SUPPORT_TOUCH_DAYS = 5               # C/E: the low came to the weekly support w
 NEAR_SUPPORT_PCT = 3.0               # C/E: within 3% of support
 RETEST_NEAR_PCT = 2.0                # D: came back within 2% of the broken level
 RETEST_MAX_ABOVE_PCT = 5.0           # D: price must still be within 5% of the level (else it has run away)
+STRONG_HAMMER = 70                   # E: hammer score (0-100) from which a hammer counts as strong (+1 point)
+WKR_LOOKBACK = 13                    # W: the reversal week's low is the lowest of the last 13 weeks
 MAX_PULLBACK_PCT = 15.0              # C/D/E: a drop of more than 15% from the 20-day high is a fall, not a dip
 BUY_ZONE_PCT = 3.0                   # support-style buy zone = support .. +3%
 VOL_MULT = 1.5
-SCORE = {"D": 3, "A": 2, "C": 2, "G": 2, "E": 1, "VOL": 1,
+SCORE = {"D": 3, "A": 2, "C": 2, "W": 2, "G": 2, "E": 1, "HQ": 1, "VOL": 1,
          "SWEEP": 2, "OB": 2, "FVG": 1, "CHOCH": -2}   # Smart Money Concepts: points only, never eligibility
 SMC_LOOKBACK = 60                    # SMC zones are searched in the last 60 sessions (about 3 months)
 SWEEP_MAX_PCT = 3.0                  # sweep: a dip of at most 3% under the low; deeper is a breakdown
@@ -76,6 +81,8 @@ SHORT_HISTORY_FLAG = 120
 PICKS_FILE = os.path.join("data", "picks_log.csv")
 TOP_N = 10                           # the daily list = top 10 eligible
 ENTRY_WINDOW = 3                     # a pick can be bought within the first 3 sessions after the list date
+NEAR_MISS_FILE = os.path.join("data", "near_miss_log.csv")   # stocks that just missed the list, replayed the same way
+NEAR_MISS = {"rank 11-20": 10, "room under 6%": 10, "past T1": 5}   # how many of each kind are kept per day
 BAD_LIST_DATES = {"2026-09-28"}      # a run just after midnight got stale Yahoo data and logged these by mistake
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
                "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
@@ -590,6 +597,53 @@ def check_candle(o, h, l, c):
     return None
 
 
+def hammer_score(o, h, l, c):
+    """How clean the latest session's hammer is, 0-100 (Stockbee-style selling-exhaustion geometry):
+    long lower wick, small body, close near the high, small upper wick, a real bounce off the low,
+    a green close, and down closes before it (selling that may be used up)."""
+    rng = h[-1] - l[-1]
+    if rng <= 0:
+        return 0
+    body = abs(c[-1] - o[-1])
+    lower = (min(o[-1], c[-1]) - l[-1]) / rng * 100
+    upper = (h[-1] - max(o[-1], c[-1])) / rng * 100
+    body = body / rng * 100
+    close_loc = (c[-1] - l[-1]) / rng * 100
+    bounce = pct(c[-1], l[-1])
+    downs = 0
+    for k in range(2, min(len(c), 9)):                     # down closes in a row before the hammer
+        if c[-k] < c[-k - 1]:
+            downs += 1
+        else:
+            break
+    score = (30 if lower >= 60 else 20 if lower >= 40 else 0)
+    score += (15 if body <= 20 else 10 if body <= 35 else 0)
+    score += (20 if close_loc >= 75 else 12 if close_loc >= 60 else 0)
+    score += (10 if upper <= 10 else 5 if upper <= 35 else 0)
+    score += (10 if bounce >= 4 else 5 if bounce >= 2 else 0)
+    score += (5 if c[-1] >= o[-1] else 0)
+    score += (10 if downs >= 3 else 5 if downs == 2 else 0)
+    return int(score)
+
+
+def check_weekly_reversal(wh, wl, wc, wsup, last_done):
+    """W: in one of the last 2 finished weeks, the week's low was the lowest of the last 13 weeks and came to a
+    weekly support (within 3% above it, at most 3% under it), and the week closed above the previous week's high
+    and back above the support. Cancelled if any later weekly close (this week's so far included) is under that low."""
+    for k in (last_done, last_done - 1):
+        if k < WKR_LOOKBACK or k >= len(wc):
+            continue
+        if not (wl[k] < wl[k - WKR_LOOKBACK:k].min() and wc[k] > wh[k - 1]):
+            continue
+        if (wc[k + 1:] < wl[k]).any():
+            continue
+        for s in wsup:
+            S = s["level"]
+            if S * 0.97 <= wl[k] <= S * (1 + NEAR_SUPPORT_PCT / 100) and wc[k] >= S:
+                return {"k": k, "low": wl[k], "prev_high": wh[k - 1], "S": S, "sup": s}
+    return None
+
+
 def next_resistance(peaks, h, above):
     """Nearest swing peak (last year) or 52-week high above the entry; NaN = nothing overhead."""
     n = len(h)
@@ -688,12 +742,16 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     candle = check_candle(o, h, l, c)
     near_S = touched["level"] if touched else None
     E = bool(candle and (C or D or near_S is not None))
+    hq = hammer_score(o, h, l, c) if candle == "Hammer" else None
+    HQ = bool(E and hq is not None and hq >= STRONG_HAMMER)
+    last_done = nw - 1 if dates[-1].weekday() == 4 else nw - 2       # the latest finished week (Mon-Fri)
+    W = check_weekly_reversal(wh, wl, wc, wsup, last_done)
 
     # A fall of more than 15% from the 20-day high is not a dip: dip-style setups (C, D, E) don't count
     drop_from_high = pct(h[-20:].max(), c[-1])
-    deep_drop = bool(drop_from_high > MAX_PULLBACK_PCT and (C or D or E))
+    deep_drop = bool(drop_from_high > MAX_PULLBACK_PCT and (C or D or E or W))
     if deep_drop:
-        C, D, E = None, None, False
+        C, D, E, W, HQ = None, None, False, None, False
 
     SW = check_sweep(troughs, supports, l, c, n)
     OB = check_order_block(o, h, l, c, v, n)
@@ -707,13 +765,13 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
 
     vr_today = vol_ratio_at(v, n - 1)
     trig_vr = vr_today
-    VOL = bool(trig_vr == trig_vr and trig_vr >= VOL_MULT and (C or D or E))
+    VOL = bool(trig_vr == trig_vr and trig_vr >= VOL_MULT and (C or D or E or W))
 
-    # ---- entry style and levels (support trades only; priority: retest > pullback > candle)
+    # ---- entry style and levels (support trades only; priority: retest > pullback > weekly reversal > candle)
     zone_status = ""
-    if D or C or E:
-        S = D["P"] if D else (C["S"] if C else near_S)
-        style = "Retest" if D else ("Pullback" if C else "Candle at support")
+    if D or C or W or E:
+        S = D["P"] if D else (C["S"] if C else (W["S"] if W else near_S))
+        style = "Retest" if D else ("Pullback" if C else ("Weekly reversal" if W else "Candle at support"))
         entry_low, entry_high = S, S * (1 + BUY_ZONE_PCT / 100)     # buy near support only
         support = S
         zone_status = ("In buy zone" if c[-1] <= entry_high
@@ -728,7 +786,7 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     room = pct(res, entry_ref) if res == res else np.nan
     F = bool(res != res or room >= MIN_ROOM_PCT)
 
-    has_setup = bool(C or D or E)
+    has_setup = bool(C or D or E or W)
     # a bounce off weekly support that has already run past T1 is a missed trade, not a setup
     ran_away = bool(has_setup and c[-1] > t1)
     eligible = has_setup and F and not ran_away
@@ -736,7 +794,7 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     if D:
         sup_info = {"level": D["P"], "kind": "old weekly high", "wk": D["wk"], "broke_wk": D["bwk"]}
     elif style:
-        sup_info = (C["sup"] if C else touched)
+        sup_info = (C["sup"] if C else (W["sup"] if W else touched))
     else:
         sup_info = wsup[0] if wsup else None
     if sup_info:
@@ -744,12 +802,12 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
                         f"old weekly high, {wfmt(sup_info['wk'])}, broken {wfmt(sup_info['broke_wk'])}")
     else:
         support_kind = ""
-    pats = {"A": bool(A), "C": bool(C), "D": bool(D), "E": E, "G": G, "VOL": VOL,
+    pats = {"A": bool(A), "C": bool(C), "D": bool(D), "W": bool(W), "E": E, "HQ": HQ, "G": G, "VOL": VOL,
             "SWEEP": bool(SW), "OB": bool(OB), "FVG": bool(FV), "CHOCH": bool(CH)}
     score = sum(SCORE[k] for k, on in pats.items() if on)
-    names = {"VOL": "Vol", "SWEEP": "Sweep", "CHOCH": "CHoCH"}
-    setups = "+".join(names.get(k, k) for k in ("D", "C", "E", "A", "G", "VOL", "SWEEP", "OB", "FVG", "CHOCH")
-                      if pats[k])
+    names = {"HQ": "Strong hammer", "VOL": "Vol", "SWEEP": "Sweep", "CHOCH": "CHoCH"}
+    setups = "+".join(names.get(k, k) for k in ("D", "C", "W", "E", "HQ", "A", "G", "VOL", "SWEEP", "OB", "FVG",
+                                                "CHOCH") if pats[k])
 
     # ---- plain-English reason
     why = []
@@ -759,8 +817,13 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     if C:
         why.append(f"Pulled back {C['off_high']:.1f}% from its 20-day high to weekly support at ₹{C['S']:.2f} "
                    f"({support_kind}) and holding")
+    if W:
+        why.append(f"Weekly reversal at weekly support ₹{W['S']:.2f}: the {wfmt(W['k'])} made a new "
+                   f"{WKR_LOOKBACK}-week low ₹{W['low']:.2f}, then closed above the previous week's high "
+                   f"₹{W['prev_high']:.2f}")
     if E:
-        why.append(f"{candle} at weekly support")
+        why.append(f"{candle} at weekly support" + (f" (hammer score {hq}/100, strong: +1 point)" if HQ else
+                                                    f" (hammer score {hq}/100)" if hq is not None else ""))
     if A:
         why.append("Weekly uptrend: higher weekly highs and higher weekly lows")
     if G:
@@ -784,7 +847,7 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     if deep_drop:
         missing.append(f"Fell {drop_from_high:.1f}% from its 20-day high (more than {MAX_PULLBACK_PCT:.0f}%: a fall, not a dip)")
     if not has_setup and not deep_drop:
-        missing.append("Not at a weekly support (no retest, pullback or candle at weekly support)")
+        missing.append("Not at a weekly support (no retest, pullback, weekly reversal or candle at weekly support)")
     if ran_away:
         missing.append(f"Already bounced to ₹{c[-1]:.2f}, above T1 ₹{t1:.2f}: the move off weekly support is done")
     if not F:
@@ -827,6 +890,10 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "weekly_supports": " ".join(f"{x['level']:.2f}" for x in wsup[:5]),
         "pat_A_uptrend": pats["A"], "pat_C_pullback": pats["C"],
         "pat_D_retest": pats["D"], "pat_E_candle": pats["E"], "pat_F_room": F, "pat_G_rel_strength": pats["G"],
+        "pat_W_weekly_reversal": pats["W"], "hammer_score": hq, "strong_hammer": pats["HQ"],
+        "weekly_reversal_week": wdates[W["k"]].strftime("%Y-%m-%d") if W else None,
+        "weekly_reversal_low": r2(W["low"]) if W else None,
+        "blocked_by": ("" if eligible or not has_setup else "room" if not F else "past T1" if ran_away else ""),
         "vol_ok": pats["VOL"],
         "smc_sweep": pats["SWEEP"], "smc_order_block": pats["OB"], "smc_fvg": pats["FVG"], "smc_choch": pats["CHOCH"],
         "sweep_level": r2(SW["L"]) if SW else None,
@@ -974,7 +1041,7 @@ def replay_pick(p, df):
     df = _naive(df)
     out = {"status": "Waiting for entry", "fill_date": None, "fill_price": None, "t1_date": None,
            "t2_date": None, "close_date": None, "exit_price": None, "return_pct": None,
-           "current_pct": None, "max_dip_pct": None, "days_held": None,
+           "current_pct": None, "max_dip_pct": None, "max_rise_pct": None, "days_held": None,
            "last_event": "Listed", "last_event_date": p["list_date"]}
     after = df[df.index > pd.Timestamp(p["list_date"])]
     if after.empty:
@@ -1018,6 +1085,10 @@ def replay_pick(p, df):
     path = hold[hold.index <= end]
     lows = path["Low"].iloc[1:] if len(path) > 1 else path["Close"]
     out["max_dip_pct"] = r2(min(0.0, pct(lows.min(), fill))) or 0.0
+    # best rise: the highest price in the whole 30-day window (not cut at T2), so the review can see how
+    # far trades really went; the fill day counts with its close, like the targets
+    tops = np.r_[hold["Close"].iloc[:1].to_numpy(), hold["High"].iloc[1:].to_numpy()]
+    out["max_rise_pct"] = r2(max(0.0, pct(tops.max(), fill)))
     if t1d is not None:
         out.update(t1_date=str(t1d.date()), last_event="T1 hit (+3%)", last_event_date=str(t1d.date()))
 
@@ -1054,6 +1125,53 @@ def _replay_all(log, frames):
         res = replay_pick(p, df) if df is not None else {"status": "Price data unavailable"}
         rows.append({**p.to_dict(), **res})
     return pd.DataFrame(rows)
+
+
+def _active(log, frames):
+    """Symbols with an open pick (waiting for entry or running) in a log."""
+    if log.empty:
+        return set()
+    prior = _replay_all(log, frames)
+    return set(prior.loc[prior["status"].astype(str).str.startswith(("Running", "Waiting")), "symbol"])
+
+
+def update_near_misses(table, frames, data_date, listed):
+    """Log the stocks that just missed today's list and replay them exactly like real picks, so the review can
+    see whether the cut-off or a filter throws away winners. Kinds: eligible but ranked 11-20; a setup at weekly
+    support blocked only by the room-to-resistance rule; a setup that had already bounced past T1.
+    Nothing here changes the list. A stock with an open near-miss (or on today's list) is not logged again."""
+    cols = PICK_STATIC + ["near_miss_reason", "score"]
+    if os.path.exists(NEAR_MISS_FILE):
+        log = pd.read_csv(NEAR_MISS_FILE, dtype={"list_date": str})
+        log = log[[c for c in cols if c in log.columns]]
+    else:
+        log = pd.DataFrame(columns=cols)
+    if data_date and not table.empty:
+        log = log[log["list_date"] != data_date]
+        skip = _active(log, frames) | set(listed)
+        fresh = table[~table["stale"]] if "stale" in table else table
+        picks = {
+            "rank 11-20": fresh[fresh["eligible"]].iloc[TOP_N:TOP_N + 10],
+            "room under 6%": fresh[fresh["blocked_by"] == "room"],
+            "past T1": fresh[fresh["blocked_by"] == "past T1"],
+        }
+        today = []
+        for why, rows in picks.items():
+            rows = rows[~rows["symbol"].isin(skip)].head(NEAR_MISS[why])
+            skip |= set(rows["symbol"])
+            today.append(pd.DataFrame({
+                "list_date": data_date, "rank": rows["rank"], "symbol": rows["symbol"], "segment": rows["segment"],
+                "entry_style": rows["entry_style"], "entry_low": rows["entry_low"], "entry_high": rows["entry_high"],
+                "t1": rows["t1"], "t2": rows["t2"], "warning_at_listing": rows["warning"].fillna(""),
+                "sector": rows["sector"], "sector_tag": rows["sector_tag"], "near_miss_reason": why,
+                "score": rows["score"],
+            }))
+        log = pd.concat([log] + today, ignore_index=True)
+    full = _replay_all(log, frames) if not log.empty else pd.DataFrame()
+    if not full.empty:
+        full = full.sort_values(["list_date", "rank"], ascending=[False, True])
+    full.to_csv(NEAR_MISS_FILE, index=False, encoding="utf-8")
+    return {"logged": int(len(full)), "file": NEAR_MISS_FILE}
 
 
 def update_track_record(table, frames, data_date):
@@ -1103,6 +1221,7 @@ def update_track_record(table, frames, data_date):
         "full_win_rate_t2_pct": r2(100 * fw / closed) if closed else None,
         "avg_return_closed_pct": r2(done["return_pct"].mean()) if closed else None,
         "avg_max_dip_closed_pct": r2(done["max_dip_pct"].mean()) if closed else None,
+        "avg_max_rise_closed_pct": r2(done["max_rise_pct"].mean()) if closed else None,
         "new_events_today": int(len(new)),
         "file": PICKS_FILE,
     }
@@ -1264,6 +1383,15 @@ def main():
     except Exception as e:                     # tracking must never block the daily list
         print("track record failed:", e)
         track = {"error": str(e)}
+    try:
+        listed = set()                         # today's picks and open picks are real trades, not near misses
+        if os.path.exists(PICKS_FILE):
+            pl = pd.read_csv(PICKS_FILE, dtype={"list_date": str})
+            open_ = pl["status"].astype(str).str.startswith(("Running", "Waiting")) if "status" in pl else False
+            listed = set(pl.loc[(pl["list_date"] == str(latest_date)) | open_, "symbol"])
+        track["near_misses"] = update_near_misses(table, frames, latest_date, listed)
+    except Exception as e:                     # near misses are for the review only: never block anything
+        print("near-miss log failed:", e)
 
     elig = table[table["eligible"]] if not table.empty else table
     meta = {

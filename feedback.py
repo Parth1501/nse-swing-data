@@ -27,6 +27,7 @@ import pandas as pd
 DATA = "data"
 PICKS = os.path.join(DATA, "picks_log.csv")
 LATEST = os.path.join(DATA, "latest.csv")
+NEAR_MISS = os.path.join(DATA, "near_miss_log.csv")
 META = os.path.join(DATA, "meta.json")
 FEATURES = os.path.join(DATA, "pick_features.csv")
 OUT = os.path.join(DATA, "feedback.json")
@@ -40,6 +41,7 @@ FEATURE_COLS = [
     "trigger_vol_ratio", "candle", "ret_1m", "ret_3m", "rs_3m_vs_nifty", "pct_below_high52",
     "base_days", "base_range_pct", "warning", "n_flags", "price_band", "avg_value20_cr",
     "segment", "in_midcap150", "sector_tag", "support_kind",
+    "pat_W_weekly_reversal", "hammer_score", "strong_hammer",
 ]
 
 CLOSED = ["Full win (T2)", "Partial win (T1)", "Failed"]
@@ -116,9 +118,12 @@ def add_groups(df):
                       ("pat_C_pullback", "C pullback"), ("pat_D_retest", "D retest"),
                       ("pat_E_candle", "E candle"), ("pat_G_rel_strength", "G rel. strength"),
                       ("smc_sweep", "Sweep"), ("smc_order_block", "Order block"),
-                      ("smc_fvg", "FVG"), ("smc_choch", "CHoCH"), ("vol_ok", "Volume")]:
+                      ("smc_fvg", "FVG"), ("smc_choch", "CHoCH"), ("vol_ok", "Volume"),
+                      ("pat_W_weekly_reversal", "W weekly reversal"), ("strong_hammer", "Strong hammer")]:
         if col in df:
             g[f"pattern {name}"] = df[col].map({True: "yes", False: "no", "True": "yes", "False": "no"})
+    if "hammer_score" in df:                                  # hammers only (from 13 Oct)
+        g["hammer score"] = bucket(df["hammer_score"], [-1, 54, 69, 100], ["under 55", "55-69", "70+"])
     if "trigger_vol_ratio" in df:
         g["trigger volume"] = bucket(df["trigger_vol_ratio"], [-1, 1.5, 2.5, 999],
                                      ["below 1.5x", "1.5-2.5x", "above 2.5x"])
@@ -163,6 +168,8 @@ def stats(df):
         "success_pct": r2(100 * (bought["status"] == "Full win (T2)").sum() / len(bought)) if len(bought) else None,
         "decided": int(len(decided)),
         "avg_worst_dip_pct": r2(bought["max_dip_pct"].mean()) if len(bought) else None,
+        "avg_best_rise_pct": r2(bought["max_rise_pct"].mean()) if "max_rise_pct" in bought and len(bought) else None,
+        "rise_8pct_plus": int((bought["max_rise_pct"] >= 8).sum()) if "max_rise_pct" in bought else None,
         "avg_days_to_t1": r2(days_t1.mean()) if len(days_t1) else None,
         "avg_return_closed_pct": r2(bought.loc[bought["status"].isin(CLOSED), "return_pct"].mean()),
     }
@@ -335,6 +342,24 @@ def missed_entries(df):
     }
 
 
+# ---------------------------------------------------------------- near misses
+def near_misses():
+    """Stocks that just missed the list (ranked 11-20, blocked by the room rule, or already past T1), replayed
+    by the scan exactly like real picks. Same numbers as the groups, one row per kind of near miss."""
+    if not os.path.exists(NEAR_MISS):
+        return None
+    nm = pd.read_csv(NEAR_MISS, dtype={"list_date": str})
+    if nm.empty:
+        return None
+    rows = [{"kind": "all near misses", **stats(nm)}]
+    for why, part in nm.groupby("near_miss_reason"):
+        rows.append({"kind": why, **stats(part)})
+    return {"note": ("Not on the list, so never traded: replayed like the tracker to see whether the top-10 cut "
+                     "or a filter throws away winners. A kind needs " f"{MIN_GROUP} decided trades before it means "
+                     "anything; compare with 'overall'."),
+            "since": nm["list_date"].min(), "kinds": rows}
+
+
 def main():
     rebuild = "--rebuild" in sys.argv
     if not os.path.exists(PICKS):
@@ -362,7 +387,8 @@ def main():
         "picks_missing_setup_details": missing,
         "completed_trades": completed_trades(df),
         "missed_entries": missed_entries(picks),
-        "files": {"features": FEATURES, "picks": PICKS},
+        "near_misses": near_misses(),
+        "files": {"features": FEATURES, "picks": PICKS, "near_misses": NEAR_MISS},
     }
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=1, default=str)

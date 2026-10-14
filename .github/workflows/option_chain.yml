@@ -1,11 +1,12 @@
 name: Nifty option chain
 
 on:
-  schedule:                    # every 30 min, 9:15 to 15:30 IST, Mon-Fri (cron is UTC; GitHub may start a few minutes late)
-    - cron: "45 3 * * 1-5"
-    - cron: "15,45 4-9 * * 1-5"
-    - cron: "0 10 * * 1-5"
-  workflow_dispatch:           # or by hand from the Actions tab
+  workflow_dispatch:           # started every hour (9:15 to 15:15 IST, Mon-Fri) by the Claude routine, or by hand
+    inputs:
+      second_snapshot:
+        description: "Also take a second snapshot 30 minutes later (the routine's runs do)"
+        required: false
+        default: "yes"
 
 permissions:
   contents: write
@@ -17,23 +18,15 @@ concurrency:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install requests
-      - run: python option_chain.py
-      - name: Save data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/option_chain
-          git diff --cached --quiet && exit 0
-          git commit -m "Option chain $(TZ=Asia/Kolkata date +%F-%H%M)"
-          for i in 1 2 3 4; do                       # the daily data run may push at the same time
-            git pull --rebase origin "$GITHUB_REF_NAME" && git push && exit 0
-            sleep $((i * 5))
-          done
-          exit 1
+      - name: Snapshot now
+        run: python option_chain.py && bash .github/save_option_chain.sh
+      - name: Snapshot 30 minutes later
+        if: inputs.second_snapshot != 'no'
+        run: sleep 1800 && python option_chain.py && bash .github/save_option_chain.sh

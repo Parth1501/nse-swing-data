@@ -1,0 +1,44 @@
+name: Option chain reachability probe (one-off test)
+on:
+  push:
+    branches: [claude/project-thread-cwhmts]
+    paths: [.github/workflows/oc_probe.yml]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: pip install requests
+      - shell: python
+        run: |
+          import requests, json, time
+          UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+          s = requests.Session()
+          s.headers.update({"User-Agent": UA, "Accept": "*/*", "Accept-Language": "en-US,en;q=0.9", "Referer": "https://www.nseindia.com/option-chain"})
+          for u in ("https://www.nseindia.com", "https://www.nseindia.com/option-chain"):
+              try:
+                  r = s.get(u, timeout=15); print("warmup", u, r.status_code, len(r.content))
+              except Exception as e: print("warmup", u, "ERR", e)
+          def show(name, url):
+              try:
+                  r = s.get(url, timeout=20)
+                  print(name, r.status_code, len(r.content))
+                  try:
+                      j = r.json(); print("  keys", list(j)[:8])
+                      rec = j.get("records", {}); print("  ts", rec.get("timestamp"), "spot", rec.get("underlyingValue"), "expiries", (rec.get("expiryDates") or j.get("expiryDates") or [])[:3], "rows", len(rec.get("data", [])))
+                      return j
+                  except Exception: print("  body", r.text[:200])
+              except Exception as e: print(name, "ERR", e)
+          show("old option-chain-indices", "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY")
+          ci = show("contract-info", "https://www.nseindia.com/api/option-chain-contract-info?symbol=NIFTY")
+          exp = (ci or {}).get("expiryDates", [None])[0]
+          print("first expiry", exp)
+          if exp:
+              j = show("option-chain-v3", f"https://www.nseindia.com/api/option-chain-v3?type=Indices&symbol=NIFTY&expiry={exp}")
+              if j:
+                  d = j["records"]["data"]; atm = min(d, key=lambda x: abs(x["strikePrice"] - j["records"]["underlyingValue"]))
+                  print("  ATM row", json.dumps(atm)[:900])
+          for i in range(3):
+              time.sleep(5); show(f"repeat {i}", f"https://www.nseindia.com/api/option-chain-v3?type=Indices&symbol=NIFTY&expiry={exp}")
+          y = requests.get("https://query2.finance.yahoo.com/v7/finance/options/%5ENSEI", headers={"User-Agent": UA}, timeout=15)
+          print("yahoo options", y.status_code, y.text[:200])

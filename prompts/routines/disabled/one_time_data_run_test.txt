@@ -1,0 +1,1 @@
+Routine firing (8:01 PM IST test): start the Daily NSE data workflow now via the GitHub workflow_dispatch API on Parth1501/nse-swing-data main, confirm the run was created, and report the start time to Parth in the thread.

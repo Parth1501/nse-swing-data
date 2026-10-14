@@ -1,0 +1,446 @@
+<title>NSE Swing Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a trader's desk. Sticky header with data freshness, KPI strip, then list / trades / option chain / lessons as stacked panels. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #eef1f6; --ink: #131923; --muted: #5a6476; --line: #dce1e9;
+  --accent: #2a55c0; --accent-soft: #e3eafb;
+  --up: #0d7f49; --up-soft: #dcf2e6; --down: #c2352b; --down-soft: #fbe3e0; --warn: #9a6512; --warn-soft: #fbefd8;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1118; --surface: #151b25; --surface-2: #1b2330; --ink: #e5e9f0; --muted: #8f99ab; --line: #273142;
+  --accent: #86a6ff; --accent-soft: #1f2a44;
+  --up: #43cf8f; --up-soft: #12301f; --down: #ff7468; --down-soft: #3a1714; --warn: #e8b552; --warn-soft: #36290f;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d1118; --surface: #151b25; --surface-2: #1b2330; --ink: #e5e9f0; --muted: #8f99ab; --line: #273142;
+  --accent: #86a6ff; --accent-soft: #1f2a44;
+  --up: #43cf8f; --up-soft: #12301f; --down: #ff7468; --down-soft: #3a1714; --warn: #e8b552; --warn-soft: #36290f;
+  color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 12px; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; }
+.brand small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 6px; letter-spacing: 0; }
+nav.sections { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.sections a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-weight: 500; }
+nav.sections a:hover, nav.sections a:focus-visible { background: var(--surface-2); color: var(--ink); outline: none; }
+.fresh { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12.5px; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; }
+.btn { background: var(--accent); color: var(--surface); border: 0; border-radius: 6px; padding: 6px 12px; font-weight: 600; font-size: 13px; }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn:focus-visible, .chip:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-block: 22px 48px; }
+main > * { min-width: 0; }
+section h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin: 0 0 4px; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0 0 12px; font-size: 13px; max-width: 75ch; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.num, td.n, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.up { color: var(--up); } .down { color: var(--down); } .muted { color: var(--muted); }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.kpi { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.kpi .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.kpi .value { font-family: var(--font-data); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kpi .note { font-size: 12px; color: var(--muted); }
+
+.market { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.mk { padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.mk .label { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk .value { font-family: var(--font-data); font-size: 16px; font-weight: 600; }
+.mk .chg { font-family: var(--font-data); font-size: 12.5px; }
+.banline { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.banline b { color: var(--ink); }
+
+.tablebox { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--surface); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+td.sym { font-weight: 700; white-space: nowrap; }
+td.sym a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+td.sym a:hover { color: var(--accent); }
+td.small { font-size: 12px; color: var(--muted); min-width: 160px; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.p-up { background: var(--up-soft); color: var(--up); }
+.p-down { background: var(--down-soft); color: var(--down); }
+.p-warn { background: var(--warn-soft); color: var(--warn); }
+.p-acc { background: var(--accent-soft); color: var(--accent); }
+.p-mute { background: var(--surface-2); color: var(--muted); }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip { background: var(--surface); border: 1px solid var(--line); color: var(--ink); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.chip .c { font-family: var(--font-data); opacity: .75; margin-left: 4px; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.two > * { min-width: 0; }
+.cardhead { padding: 12px 14px 0; font-weight: 700; font-family: var(--font-display); }
+
+.oc-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+select { font: inherit; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+.oc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.oc-stats .mk .value { font-size: 18px; }
+.fly { padding: 12px 14px 14px; display: grid; gap: 3px; }
+.fly-head, .fly-row { display: grid; grid-template-columns: 1fr 74px 1fr; align-items: center; gap: 8px; font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; }
+.fly-head { color: var(--muted); font-family: var(--font-body); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; padding-bottom: 6px; }
+.fly-head span:first-child { text-align: right; }
+.fly-row .k { text-align: center; color: var(--muted); }
+.fly-row.atm .k { color: var(--ink); font-weight: 700; background: var(--accent-soft); border-radius: 4px; }
+.bar { position: relative; height: 16px; }
+.bar i { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; }
+.bar.ce i { right: 0; background: var(--down); opacity: .78; }
+.bar.pe i { left: 0; background: var(--up); opacity: .78; }
+.bar.ce b, .bar.pe b { position: absolute; top: 0; font-weight: 500; font-size: 11px; color: var(--muted); line-height: 16px; }
+.bar.ce b { left: 0; } .bar.pe b { right: 0; }
+
+.lessons { padding: 6px 22px 20px; max-width: 100%; }
+.lessons h1 { font-family: var(--font-display); font-size: 18px; margin: 16px 0 6px; text-wrap: balance; }
+.lessons h2 { font-family: var(--font-display); font-size: 15px; margin: 22px 0 6px; }
+.lessons p, .lessons li { max-width: 78ch; }
+.lessons li { margin-bottom: 6px; }
+.lessons code { font-family: var(--font-data); font-size: 12px; background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
+.lessons table { margin: 8px 0; }
+.lessons .tablebox { border: 1px solid var(--line); border-radius: 8px; }
+.wr-sum { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 14px 4px; font-size: 12.5px; color: var(--muted); }
+.wr-sum b { color: var(--ink); font-family: var(--font-data); font-weight: 600; }
+.wr-row { display: grid; grid-template-columns: 52px 1fr 64px 1fr 52px; align-items: center; gap: 6px; font-family: var(--font-data); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.wr-row .k { text-align: center; color: var(--muted); }
+.wr-row.atm .k { color: var(--ink); font-weight: 700; background: var(--accent-soft); border-radius: 4px; }
+.wr-row .cu { color: var(--muted); } .wr-row .cu.l { text-align: right; }
+.wbar { position: relative; height: 16px; }
+.wbar i { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; min-width: 2px; }
+.wbar.ce i { right: 0; } .wbar.pe i { left: 0; }
+.s-strong { background: var(--accent); } .s-medium { background: var(--muted); opacity: .55; } .s-weak { background: var(--warn); opacity: .8; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); padding: 0 14px 10px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+.empty { padding: 18px; color: var(--muted); }
+footer { color: var(--muted); font-size: 12px; padding-bottom: 32px; }
+@media (max-width: 560px) { .kpi .value { font-size: 20px; } .fresh { margin-left: 0; } }
+@media (prefers-reduced-motion: no-preference) { .chip, nav.sections a { transition: background .15s, color .15s; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">NSE Swing Desk<small id="dataDate"></small></div>
+    <nav class="sections" aria-label="Sections">
+      <a href="#list">Today's list</a><a href="#trades">Trades</a><a href="#options">Option chain</a><a href="#lessons">Lessons</a>
+    </nav>
+    <div class="fresh"><span id="freshText"></span></div>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <section id="summary" aria-label="Scoreboard">
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section id="market">
+    <h2>Market backdrop</h2>
+    <p class="sub" id="marketSub"></p>
+    <div class="market" id="marketGrid"></div>
+    <div class="banline" id="banLine"></div>
+  </section>
+
+  <section id="list">
+    <h2>Today's list</h2>
+    <p class="sub" id="listSub"></p>
+    <div class="panel tablebox"><table id="listTable"></table></div>
+  </section>
+
+  <section id="trades">
+    <h2>Trades</h2>
+    <p class="sub">Simulated fills at the buy zone, tracked on daily closes. P&amp;L now is the booked return for closed trades and today's mark-to-market for open ones. Targets are +3% (T1) and +6% (T2), with a 30-day time exit and no stop-loss.</p>
+    <div class="two" style="margin-bottom:16px">
+      <div class="panel"><div class="cardhead">By rule set</div><div class="tablebox"><table id="cohortTable"></table></div></div>
+      <div class="panel"><div class="cardhead">By setup</div><div class="tablebox"><table id="styleTable"></table></div></div>
+    </div>
+    <div class="chips" id="tradeChips" role="group" aria-label="Filter trades"></div>
+    <div class="panel tablebox"><table id="tradeTable"></table></div>
+  </section>
+
+  <section id="options">
+    <h2>Nifty option chain</h2>
+    <p class="sub" id="ocSub"></p>
+    <div class="oc-controls">
+      <label for="ocExpiry" class="muted">Expiry</label><select id="ocExpiry"></select>
+      <label for="ocSnap" class="muted">Snapshot</label><select id="ocSnap"></select>
+    </div>
+    <div class="oc-stats" id="ocStats"></div>
+    <div class="two">
+      <div class="panel"><div class="cardhead">Open interest by strike</div><div class="fly" id="ocFly"></div></div>
+      <div class="panel"><div class="cardhead">Through the day</div><div class="tablebox"><table id="ocDay"></table></div></div>
+    </div>
+    <div id="wrBox" style="margin-top:16px">
+      <h3 style="font-family:var(--font-display);font-size:15px;margin:0 0 4px">Strong vs weak writers</h3>
+      <p class="sub" id="wrSub"></p>
+      <div class="two" id="wrGrid"></div>
+    </div>
+    <div class="panel" id="patBox" style="margin-top:16px">
+      <div class="cardhead">Pattern log</div>
+      <p class="sub" id="patSub" style="padding:4px 14px 0;margin:0"></p>
+      <div class="tablebox"><table id="patNow"></table></div>
+      <div class="tablebox" style="border-top:1px solid var(--line)"><table id="patLib"></table></div>
+    </div>
+  </section>
+
+  <section id="lessons">
+    <h2>Lessons so far</h2>
+    <p class="sub" id="lessonsSub"></p>
+    <div class="panel lessons" id="lessonsBox"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</main>
+</div>
+
+<script id="snapshot" type="application/json">/*__DATA__*/</script>
+<script>
+(function () {
+  const GH = "https://github.com/Parth1501/nse-swing-data/blob/main/";
+  let S = JSON.parse(document.getElementById("snapshot").textContent);
+
+  // ---------- helpers ----------
+  function parseCSV(text) {
+    const rows = []; let row = [], f = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+      else if (c === '"') q = true;
+      else if (c === ",") { row.push(f); f = ""; }
+      else if (c === "\n") { row.push(f); rows.push(row); row = []; f = ""; }
+      else if (c !== "\r") f += c;
+    }
+    if (f !== "" || row.length) { row.push(f); rows.push(row); }
+    const head = rows.shift() || [];
+    return rows.filter(r => r.length > 1).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] === undefined ? "" : r[i]])));
+  }
+  const num = v => (v === "" || v == null || isNaN(+v)) ? null : +v;
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = (v, d = 2) => v == null ? "–" : v.toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pct = (v, d = 2) => v == null ? "–" : (v > 0 ? "+" : "") + v.toFixed(d) + "%";
+  const cls = v => v == null ? "muted" : v > 0 ? "up" : v < 0 ? "down" : "";
+  const day = s => { if (!s) return "–"; const d = new Date(s.slice(0, 10) + "T00:00:00"); return isNaN(d) ? s : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }); };
+  const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  const $ = id => document.getElementById(id);
+
+  // ---------- derived trade data ----------
+  function trades() {
+    return parseCSV(S.picks_log).map(r => {
+      const bought = !!r.fill_date;
+      const closed = !!r.close_date;
+      const pnl = closed ? num(r.return_pct) : num(r.current_pct);
+      return Object.assign(r, { bought, closed, pnl, t1: !!r.t1_date, t2: !!r.t2_date, dip: num(r.max_dip_pct), held: num(r.days_held) });
+    });
+  }
+  function stats(rows) {
+    const b = rows.filter(r => r.bought);
+    const pnls = b.map(r => r.pnl).filter(v => v != null);
+    return { n: b.length, t1: b.filter(r => r.t1).length, t2: b.filter(r => r.t2).length, avg: avg(pnls),
+      under: b.filter(r => r.pnl != null && r.pnl < 0).length, dip5: b.filter(r => r.dip != null && r.dip <= -5).length };
+  }
+  function statusPill(r) {
+    if (r.status.startsWith("Full win")) return '<span class="pill p-up">Closed at T2</span>';
+    if (r.status.includes("T1 hit")) return '<span class="pill p-acc">T1 hit, open</span>';
+    if (r.status === "Running") return '<span class="pill p-mute">Open</span>';
+    if (r.status.startsWith("Waiting")) return '<span class="pill p-warn">Waiting for entry</span>';
+    if (r.status.startsWith("Not bought")) return '<span class="pill p-mute">Not bought</span>';
+    return '<span class="pill p-mute">' + esc(r.status) + "</span>";
+  }
+
+  // ---------- render: header + KPIs ----------
+  function renderTop(T) {
+    const m = S.meta;
+    $("dataDate").textContent = "Data to " + day(m.data_date) + " close";
+    const s = stats(T);
+    const open = T.filter(r => r.bought && !r.closed).length;
+    const waiting = T.filter(r => r.status.startsWith("Waiting")).length;
+    const k = [
+      ["Picks listed", T.length, "since " + day(m.track_record && m.track_record.since)],
+      ["Bought", s.n, open + " open, " + (s.n - open) + " closed"],
+      ["T1 hit (+3%)", s.t1, s.n ? Math.round(100 * s.t1 / s.n) + "% of bought" : ""],
+      ["T2 hit (+6%)", s.t2, s.n ? Math.round(100 * s.t2 / s.n) + "% of bought" : ""],
+      ["Avg P&L now", '<span class="' + cls(s.avg) + '">' + pct(s.avg) + "</span>", "closed + open, per trade"],
+      ["Under water", s.under, s.dip5 + " have dipped 5% or more"],
+      ["Waiting for entry", waiting, "from the latest lists"]
+    ];
+    $("kpis").innerHTML = k.map(([l, v, n]) => '<div class="kpi"><span class="label">' + l + '</span><span class="value">' + v + '</span><span class="note">' + esc(n) + "</span></div>").join("");
+  }
+
+  function renderMarket() {
+    const m = S.meta, g = S.global, n = m.nifty || {};
+    const cells = [];
+    cells.push({ label: "Nifty 50 · " + day(n.date), value: fmt(n.close), chg: "1M " + pct(n.ret_1m) + " · 3M " + pct(n.ret_3m), c: cls(n.ret_1m) });
+    cells.push({ label: "Nifty structure", value: n.uptrend_structure ? "Uptrend" : "Not in uptrend", chg: fmt(n.pct_below_high52, 1) + "% below 52W high", c: n.uptrend_structure ? "up" : "down" });
+    (g.items || []).forEach(it => cells.push({ label: it.name + " · " + day(it.for_date), value: fmt(it.value, it.value < 20 ? 3 : 2), chg: pct(it.change_pct), c: cls(it.change_pct) }));
+    const f = g.fii_dii && g.fii_dii.all_exchanges;
+    if (f) {
+      const fi = f["FII/FPI"], di = f.DII;
+      if (fi) cells.push({ label: "FII net · " + day(fi.date), value: "₹" + fmt(fi.net_cr, 0) + " cr", chg: "cash market", c: cls(fi.net_cr) });
+      if (di) cells.push({ label: "DII net · " + day(di.date), value: "₹" + fmt(di.net_cr, 0) + " cr", chg: "cash market", c: cls(di.net_cr) });
+    }
+    $("marketGrid").innerHTML = cells.map(x => '<div class="panel mk"><span class="label" title="' + esc(x.label) + '">' + esc(x.label) + '</span><span class="value ' + (x.label.startsWith("Nifty structure") ? x.c : "") + '">' + esc(x.value) + '</span><span class="chg ' + x.c + '">' + esc(x.chg) + "</span></div>").join("");
+    $("marketSub").textContent = "Nifty from the evening scan; global numbers fetched " + (g.generated_at_ist || "–") + " IST.";
+    const ban = m.fno_ban && m.fno_ban.symbols || [];
+    $("banLine").innerHTML = "F&amp;O ban: <b>" + (ban.length ? ban.map(esc).join(", ") : "none") + "</b> · ASM list " + ((m.asm_gsm && m.asm_gsm.asm && m.asm_gsm.asm.count) || "–") + " stocks, GSM " + ((m.asm_gsm && m.asm_gsm.gsm && m.asm_gsm.gsm.count) || "–");
+  }
+
+  // ---------- today's list ----------
+  function renderList() {
+    const rows = parseCSV(S.latest).filter(r => r.eligible === "True").sort((a, b) => +a.rank - +b.rank).slice(0, 10);
+    $("listSub").textContent = "Top 10 eligible support setups from the " + day(S.meta.data_date) + " evening scan (" + (S.meta.eligible_count || rows.length) + " passed). This is what the morning list works from; buy only inside the zone.";
+    if (!rows.length) { $("listTable").innerHTML = '<tr><td class="empty">No eligible setups in the latest scan.</td></tr>'; return; }
+    $("listTable").innerHTML = "<thead><tr><th class=n>#</th><th>Stock</th><th>Setup</th><th class=n>Score</th><th class=n>Close</th><th class=n>Buy zone</th><th class=n>T1</th><th class=n>T2</th><th>Zone</th><th>Flags</th></tr></thead><tbody>" +
+      rows.map(r => {
+        const inZone = r.zone_status === "In buy zone";
+        const flags = [r.warning, r.flags].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+        return "<tr><td class=n>" + esc(r.rank) + '</td><td class="sym"><a href="' + GH + esc(r.chart) + '" target="_blank" rel="noopener" title="Open chart">' + esc(r.symbol) + "</a><div class='muted' style='font-weight:400;font-size:11.5px'>" + esc(r.segment) + "</div></td><td>" + esc(r.entry_style) + "<div class='muted' style='font-size:11.5px'>" + esc(r.setups) + "</div></td><td class=n>" + esc(r.score) +
+          "</td><td class=n>" + fmt(num(r.close)) + "</td><td class=n>" + fmt(num(r.entry_low)) + "–" + fmt(num(r.entry_high)) + "</td><td class=n>" + fmt(num(r.t1)) + "</td><td class=n>" + fmt(num(r.t2)) +
+          "</td><td>" + (inZone ? '<span class="pill p-up">In zone</span>' : '<span class="pill p-mute" title="' + esc(r.zone_status) + '">' + esc((r.zone_status.match(/by ([\d.]+%)/) || [])[1] ? "Above by " + r.zone_status.match(/by ([\d.]+%)/)[1] : r.zone_status) + "</span>") +
+          "</td><td>" + (flags.length ? flags.map(f => '<span class="pill p-warn" title="' + esc(f) + '">' + esc(f.length > 22 ? f.split(/[:(]/)[0].trim() : f) + "</span>").join(" ") : '<span class="muted">–</span>') + "</td></tr>";
+      }).join("") + "</tbody>";
+  }
+
+  // ---------- trades ----------
+  let filter = "open";
+  function renderTrades(T) {
+    const cut = "2026-10-08";
+    const groups = [["All bought", T], ["Before 8 Oct (old rules)", T.filter(r => r.list_date < cut)], ["8 Oct on (weekly support)", T.filter(r => r.list_date >= cut)]];
+    const head = "<thead><tr><th></th><th class=n>Bought</th><th class=n>T1</th><th class=n>T2</th><th class=n>Avg P&amp;L</th><th class=n>Under water</th><th class=n>Dip ≥5%</th></tr></thead>";
+    const line = ([name, rows]) => { const s = stats(rows); return "<tr><td>" + esc(name) + "</td><td class=n>" + s.n + "</td><td class=n>" + s.t1 + "</td><td class=n>" + s.t2 + '</td><td class="n ' + cls(s.avg) + '">' + pct(s.avg) + "</td><td class=n>" + s.under + "</td><td class=n>" + s.dip5 + "</td></tr>"; };
+    $("cohortTable").innerHTML = head + "<tbody>" + groups.map(line).join("") + "</tbody>";
+    const styles = [...new Set(T.map(r => r.entry_style))].sort();
+    $("styleTable").innerHTML = head + "<tbody>" + styles.map(s => [s, T.filter(r => r.entry_style === s)]).filter(g => g[1].some(r => r.bought)).map(line).join("") + "</tbody>";
+
+    const F = {
+      open: ["Open", r => r.bought && !r.closed],
+      t1: ["T1 hit, open", r => r.t1 && !r.closed],
+      closed: ["Closed", r => r.closed],
+      waiting: ["Waiting", r => r.status.startsWith("Waiting")],
+      notbought: ["Not bought", r => r.status.startsWith("Not bought")],
+      all: ["All picks", () => true]
+    };
+    $("tradeChips").innerHTML = Object.entries(F).map(([k, [l, fn]]) => '<button type="button" class="chip" data-f="' + k + '" aria-pressed="' + (k === filter) + '">' + l + '<span class="c">' + T.filter(fn).length + "</span></button>").join("");
+    $("tradeChips").querySelectorAll(".chip").forEach(b => b.onclick = () => { filter = b.dataset.f; renderTrades(T); });
+    const rows = T.filter(F[filter][1]).sort((a, b) => (b.list_date.localeCompare(a.list_date)) || (+a.rank - +b.rank));
+    if (!rows.length) { $("tradeTable").innerHTML = '<tr><td class="empty">Nothing in this group yet.</td></tr>'; return; }
+    $("tradeTable").innerHTML = "<thead><tr><th>Listed</th><th>Stock</th><th>Setup</th><th>Status</th><th class=n>Bought</th><th class=n>Price</th><th class=n>T1 date</th><th class=n>T2 date</th><th class=n>P&amp;L now</th><th class=n>Worst dip</th><th class=n>Days</th><th>Flag</th></tr></thead><tbody>" +
+      rows.map(r => "<tr><td class=n style='text-align:left'>" + day(r.list_date) + " <span class=muted>#" + esc(r.rank) + '</span></td><td class="sym">' + esc(r.symbol) + "</td><td>" + esc(r.entry_style) + "</td><td>" + statusPill(r) +
+        "</td><td class=n>" + (r.fill_date ? day(r.fill_date) : "–") + "</td><td class=n>" + (r.fill_price ? fmt(num(r.fill_price)) : fmt(num(r.entry_low)) + "–" + fmt(num(r.entry_high))) +
+        "</td><td class=n>" + day(r.t1_date) + "</td><td class=n>" + day(r.t2_date) + '</td><td class="n ' + cls(r.pnl) + '" style="font-weight:600">' + pct(r.pnl) + '</td><td class="n ' + (r.dip != null && r.dip <= -5 ? "down" : "muted") + '">' + pct(r.dip) +
+        "</td><td class=n>" + (r.held == null ? "–" : r.held) + "</td><td>" + (r.warning_at_listing ? '<span class="pill p-warn">' + esc(r.warning_at_listing) + "</span>" : "") + "</td></tr>").join("") + "</tbody>";
+  }
+
+  // ---------- option chain ----------
+  let ocExp = null, ocSnap = null;
+  function renderOC() {
+    const all = S.option_chain ? parseCSV(S.option_chain.csv) : [];
+    if (!all.length) { $("ocSub").textContent = "No option chain snapshots saved yet today."; $("ocStats").innerHTML = ""; $("ocFly").innerHTML = '<div class="empty">Nothing to show.</div>'; $("ocDay").innerHTML = ""; return; }
+    all.forEach(r => { ["spot", "strike", "ce_ltp", "ce_oi", "ce_chg_oi", "ce_iv", "ce_volume", "pe_ltp", "pe_oi", "pe_chg_oi", "pe_iv", "pe_volume"].forEach(k => r[k] = +r[k] || 0); });
+    const exps = [...new Set(all.map(r => r.expiry + "|" + r.expiry_type))].sort();
+    if (!ocExp || !exps.includes(ocExp)) ocExp = exps[0];
+    const snaps = [...new Set(all.map(r => r.snapshot_ist))].sort();
+    if (!ocSnap || !snaps.includes(ocSnap)) ocSnap = snaps[snaps.length - 1];
+    $("ocExpiry").innerHTML = exps.map(e => { const [d, t] = e.split("|"); return '<option value="' + esc(e) + '"' + (e === ocExp ? " selected" : "") + ">" + day(d) + " (" + esc(t) + ")</option>"; }).join("");
+    $("ocSnap").innerHTML = snaps.slice().reverse().map(s => '<option value="' + esc(s) + '"' + (s === ocSnap ? " selected" : "") + ">" + esc(s.slice(11, 16)) + " IST</option>").join("");
+    $("ocExpiry").onchange = e => { ocExp = e.target.value; renderOC(); };
+    $("ocSnap").onchange = e => { ocSnap = e.target.value; renderOC(); };
+    $("ocSub").textContent = "Snapshots saved from NSE during market hours on " + day(S.option_chain.date) + " (" + snaps.length + " so far). OI in contracts.";
+
+    const [expD] = ocExp.split("|");
+    const pick = s => all.filter(r => r.snapshot_ist === s && r.expiry === expD).sort((a, b) => a.strike - b.strike);
+    const summarize = rows => {
+      if (!rows.length) return null;
+      const ce = rows.reduce((a, r) => a + r.ce_oi, 0), pe = rows.reduce((a, r) => a + r.pe_oi, 0);
+      let mp = null, best = Infinity;
+      rows.forEach(k => { let p = 0; rows.forEach(s => { p += s.ce_oi * Math.max(0, k.strike - s.strike) + s.pe_oi * Math.max(0, s.strike - k.strike); }); if (p < best) { best = p; mp = k.strike; } });
+      const topCE = rows.reduce((a, r) => r.ce_oi > a.ce_oi ? r : a, rows[0]), topPE = rows.reduce((a, r) => r.pe_oi > a.pe_oi ? r : a, rows[0]);
+      const spot = rows[0].spot;
+      const atm = rows.reduce((a, r) => Math.abs(r.strike - spot) < Math.abs(a.strike - spot) ? r : a, rows[0]);
+      return { pcr: ce ? pe / ce : null, mp, topCE, topPE, spot, atm, ce, pe, nse: rows[0].nse_time };
+    };
+    const rows = pick(ocSnap), s = summarize(rows);
+    if (!s) { $("ocStats").innerHTML = ""; $("ocFly").innerHTML = '<div class="empty">No rows for this expiry in this snapshot.</div>'; return; }
+    const st = [
+      ["Spot", fmt(s.spot), "NSE " + (s.nse || "").slice(11, 16)],
+      ["PCR (OI)", s.pcr == null ? "–" : s.pcr.toFixed(2), s.pcr == null ? "" : s.pcr > 1.2 ? "put-heavy" : s.pcr < 0.8 ? "call-heavy" : "balanced"],
+      ["Max pain", fmt(s.mp, 0), pct((s.mp - s.spot) / s.spot * 100) + " vs spot"],
+      ["Highest call OI", fmt(s.topCE.strike, 0), "resistance · " + fmt(s.topCE.ce_oi / 1e5, 1) + "L"],
+      ["Highest put OI", fmt(s.topPE.strike, 0), "support · " + fmt(s.topPE.pe_oi / 1e5, 1) + "L"],
+      ["ATM IV", s.atm.ce_iv || s.atm.pe_iv ? fmt((s.atm.ce_iv + s.atm.pe_iv) / ((s.atm.ce_iv ? 1 : 0) + (s.atm.pe_iv ? 1 : 0)), 1) + "%" : "–", "strike " + fmt(s.atm.strike, 0)]
+    ];
+    $("ocStats").innerHTML = st.map(([l, v, n]) => '<div class="panel mk"><span class="label">' + l + '</span><span class="value">' + esc(v) + '</span><span class="chg muted">' + esc(n) + "</span></div>").join("");
+
+    const i = rows.indexOf(s.atm), win = rows.slice(Math.max(0, i - 10), i + 11);
+    const mx = Math.max(1, ...win.map(r => Math.max(r.ce_oi, r.pe_oi)));
+    const L = v => v >= 1e5 ? (v / 1e5).toFixed(1) + "L" : v >= 1e3 ? (v / 1e3).toFixed(0) + "k" : String(v);
+    $("ocFly").innerHTML = '<div class="fly-head"><span>Call OI</span><span style="text-align:center">Strike</span><span>Put OI</span></div>' +
+      win.slice().reverse().map(r => '<div class="fly-row' + (r === s.atm ? " atm" : "") + '"><div class="bar ce"><b>' + L(r.ce_oi) + '</b><i style="width:' + (r.ce_oi / mx * 78).toFixed(1) + '%"></i></div><div class="k">' + r.strike + '</div><div class="bar pe"><i style="width:' + (r.pe_oi / mx * 78).toFixed(1) + '%"></i><b>' + L(r.pe_oi) + "</b></div></div>").join("");
+
+    $("ocDay").innerHTML = "<thead><tr><th>Time</th><th class=n>Spot</th><th class=n>PCR</th><th class=n>Max pain</th><th class=n>Top call</th><th class=n>Top put</th></tr></thead><tbody>" +
+      snaps.slice().reverse().map(t => { const x = summarize(pick(t)); if (!x) return ""; return "<tr" + (t === ocSnap ? ' style="background:var(--accent-soft)"' : "") + "><td class=n style='text-align:left'>" + esc(t.slice(11, 16)) + "</td><td class=n>" + fmt(x.spot) + "</td><td class=n>" + (x.pcr == null ? "–" : x.pcr.toFixed(2)) + "</td><td class=n>" + fmt(x.mp, 0) + "</td><td class=n>" + fmt(x.topCE.strike, 0) + "</td><td class=n>" + fmt(x.topPE.strike, 0) + "</td></tr>"; }).join("") + "</tbody>";
+  }
+
+  // ---------- option chain pattern log ----------
+  function renderPatterns() {
+    const L = S.oc_latest, lib = S.oc_library ? parseCSV(S.oc_library) : [];
+    if (!L || !L.expiries) { $("patBox").hidden = true; return; }
+    $("patBox").hidden = false;
+    $("patSub").textContent = "Read at " + (L.as_of || "–").slice(11, 16) + " IST. A pattern shows a lean only after 10 outcomes and points to a structure after 20, so early rows are just a log.";
+    $("patNow").innerHTML = "<thead><tr><th>Expiry</th><th class=n>Days left</th><th class=n>PCR near</th><th class=n>Put wall</th><th class=n>Call wall</th><th class=n>Implied range</th><th>Last 30 min</th></tr></thead><tbody>" +
+      L.expiries.map(e => "<tr><td>" + day(e.expiry) + " <span class=muted>" + esc(e.type) + "</span></td><td class=n>" + fmt(e.dte, 1) + "</td><td class=n>" + fmt(e.pcr_near, 2) + "</td><td class=n>" + fmt(e.put_wall, 0) + "</td><td class=n>" + fmt(e.call_wall, 0) + "</td><td class=n>" + (e.implied_range ? fmt(e.implied_range[0], 0) + "–" + fmt(e.implied_range[1], 0) + " <span class=muted>±" + fmt(e.implied_move_pct, 2) + "%</span>" : "–") +
+        '</td><td class="small"><div style="color:var(--ink)">' + esc(e.intraday && e.intraday.pattern || "–") + "</div>" + esc(e.intraday && e.intraday.verdict || "") + "</td></tr>").join("") + "</tbody>";
+    const rows = lib.sort((a, b) => (+b.with_outcome - +a.with_outcome) || (+b.seen - +a.seen)).slice(0, 12);
+    $("patLib").innerHTML = rows.length ? "<thead><tr><th>Pattern</th><th>Expiry</th><th class=n>Seen</th><th class=n>Outcomes</th><th class=n>Up after</th><th class=n>Avg move</th><th>Lean</th></tr></thead><tbody>" +
+      rows.map(r => { const lean = r.lean || ""; const lc = /^up/.test(lean) ? "p-up" : /^down/.test(lean) ? "p-down" : "p-mute";
+        return "<tr><td class='small' style='color:var(--ink)'>" + esc(r.pattern) + " <span class=muted>(" + esc(r.layer) + ")</span></td><td>" + esc(r.expiry_type) + "</td><td class=n>" + esc(r.seen) + "</td><td class=n>" + esc(r.with_outcome) + "</td><td class=n>" + (r.up_share === "" ? "–" : Math.round(100 * +r.up_share) + "%") + '</td><td class="n ' + cls(num(r.avg_move)) + '">' + pct(num(r.avg_move)) + '</td><td><span class="pill ' + lc + '">' + esc(lean || "–") + "</span></td></tr>"; }).join("") + "</tbody>" : '<tr><td class="empty">No patterns logged yet.</td></tr>';
+  }
+
+  // ---------- strong vs weak writers ----------
+  function renderWriters() {
+    const L = S.oc_latest, ex = L && L.expiries ? L.expiries.filter(e => e.writers && e.writers.strikes && e.writers.strikes.length) : [];
+    if (!ex.length) { $("wrBox").hidden = true; return; }
+    $("wrBox").hidden = false;
+    $("wrSub").textContent = "Read at " + (L.as_of || "–").slice(11, 16) + " IST. For OI written since tracking began, we know roughly where it was sold, so we know each writer's break-even. Strong writers have a big cushion between spot and their break-even and tend to defend the strike; weak writers are near or past break-even and are the ones likely to cover on a move. Bars show tracked OI; the number beside each bar is the cushion in Nifty points.";
+    const sk = v => v == null || isNaN(v) ? "–" : fmt(+v, 0);
+    const share = v => v == null ? "–" : Math.round(100 * v) + "%";
+    $("wrGrid").innerHTML = ex.map(e => {
+      const w = e.writers, spot = e.spot;
+      const rows = w.strikes.filter(x => Math.abs(x.strike / spot - 1) <= 0.015);
+      const strikes = [...new Set(rows.map(x => x.strike))].sort((a, b) => b - a);
+      const by = (side, k) => rows.find(x => x.side === side && x.strike === k);
+      const mx = Math.max(1, ...rows.map(x => x.tracked_oi || 0));
+      const atm = strikes.reduce((a, k) => Math.abs(k - spot) < Math.abs(a - spot) ? k : a, strikes[0]);
+      const cell = (x, side) => x ? '<div class="wbar ' + side + '" title="' + esc((side === "ce" ? "Call" : "Put") + " " + x.strike + ": " + x.strength + " · tracked OI " + fmt(x.tracked_oi, 0) + " of " + fmt(x.oi, 0) + " · sold ~" + fmt(x.avg_sell_price) + " · break-even " + fmt(x.break_even, 0) + " · writer P&L " + (x.writer_pnl_pts > 0 ? "+" : "") + fmt(x.writer_pnl_pts, 1) + " pts") + '"><i class="s-' + esc(x.strength) + '" style="width:' + ((x.tracked_oi || 0) / mx * 100).toFixed(1) + '%"></i></div>' : '<div class="wbar"></div>';
+      const cu = x => x ? (x.cushion_pts > 0 ? "+" : "") + fmt(x.cushion_pts, 0) : "";
+      const ladder = strikes.map(k => { const c = by("ce", k), p = by("pe", k);
+        return '<div class="wr-row' + (k === atm ? " atm" : "") + '"><span class="cu l">' + cu(c) + "</span>" + cell(c, "ce") + '<span class="k">' + k + "</span>" + cell(p, "pe") + '<span class="cu">' + cu(p) + "</span></div>"; }).join("");
+      const verdict = e.intraday && e.intraday.writers_verdict ? '<p class="sub" style="padding:0 14px;margin:6px 0 0">' + esc(e.intraday.writers_verdict) + "</p>" : "";
+      return '<div class="panel"><div class="cardhead">' + day(e.expiry) + ' <span class="muted" style="font-weight:500">' + esc(e.type) + " · spot " + fmt(spot) + "</span></div>" +
+        '<div style="padding:6px 14px 0"><span class="pill p-acc">' + esc(w.label || "–") + "</span></div>" + verdict +
+        '<div class="wr-sum"><span>Strongest call <b>' + sk(w.strong_call_strike) + "</b></span><span>Strongest put <b>" + sk(w.strong_put_strike) + "</b></span><span>Weakest call <b>" + sk(w.weak_call_strike) + "</b></span><span>Weakest put <b>" + sk(w.weak_put_strike) + "</b></span><span>Tracked: calls <b>" + share(w.call_tracked_share) + "</b>, puts <b>" + share(w.put_tracked_share) + "</b> of OI</span></div>" +
+        '<div class="fly"><div class="wr-row" style="font-family:var(--font-body);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span class="cu l">Cushion</span><span style="text-align:right">Call writers</span><span class="k">Strike</span><span>Put writers</span><span>Cushion</span></div>' + (ladder || '<div class="empty">No tracked writers within 1.5% of spot.</div>') + "</div>" +
+        '<div class="legend"><span style="--c:var(--accent)">Strong</span><span style="--c:var(--muted)">Medium</span><span style="--c:var(--warn)">Weak</span></div></div>';
+    }).join("");
+  }
+
+  function renderAll() {
+    const T = trades();
+    renderTop(T); renderMarket(); renderList(); renderTrades(T); renderOC(); renderWriters(); renderPatterns();
+    $("lessonsBox").innerHTML = S.lessons_html; $("lessonsSub").textContent = "The latest written trade review (" + S.lessons_name + "). It changes only when a new review is written; the tables above move with every data run.";
+    $("lessonsBox").querySelectorAll("table").forEach(t => { const w = document.createElement("div"); w.className = "tablebox"; t.parentNode.insertBefore(w, t); w.appendChild(t); });
+    $("freshText").textContent = "Updated " + S.built_ist + " IST · refreshes after each data run";
+    $("foot").innerHTML = 'Data: <a href="https://github.com/Parth1501/nse-swing-data" target="_blank" rel="noopener" style="color:inherit">Parth1501/nse-swing-data</a>. Prices from Yahoo Finance (unofficial) and NSE. Simulated tracking, not broker fills.';
+  }
+
+  renderAll();
+})();
+</script>

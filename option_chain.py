@@ -1,5 +1,6 @@
 """
-Nifty option chain snapshot (runs on GitHub Actions every 30 minutes in market hours).
+Nifty option chain snapshot (runs on GitHub Actions every 30 minutes in market hours; each run
+is started hourly by a Claude routine and takes a second snapshot 30 minutes later).
 
 Reads NSE's own option chain for the two nearest Nifty expiries and appends one row per
 strike to data/option_chain/<IST date>.csv. Only what NSE publishes is saved: spot, and for

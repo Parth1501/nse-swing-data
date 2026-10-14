@@ -37,6 +37,10 @@ PCR_STEP = {"intraday": 0.02, "day": 0.05}     # smaller PCR changes count as "f
 FLOW_STEP = 0.005             # new OI near the money below 0.5% of near OI counts as "quiet"
 SEEN_MIN = 10                 # past outcomes a pattern needs before it shows a lean
 TRADE_MIN = 20                # ... and before it can point to a structure
+# Strong vs weak writers: how far spot is from the writers' break-even (strike +/- their average
+# selling price), in % of spot. ~0.45% is about 100 Nifty points, ~0.22% about 50.
+STRONG_CUSHION = 0.45
+WEAK_CUSHION = 0.22
 
 
 # ---------- loading ----------
@@ -102,6 +106,93 @@ def chain_features(g):
 def build(raw):
     rows = [chain_features(g) for _, g in raw.groupby(["obs", "expiry"])]
     return pd.DataFrame(rows).sort_values(["expiry", "obs"]).reset_index(drop=True)
+
+
+# ---------- strong vs weak writers ----------
+
+def writer_book(raw):
+    """Follows the OI at every strike through the snapshots to estimate, for the OI added while
+    we were watching, the average premium it was sold at and where spot was then. OI that grew
+    between two snapshots is counted as sold at the later snapshot's price; OI that fell is taken
+    out pro rata. OI already open when a contract was first seen has no known price and is left
+    out of the strong/weak split (tracked_share says how much is covered).
+
+    Option data can't tell a writer from a buyer: every open contract has both. Following the
+    usual reading, new OI is treated as writing. Returns one row per snapshot, expiry, strike
+    and side, near the money."""
+    rows = []
+    for exp, g in raw.sort_values("obs").groupby("expiry"):
+        book = {}
+        for t, snap in g.groupby("obs", sort=True):
+            spot = float(snap["spot"].iloc[0])
+            for side in ("ce", "pe"):
+                for k, oi, ltp in zip(snap["strike"], snap[f"{side}_oi"], snap[f"{side}_ltp"]):
+                    oi, ltp = float(oi), float(ltp)
+                    b = book.get((side, k))
+                    if b is None:                      # first sight: price unknown
+                        book[(side, k)] = b = {"oi": oi, "untracked": oi, "tracked": 0.0,
+                                               "prem": 0.0, "spot": 0.0}
+                    else:
+                        d = oi - b["oi"]
+                        if d > 0 and ltp > 0:
+                            w = b["tracked"] + d
+                            b["prem"] = (b["prem"] * b["tracked"] + ltp * d) / w
+                            b["spot"] = (b["spot"] * b["tracked"] + spot * d) / w
+                            b["tracked"] = w
+                        elif d < 0 and b["oi"] > 0:
+                            keep = max(oi, 0) / b["oi"]
+                            b["tracked"] *= keep
+                            b["untracked"] *= keep
+                        b["oi"] = oi
+                    if abs(k / spot - 1) > NEAR or b["tracked"] <= 0:
+                        continue
+                    be = k + b["prem"] if side == "ce" else k - b["prem"]
+                    cushion = (be - spot) if side == "ce" else (spot - be)
+                    pnl = b["prem"] - ltp
+                    c = 100 * cushion / spot
+                    strength = ("weak" if c < WEAK_CUSHION else
+                                "strong" if c >= STRONG_CUSHION else "medium")
+                    rows.append({"obs": t, "expiry": exp, "spot": spot, "side": side, "strike": k,
+                                 "oi": oi, "tracked_oi": round(b["tracked"]),
+                                 "tracked_share": b["tracked"] / oi if oi else 0.0,
+                                 "avg_sell_price": b["prem"], "avg_spot_at_sale": b["spot"],
+                                 "ltp": ltp, "break_even": be, "cushion_pts": cushion,
+                                 "writer_pnl_pts": pnl, "strength": strength})
+    return pd.DataFrame(rows)
+
+
+def writer_summary(w):
+    """Per snapshot and expiry: tracked strong and weak OI on each side, the strongest call and put
+    strikes, and a short label for the pattern log."""
+    out = []
+    for (t, exp), g in w.groupby(["obs", "expiry"]):
+        r = {"obs": t, "expiry": exp}
+        for side, name in (("ce", "call"), ("pe", "put")):
+            x = g[g["side"] == side]
+            for st in ("strong", "weak"):
+                r[f"{st}_{name}_oi"] = x.loc[x["strength"] == st, "tracked_oi"].sum()
+            s = x[x["strength"] == "strong"]
+            r[f"strong_{name}_strike"] = float(s.loc[s["tracked_oi"].idxmax(), "strike"]) if len(s) else np.nan
+            wk = x[x["strength"] == "weak"]
+            r[f"weak_{name}_strike"] = float(wk.loc[wk["tracked_oi"].idxmax(), "strike"]) if len(wk) else np.nan
+            tot = x["oi"].sum()
+            r[f"{name}_tracked_share"] = x["tracked_oi"].sum() / tot if tot else 0.0
+        sc, sp = r["strong_call_oi"], r["strong_put_oi"]
+        bal = (sp - sc) / (sp + sc) if sp + sc else 0.0
+        stronger = "put writers stronger" if bal > 0.2 else "call writers stronger" if bal < -0.2 else "writers even"
+        wc, wp = r["weak_call_oi"], r["weak_put_oi"]
+        tracked = g["tracked_oi"].sum()
+        if wc + wp < 0.1 * tracked:
+            weak = "few weak writers"
+        elif wc > 1.5 * wp:
+            weak = "weak calls"
+        elif wp > 1.5 * wc:
+            weak = "weak puts"
+        else:
+            weak = "weak on both sides"
+        r["writers"] = f"{stronger} · {weak}"
+        out.append(r)
+    return pd.DataFrame(out)
 
 
 # ---------- patterns ----------
@@ -184,9 +275,11 @@ def wilson(k, n):
     return (c - h, c + h)
 
 
-def library(log):
+def library(log, key="pattern"):
+    """key: "pattern" (the chain pattern) or "writers" (the strong/weak writer label)."""
     out = []
-    for (layer, kind, pat), g in log[log["pattern"] != ""].groupby(["layer", "expiry_type", "pattern"]):
+    use = log[log[key].fillna("").ne("")]
+    for (layer, kind, pat), g in use.groupby(["layer", "expiry_type", key]):
         mv = g["move_close" if layer == "intraday" else "move_next"].dropna()
         mv = mv[mv != 0]
         n, up = len(mv), int((mv > 0).sum())
@@ -203,7 +296,7 @@ def library(log):
         else:
             lean = "no clear direction"
         out.append({
-            "layer": layer, "expiry_type": kind, "pattern": pat, "seen": len(g), "with_outcome": n,
+            "group": key, "layer": layer, "expiry_type": kind, "pattern": pat, "seen": len(g), "with_outcome": n,
             "up_share": up / n if n else np.nan, "up_low": lo, "up_high": hi,
             "avg_move": mv.mean() if n else np.nan, "median_move": mv.median() if n else np.nan,
             "worst_down": mv.min() if n else np.nan, "best_up": mv.max() if n else np.nan,
@@ -215,12 +308,13 @@ def library(log):
     return pd.DataFrame(out)
 
 
-def structure_for(row, lib):
+def structure_for(row, lib, key="pattern"):
     """What the history of this pattern points to. Only hedged structures, never naked options."""
-    if row["pattern"] == "":
-        return "No pattern yet (needs an earlier snapshot to compare with)."
-    m = lib[(lib["layer"] == row["layer"]) & (lib["expiry_type"] == row["expiry_type"])
-            & (lib["pattern"] == row["pattern"])] if not lib.empty else lib
+    if not isinstance(row[key], str) or row[key] == "":
+        return ("No pattern yet (needs an earlier snapshot to compare with)." if key == "pattern"
+                else "No writer data yet (needs OI added while being watched).")
+    m = lib[(lib["group"] == key) & (lib["layer"] == row["layer"]) & (lib["expiry_type"] == row["expiry_type"])
+            & (lib["pattern"] == row[key])] if not lib.empty else lib
     if m.empty:
         return "New pattern, never seen before. Logged; nothing to go on yet."
     m = m.iloc[0]
@@ -259,7 +353,8 @@ def write_report(log, lib, read):
          "Analysis only, not trading advice.", "",
          "## Data",
          f"- {intra['obs'].nunique()} snapshots over {intra['date'].nunique()} trading days",
-         f"- {int((log['pattern'] != '').sum())} patterns logged; {len(lib)} different patterns so far", ""]
+         f"- {int((log['pattern'] != '').sum())} patterns logged; "
+         f"{int((lib['group'] == 'pattern').sum()) if not lib.empty else 0} different patterns so far", ""]
     L += [f"## Latest read ({read['as_of']})", "",
           "| Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |",
           "|---|---|---|---|---|---|---|---|---|"]
@@ -273,11 +368,35 @@ def write_report(log, lib, read):
             p = e.get(layer)
             if p:
                 L.append(f"- **{e['type'].title()}, {when}**: `{p['pattern'] or '-'}`. {p['verdict']}")
+                if p.get("writers"):
+                    L.append(f"  - Writers: `{p['writers']}`. {p['writers_verdict']}")
     L.append("")
+    for e in read["expiries"]:
+        w = e.get("writers")
+        if not w or not w["strikes"]:
+            continue
+        def strike(v):
+            return "-" if v is None or pd.isna(v) else f"{v:.0f}"
+        L += [f"## Strong vs weak writers, {e['type']} {e['expiry']}", "",
+              f"Strongest call writers at {strike(w['strong_call_strike'])}, strongest put writers at "
+              f"{strike(w['strong_put_strike'])}; weakest call writers at {strike(w['weak_call_strike'])}, "
+              f"weakest put writers at {strike(w['weak_put_strike'])}. Covers {pct(w['call_tracked_share'])} of "
+              f"near-money call OI and {pct(w['put_tracked_share'])} of put OI (the rest was open before it was "
+              "watched, so its selling price is unknown).", "",
+              "| Side | Strike | OI | Of which tracked | Avg sold at | Spot when sold | Now | Break-even | Cushion (pts) | Writer P&L (pts) | Strength |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
+        for x in w["strikes"]:
+            if abs(x["strike"] / e["spot"] - 1) > 0.015:
+                continue
+            L.append(f"| {'Call' if x['side'] == 'ce' else 'Put'} | {x['strike']:.0f} | {x['oi']:.0f} | "
+                     f"{x['tracked_oi']:.0f} | {x['avg_sell_price']:.1f} | {x['avg_spot_at_sale']:.0f} | "
+                     f"{x['ltp']:.1f} | {x['break_even']:.0f} | {x['cushion_pts']:+.0f} | "
+                     f"{x['writer_pnl_pts']:+.1f} | {x['strength']} |")
+        L.append("")
     if not lib.empty:
         for layer, title, mv in (("intraday", "30-minute patterns (Nifty move to that day's close)", "to close"),
                                  ("day", "Day patterns (Nifty move next day)", "next day")):
-            g = lib[lib["layer"] == layer].sort_values("seen", ascending=False)
+            g = lib[(lib["layer"] == layer) & (lib["group"] == "pattern")].sort_values("seen", ascending=False)
             if g.empty:
                 continue
             L += [f"## {title}", "",
@@ -289,6 +408,15 @@ def write_report(log, lib, read):
                 held = f"{pct(r['held_walls_share'])} of {int(r['expiries_seen'])}" if r["expiries_seen"] else ""
                 L.append(f"| {r['expiry_type']} | {r['pattern']} | {int(r['seen'])} | {pct(r['up_share'])} | "
                          f"{avg} | {rng} | {held} | {r['lean']} |")
+            L.append("")
+        g = lib[lib["group"] == "writers"].sort_values(["layer", "seen"], ascending=[False, False])
+        if not g.empty:
+            L += ["## Writer patterns (Nifty move to the close for 30-minute rows, next day for day rows)", "",
+                  "| Layer | Expiry | Writers | Seen | Up after | Avg move | Lean |", "|---|---|---|---|---|---|---|"]
+            for _, r in g.iterrows():
+                avg = "" if pd.isna(r["avg_move"]) else f"{r['avg_move']:+.2f}%"
+                L.append(f"| {r['layer']} | {r['expiry_type']} | {r['pattern']} | {int(r['seen'])} | "
+                         f"{pct(r['up_share'])} | {avg} | {r['lean']} |")
             L.append("")
     L += ["## How to read this",
           "- A pattern is: near-money PCR change · where new OI near the money went · how the put and call "
@@ -307,6 +435,21 @@ def write_report(log, lib, read):
         f.write("\n".join(L) + "\n")
 
 
+def clean(x):
+    """JSON-safe: NaN -> null, numpy numbers -> plain numbers."""
+    if isinstance(x, dict):
+        return {k: clean(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [clean(v) for v in x]
+    if isinstance(x, (np.floating, float)):
+        return None if math.isnan(x) else round(float(x), 4)
+    if isinstance(x, np.integer):
+        return int(x)
+    if isinstance(x, pd.Timestamp):
+        return str(x)
+    return x
+
+
 def rounded(df):
     return df.assign(**df.select_dtypes("number").round(4))
 
@@ -318,20 +461,26 @@ def main():
         print("no snapshots yet")
         return
     snaps = build(raw)
+    wb = writer_book(raw)
+    if not wb.empty:
+        snaps = snaps.merge(writer_summary(wb), on=["obs", "expiry"], how="left")
+    else:
+        snaps["writers"] = ""
     closes = snaps.sort_values("obs").groupby("date")["spot"].last()
     intra = add_outcomes(label_changes(snaps.copy(), "intraday"), "intraday", closes)
     day = (snaps.sort_values("obs").groupby(["expiry", "date"]).tail(1)
            .sort_values(["expiry", "obs"]).reset_index(drop=True))
     day = add_outcomes(label_changes(day, "day"), "day", closes)
     log = pd.concat([intra, day], ignore_index=True).sort_values(["obs", "layer", "expiry_type"])
-    lib = library(log)
+    lib = pd.concat([library(log, "pattern"), library(log, "writers")], ignore_index=True)
 
     # the weekly and monthly chains are read a few seconds apart, so "latest" is per expiry
     latest = intra.loc[intra.groupby("expiry_type")["obs"].idxmax()].sort_values("expiry")
     read = {"as_of": str(latest["obs"].max()), "expiries": []}
     for _, r in latest.iterrows():
         t = r["obs"]
-        past = library(log[log["obs"] < t])    # judge the latest pattern only by what came before it
+        before = log[log["obs"] < t]            # judge the latest pattern only by what came before it
+        past = pd.concat([library(before, "pattern"), library(before, "writers")], ignore_index=True)
         im = r["implied_move_pct"]
         e = {"expiry": r["expiry"], "type": r["expiry_type"], "dte": r["dte"], "spot": r["spot"],
              "pcr_near": round(r["pcr_near"], 3), "max_pain": r["max_pain"], "put_wall": r["put_wall"],
@@ -341,18 +490,41 @@ def main():
         for layer in ("intraday", "day"):
             x = log[(log["layer"] == layer) & (log["expiry"] == r["expiry"]) & (log["obs"] == t)]
             if len(x):
-                e[layer] = {"pattern": x.iloc[0]["pattern"], "verdict": structure_for(x.iloc[0], past)}
+                e[layer] = {"pattern": x.iloc[0]["pattern"], "verdict": structure_for(x.iloc[0], past),
+                            "writers": x.iloc[0]["writers"] if isinstance(x.iloc[0]["writers"], str) else "",
+                            "writers_verdict": structure_for(x.iloc[0], past, "writers")}
+        if not wb.empty:
+            w = wb[(wb["obs"] == t) & (wb["expiry"] == r["expiry"])].sort_values(["side", "strike"])
+            e["writers"] = {
+                "label": r.get("writers", ""),
+                "strong_call_strike": r.get("strong_call_strike"), "strong_put_strike": r.get("strong_put_strike"),
+                "weak_call_strike": r.get("weak_call_strike"), "weak_put_strike": r.get("weak_put_strike"),
+                "strong_call_oi": r.get("strong_call_oi"), "weak_call_oi": r.get("weak_call_oi"),
+                "strong_put_oi": r.get("strong_put_oi"), "weak_put_oi": r.get("weak_put_oi"),
+                "call_tracked_share": r.get("call_tracked_share"), "put_tracked_share": r.get("put_tracked_share"),
+                "strikes": [{k: (round(v, 2) if isinstance(v, float) else v) for k, v in row.items()
+                             if k in ("side", "strike", "oi", "tracked_oi", "tracked_share", "avg_sell_price",
+                                      "avg_spot_at_sale", "ltp", "break_even", "cushion_pts",
+                                      "writer_pnl_pts", "strength")}
+                            for row in w.to_dict("records")]}
         read["expiries"].append(e)
 
-    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "pattern", "pcr", "pcr_near", "d_pcr_near",
-            "new_pe_oi", "new_ce_oi", "max_pain", "put_wall", "call_wall", "d_put_wall", "d_call_wall",
-            "atm_iv", "d_atm_iv", "implied_move_pct", "move_next", "move_close", "move_to_expiry",
-            "held_walls", "move_vs_implied"]
-    rounded(log[cols]).to_csv(os.path.join(OUT, "pattern_log.csv"), index=False)
+    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "pattern", "writers", "pcr", "pcr_near",
+            "d_pcr_near", "new_pe_oi", "new_ce_oi", "max_pain", "put_wall", "call_wall", "d_put_wall",
+            "d_call_wall", "strong_call_strike", "strong_put_strike", "weak_call_strike", "weak_put_strike",
+            "strong_call_oi", "weak_call_oi", "strong_put_oi", "weak_put_oi", "atm_iv", "d_atm_iv",
+            "implied_move_pct", "move_next", "move_close", "move_to_expiry", "held_walls", "move_vs_implied"]
+    rounded(log.reindex(columns=cols)).to_csv(os.path.join(OUT, "pattern_log.csv"), index=False)
+    if not wb.empty:
+        # one file per day (strikes within 1.5% of spot), so past days never change
+        os.makedirs(os.path.join(OUT, "writers"), exist_ok=True)
+        near = wb[(wb["strike"] / wb["spot"] - 1).abs() <= 0.015]
+        for d, g in near.groupby(near["obs"].dt.strftime("%Y-%m-%d")):
+            rounded(g).to_csv(os.path.join(OUT, "writers", f"{d}.csv"), index=False)
     if not lib.empty:
         rounded(lib).to_csv(os.path.join(OUT, "pattern_library.csv"), index=False)
     with open(os.path.join(OUT, "latest.json"), "w") as f:
-        json.dump(read, f, indent=1, default=str)
+        json.dump(clean(read), f, indent=1)
     write_report(log, lib, read)
     print(open(os.path.join(OUT, "report.md")).read())
 

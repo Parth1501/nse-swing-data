@@ -27,6 +27,7 @@ Writes:
                         NSE's stock quote page and reused (re-checked every ~6 months)
 """
 import io
+import re
 import json
 import math
 import os
@@ -92,6 +93,8 @@ MAX_SECTOR_LOOKUPS = 150             # NSE quote lookups per run (the cache mean
 SECTOR_CACHE_DAYS = 180              # re-check a cached sector after about 6 months
 SECTOR_LOOKUP_PAUSE = 0.4            # seconds between NSE requests, to stay polite
 ETF_SECTOR = "ETF / Fund"            # shown as the sector, never rated as a sector group
+ETF_NAME_RE = r"(?i)\bETF\b|EXCHANGE TRADED|\bBEES\b|\bFUND\b"   # sec_list security names of ETFs / funds
+ETF_SYMBOL_RE = r"BEES$|ETF|^LIQUID|^GOLD(1|CASE|IETF|BETA|SHARE|ADD)?$|^SILVER(1|CASE|IETF|BEES|ADD)?$"
 
 # ---- Track record of past picks
 TOP_N = 10                           # the list shows the top 10 eligible stocks each day
@@ -168,15 +171,39 @@ def get_ban_list():
 
 
 def get_price_bands():
+    """Price band per EQ symbol, plus the EQ symbols whose security name says they are an ETF or fund."""
     try:
         txt = nse_get("https://nsearchives.nseindia.com/content/equities/sec_list.csv")
         df = pd.read_csv(io.StringIO(txt))
         df.columns = [c.strip().upper() for c in df.columns]
         df = df[df["SERIES"].astype(str).str.strip() == "EQ"]
-        return {str(r["SYMBOL"]).strip(): str(r["BAND"]).strip() for _, r in df.iterrows()}
+        bands = {str(r["SYMBOL"]).strip(): str(r["BAND"]).strip() for _, r in df.iterrows()}
+        name_col = next((c for c in df.columns if "NAME" in c or c == "SECURITY"), None)
+        etfs = set()
+        if name_col:
+            names = df[name_col].astype(str)
+            etfs = set(df.loc[names.str.contains(ETF_NAME_RE, regex=True), "SYMBOL"].astype(str).str.strip())
+        return bands, etfs
     except Exception as e:
         print("Price band fetch failed:", e)
-        return {}
+        return {}, set()
+
+
+def get_etf_symbols(from_names):
+    """Every ETF traded on NSE (user's choice, 14 Oct 2026: ETFs never go on the list).
+    NSE's ETF list, plus security names from sec_list, plus a symbol pattern as a last resort."""
+    etfs = set(from_names)
+    try:
+        df = pd.read_csv(io.StringIO(nse_get("https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv")))
+        df.columns = [c.strip().upper() for c in df.columns]
+        etfs |= {str(x).strip() for x in df["SYMBOL"].dropna() if str(x).strip()}
+    except Exception as e:
+        print("ETF list fetch failed:", e)
+    return etfs
+
+
+def is_etf(sym, etfs):
+    return sym in etfs or bool(re.search(ETF_SYMBOL_RE, sym))
 
 
 def get_index_members(fname):
@@ -1135,6 +1162,24 @@ def _active(log, frames):
     return set(prior.loc[prior["status"].astype(str).str.startswith(("Running", "Waiting")), "symbol"])
 
 
+def _held(frames, data_date):
+    """{symbol: list date} for picks from earlier lists that were bought and are still running."""
+    if not os.path.exists(PICKS_FILE):
+        return {}
+    try:
+        log = pd.read_csv(PICKS_FILE, dtype={"list_date": str})
+        log = log[[c for c in PICK_STATIC if c in log.columns]]
+        log = log[~log["list_date"].isin(BAD_LIST_DATES) & (log["list_date"] < str(data_date))]
+        if log.empty:
+            return {}
+        prior = _replay_all(log, frames)
+        run = prior[prior["status"].astype(str).str.startswith("Running")].sort_values("list_date")
+        return dict(zip(run["symbol"], run["list_date"]))
+    except Exception as e:                     # never block the daily list
+        print("held-stock check failed:", e)
+        return {}
+
+
 def update_near_misses(table, frames, data_date, listed):
     """Log the stocks that just missed today's list and replay them exactly like real picks, so the review can
     see whether the cut-off or a filter throws away winners. Kinds: eligible but ranked 11-20; a setup at weekly
@@ -1273,7 +1318,8 @@ def main():
     fno_set = set(fno)
     ban = get_ban_list()
     banned = set(ban["symbols"])
-    bands = get_price_bands()
+    bands, etf_names = get_price_bands()
+    etfs = get_etf_symbols(etf_names)
     eq_syms, eq_src = get_eq_symbols(bands)
     surv = get_asm_gsm()
     surveillance = {"ASM": set(surv["asm"]["symbols"]), "GSM": set(surv["gsm"]["symbols"])}
@@ -1291,6 +1337,9 @@ def main():
     segment_of.update({s: "Midcap 150" for s in mid_only})
     segment_of.update({s: "Cash (non-F&O)" for s in liquid})
     universe = fno + mid_only + liquid
+    dropped_etfs = sorted(s for s in universe if is_etf(s, etfs))
+    universe = [s for s in universe if s not in dropped_etfs]
+    print(f"ETFs left out: {len(dropped_etfs)}")
     frames = download([s + ".NS" for s in universe] + ["^NSEI"])
     if "^NSEI" not in frames:
         frames.update(download(["^NSEI"]))
@@ -1362,6 +1411,13 @@ def main():
                                                   f"so the setup can't be confirmed")
         table.loc[gap, "eligible"] = False
         print(f"Stocks with {latest_date} prices: {new_fresh:.0%}; eligible but dropped for missing price: {int(gap.sum())}")
+        # Already bought (a running pick from an earlier list): not a new trade, so it can't be on today's list.
+        held = _held(frames, latest_date)
+        own = table["eligible"] & table["symbol"].isin(held)
+        table.loc[own, "not_eligible_because"] = table.loc[own, "symbol"].map(
+            lambda x: f"Already bought (listed {held[x]}), trade still running")
+        table.loc[own, "eligible"] = False
+        print(f"Eligible but already bought: {int(own.sum())}")
         table = table.sort_values(["eligible", "score", "rs_3m_vs_nifty", "trigger_vol_ratio"],
                                   ascending=[False, False, False, False], na_position="last")
         table.insert(0, "rank", range(1, len(table) + 1))
@@ -1404,6 +1460,7 @@ def main():
         "fno_count": len(fno), "midcap150_count": len(mid150),
         "midcap150_non_fno_count": len(mid_only), "liquid_non_fno_count": len(liquid),
         "universe_count": len(universe), "stocks_analysed": len(rows),
+        "etfs_left_out": len(dropped_etfs),
         "stocks_failed_download": failed,
         "note_failed": f"Listed fewer than {MIN_HISTORY} sessions ago or no Yahoo data",
         "eligible_count": int(len(elig)),

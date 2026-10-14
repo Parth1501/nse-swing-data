@@ -1,0 +1,50 @@
+name: Nifty option chain learning
+
+on:
+  workflow_dispatch:           # started after the close (Mon-Fri) by the Claude routine, or by hand
+    inputs:
+      history_from:
+        description: "Optional: fetch end-of-day history from this date, e.g. 2024-11-20 (saved days are skipped)"
+        required: false
+        default: ""
+  push:                        # TEMPORARY: first backfill from the PR branch; removed before merge
+    branches: [claude/project-thread-lyr8ea]
+    paths: [oc_history.py, oc_learn.py, .github/workflows/oc_learn.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nifty-oc-learning
+  cancel-in-progress: false
+
+jobs:
+  learn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas numpy
+      - name: End-of-day history from NSE
+        run: python oc_history.py ${{ inputs.history_from }}
+        continue-on-error: true      # a missing NSE file must never stop the analysis of what is saved
+      - name: Save history and run the analysis
+        run: |
+          # Start each try from the latest copy of the branch so the snapshot runs' pushes never clash.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p "$RUNNER_TEMP/eod" && cp -r data/option_chain_eod/. "$RUNNER_TEMP/eod/" 2>/dev/null || true
+          for i in 1 2 3 4; do
+            git fetch -q origin "$GITHUB_REF_NAME" && git reset -q --hard "origin/$GITHUB_REF_NAME" || { sleep $((i * 5)); continue; }
+            mkdir -p data/option_chain_eod && cp -r "$RUNNER_TEMP/eod/." data/option_chain_eod/
+            python oc_learn.py
+            git add data/option_chain_eod data/oc_learning
+            git diff --cached --quiet && exit 0
+            git commit -q -m "Option chain learning $(TZ=Asia/Kolkata date +%F-%H%M)"
+            git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

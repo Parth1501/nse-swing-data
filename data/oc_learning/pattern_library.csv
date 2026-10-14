@@ -1,0 +1,10 @@
+layer,expiry_type,pattern,seen,with_outcome,up_share,up_low,up_high,avg_move,median_move,worst_down,best_up,expiries_seen,held_walls_share,held_low,median_move_vs_implied,lean,last_seen
+intraday,monthly,PCR down · call writing · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.7442,-0.7442,-0.7442,-0.7442,0,,,,too few (1/10),2026-10-14 12:15:04
+intraday,monthly,PCR flat · call writing · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.65,-0.65,-0.65,-0.65,0,,,,too few (1/10),2026-10-14 11:45:28
+intraday,monthly,PCR flat · quiet OI · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.7176,-0.7176,-0.7176,-0.7176,0,,,,too few (1/10),2026-10-14 11:14:58
+intraday,monthly,PCR up · call writing · walls same · mid walls,1,0,,,,,,,,0,,,,too few (0/10),2026-10-14 13:14:33
+intraday,monthly,PCR up · quiet OI · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.6682,-0.6682,-0.6682,-0.6682,0,,,,too few (1/10),2026-10-14 12:44:48
+intraday,weekly,PCR down · call writing · walls down · near put wall,1,0,,,,,,,,0,,,,too few (0/10),2026-10-14 13:12:57
+intraday,weekly,PCR down · call writing · walls same · near put wall,1,1,0.0,0.0,0.7935,-0.6218,-0.6218,-0.6218,-0.6218,0,,,,too few (1/10),2026-10-14 11:45:28
+intraday,weekly,PCR flat · call writing · walls same · near put wall,1,1,0.0,0.0,0.7935,-0.6533,-0.6533,-0.6533,-0.6533,0,,,,too few (1/10),2026-10-14 11:15:18
+intraday,weekly,PCR up · put writing · walls same · near put wall,2,2,0.0,0.0,0.6576,-0.6825,-0.6825,-0.7246,-0.6404,0,,,,too few (2/10),2026-10-14 12:44:48

@@ -1,0 +1,53 @@
+{
+ "as_of": "2026-10-14 13:14:33",
+ "expiries": [
+  {
+   "expiry": "2026-10-19",
+   "type": "weekly",
+   "dte": 5.1,
+   "spot": 22565.55,
+   "pcr_near": 0.859,
+   "max_pain": 22650.0,
+   "put_wall": 22500.0,
+   "call_wall": 22700.0,
+   "implied_move_pct": 1.36,
+   "implied_range": [
+    22259,
+    22872
+   ],
+   "atm_iv": 13.86,
+   "intraday": {
+    "pattern": "PCR down \u00b7 call writing \u00b7 walls down \u00b7 near put wall",
+    "verdict": "New pattern, never seen before. Logged; nothing to go on yet."
+   },
+   "day": {
+    "pattern": "",
+    "verdict": "No pattern yet (needs an earlier snapshot to compare with)."
+   }
+  },
+  {
+   "expiry": "2026-10-27",
+   "type": "monthly",
+   "dte": 13.09,
+   "spot": 22559.9,
+   "pcr_near": 1.045,
+   "max_pain": 23000.0,
+   "put_wall": 22000.0,
+   "call_wall": 23500.0,
+   "implied_move_pct": 2.09,
+   "implied_range": [
+    22088,
+    23031
+   ],
+   "atm_iv": 13.62,
+   "intraday": {
+    "pattern": "PCR up \u00b7 call writing \u00b7 walls same \u00b7 mid walls",
+    "verdict": "New pattern, never seen before. Logged; nothing to go on yet."
+   },
+   "day": {
+    "pattern": "",
+    "verdict": "No pattern yet (needs an earlier snapshot to compare with)."
+   }
+  }
+ ]
+}

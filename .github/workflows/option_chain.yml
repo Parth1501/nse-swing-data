@@ -2,11 +2,10 @@ name: Nifty option chain
 
 on:
   schedule:                    # every 30 min, 9:15 to 15:30 IST, Mon-Fri (cron is UTC; GitHub may start a few minutes late)
-    - cron: "15,45 3-9 * * 1-5"
+    - cron: "45 3 * * 1-5"
+    - cron: "15,45 4-9 * * 1-5"
     - cron: "0 10 * * 1-5"
   workflow_dispatch:           # or by hand from the Actions tab
-  push:                        # TEMP: test run on the feature branch
-    branches: [claude/project-thread-cwhmts]
 
 permissions:
   contents: write

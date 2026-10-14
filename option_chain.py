@@ -14,7 +14,9 @@ timestamp is already saved for that expiry (market closed, holiday, NSE not upda
 nothing.
 """
 import csv
+import json
 import os
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -94,16 +96,15 @@ def saved_times(path):
     return seen
 
 
-def main():
+PENDING = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "option_chain_pending.json")
+
+
+def fetch():
+    """Read NSE and write the new rows to PENDING (nothing in the repo changes yet)."""
     now = datetime.now(IST)
-    path = os.path.join(OUT_DIR, f"{now:%Y-%m-%d}.csv")
-    os.makedirs(OUT_DIR, exist_ok=True)
     s = session()
     expiries = pick_expiries(get_json(s, EXPIRY_API.format(sym=SYMBOL))["expiryDates"])
     types = {datetime.strptime(e, "%d-%b-%Y").strftime("%Y-%m-%d"): t for e, t in expiries.items()}
-    if os.path.exists(path):
-        add_type_column(path, types)
-    seen = saved_times(path)
     rows = []
     for exp in expiries:
         rec = get_json(s, CHAIN_API.format(sym=SYMBOL, exp=exp))["records"]
@@ -111,9 +112,6 @@ def main():
         expiry = datetime.strptime(exp, "%d-%b-%Y").strftime("%Y-%m-%d")
         if not nse_time.startswith(f"{now:%Y-%m-%d}"):
             print(f"{expiry}: NSE data is from {nse_time}, not today; skipped")
-            continue
-        if nse_time in seen.get(expiry, set()):
-            print(f"{expiry}: {nse_time} already saved; skipped")
             continue
         for d in sorted(rec["data"], key=lambda x: x["strikePrice"]):
             row = {"snapshot_ist": f"{now:%Y-%m-%d %H:%M:%S}", "nse_time": nse_time,
@@ -125,6 +123,21 @@ def main():
             rows.append(row)
         print(f"{expiry} ({expiries[exp]}): {len(rec['data'])} strikes, spot {rec['underlyingValue']}, NSE time {nse_time}")
         time.sleep(2)
+    with open(PENDING, "w") as f:
+        json.dump({"date": f"{now:%Y-%m-%d}", "types": types, "rows": rows}, f)
+
+
+def apply():
+    """Append PENDING's rows to today's file, skipping any NSE time already saved. Run on a
+    fresh copy of main each time, so two runs never fight over the same file."""
+    with open(PENDING) as f:
+        p = json.load(f)
+    path = os.path.join(OUT_DIR, f"{p['date']}.csv")
+    os.makedirs(OUT_DIR, exist_ok=True)
+    if os.path.exists(path):
+        add_type_column(path, p["types"])
+    seen = saved_times(path)
+    rows = [r for r in p["rows"] if r["nse_time"] not in seen.get(r["expiry"], set())]
     if rows:
         new = not os.path.exists(path)
         with open(path, "a", newline="") as f:
@@ -136,4 +149,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    apply() if sys.argv[1:] == ["--apply"] else fetch()

@@ -1,25 +1,23 @@
 """
-Learning how Nifty moves after changes in its option chain (weekly and monthly expiry).
+Nifty option chain pattern log, for option trading with hedged positions (spreads, condors).
 
-Reads two kinds of data, never changes them:
-  data/option_chain_eod/*.csv   one end-of-day chain per trading day (oc_history.py, NSE bhavcopy)
-  data/option_chain/*.csv       30-minute intraday snapshots (option_chain.py)
+Learns only from the live 30-minute snapshots in data/option_chain/ (option_chain.py), going
+forward from 14 Oct 2026; no historical backtest. Never changes the snapshot files.
 
-For every observation (a day, or a snapshot) and expiry it measures the chain (PCR, max pain,
-call and put walls, ATM straddle and the move it implies, ATM IV, put-call skew, where new OI was
-written near the money), how each changed since the previous observation of the same expiry, and
-what Nifty did afterwards (next day / next snapshot, to expiry, whether it stayed between the
-walls, how the real move compared with the move the straddle priced in).
+Each snapshot, for the weekly and the monthly expiry, is turned into a PATTERN: a short label
+for how the chain changed since the previous snapshot (near-money PCR up or down, whether the
+new OI near the money was put or call writing, whether the put and call walls moved, where spot
+sits between the walls). The day's last snapshot gives a second, day-level pattern (changes since
+the previous day). Every pattern is stored with what Nifty did afterwards: the day's close
+(intraday), the next day (day level), and up to expiry (did spot stay between the walls, how the
+move compared with what the ATM straddle priced in). Outcomes fill in on later runs as they happen.
 
-Then it tests a fixed list of ideas (HYPOTHESES below) and says, for each, whether there is
-enough data yet and whether an edge shows up. An idea only counts as an edge when it has enough
-observations, is statistically clear, and points the same way in the first and second half of
-the history (so one lucky stretch can't make it). Only edges feed the "today's read" section,
-which maps them to hedged structures (spreads, condors), never naked options.
+The pattern library then says, for each pattern seen before, how often and how far Nifty went
+up or down after it. When the latest snapshot shows a pattern with enough history, the report
+names the hedged structure that history points to; with too little history it says so.
 
-Writes data/oc_learning/: daily_features.csv, intraday_features.csv, hypotheses.csv (this run),
-hypotheses_history.csv (one block per run, so the learning can be followed over time),
-latest.json and report.md. Analysis only, not trading advice.
+Writes data/oc_learning/: pattern_log.csv (every observation with its pattern and outcomes),
+pattern_library.csv, latest.json and report.md. Analysis only, not trading advice.
 """
 import glob
 import json
@@ -31,26 +29,17 @@ import numpy as np
 import pandas as pd
 
 IST = timezone(timedelta(hours=5, minutes=30))
-EOD_DIR = os.path.join("data", "option_chain_eod")
 SNAP_DIR = os.path.join("data", "option_chain")
 OUT = os.path.join("data", "oc_learning")
-RATE = 0.065                  # risk-free rate for Black-Scholes IV on end-of-day prices
-NEAR = 0.03                   # "near the money" band for OI flow: +-3% of spot
-PCR_NEAR = 0.05               # band for near-money PCR
-MIN_GAP_MIN = 10              # intraday snapshots closer than this to the previous one are dropped
-SIDE = ("ltp", "oi", "chg_oi", "volume")
+NEAR = 0.03                   # "near the money": strikes within 3% of spot
+MIN_GAP_MIN = 10              # snapshots closer than this to the previous one are dropped
+PCR_STEP = {"intraday": 0.02, "day": 0.05}     # smaller PCR changes count as "flat"
+FLOW_STEP = 0.005             # new OI near the money below 0.5% of near OI counts as "quiet"
+SEEN_MIN = 10                 # past outcomes a pattern needs before it shows a lean
+TRADE_MIN = 20                # ... and before it can point to a structure
 
 
 # ---------- loading ----------
-
-def load_eod():
-    files = sorted(glob.glob(os.path.join(EOD_DIR, "*.csv")))
-    if not files:
-        return pd.DataFrame()
-    d = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
-    d["obs"] = pd.to_datetime(d["date"]) + pd.Timedelta(hours=15, minutes=30)
-    return d
-
 
 def load_snapshots():
     files = sorted(glob.glob(os.path.join(SNAP_DIR, "*.csv")))
@@ -63,45 +52,13 @@ def load_snapshots():
     # GitHub starts runs at odd times, so two snapshots can be a minute apart: keep the first of
     # any cluster, per expiry.
     keep = []
-    for _, g in d.groupby("expiry"):
+    for exp, g in d.groupby("expiry"):
         last = None
         for t in sorted(g["obs"].unique()):
             if last is None or (t - last) >= pd.Timedelta(minutes=MIN_GAP_MIN):
-                keep.append((g["expiry"].iloc[0], t))
+                keep.append((exp, t))
                 last = t
-    k = pd.DataFrame(keep, columns=["expiry", "obs"])
-    return d.merge(k, on=["expiry", "obs"])
-
-
-# ---------- option maths ----------
-
-def _ncdf(x):
-    return 0.5 * (1 + np.vectorize(math.erf)(x / math.sqrt(2)))
-
-
-def bs_price(S, K, T, sigma, call):
-    d1 = (np.log(S / K) + (RATE + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    if call:
-        return S * _ncdf(d1) - K * math.exp(-RATE * T) * _ncdf(d2)
-    return K * math.exp(-RATE * T) * _ncdf(-d2) - S * _ncdf(-d1)
-
-
-def implied_vol(price, S, K, T, call):
-    """IV in % by bisection; NaN when the price says nothing (zero, below intrinsic)."""
-    if not (price > 0 and T > 0):
-        return np.nan
-    intrinsic = max(0.0, S - K * math.exp(-RATE * T)) if call else max(0.0, K * math.exp(-RATE * T) - S)
-    if price <= intrinsic + 0.05:
-        return np.nan
-    lo, hi = 0.01, 3.0
-    for _ in range(60):
-        mid = (lo + hi) / 2
-        if float(bs_price(S, K, T, mid, call)) > price:
-            hi = mid
-        else:
-            lo = mid
-    return round(100 * (lo + hi) / 2, 2)
+    return d.merge(pd.DataFrame(keep, columns=["expiry", "obs"]), on=["expiry", "obs"])
 
 
 # ---------- one chain -> numbers ----------
@@ -113,120 +70,110 @@ def max_pain(strikes, ce_oi, pe_oi):
     return float(strikes[int(np.argmin(pain))])
 
 
-def chain_features(g, has_nse_iv):
+def chain_features(g):
     g = g.sort_values("strike")
     spot = float(g["spot"].iloc[0])
     obs = g["obs"].iloc[0]
     expiry = pd.Timestamp(g["expiry"].iloc[0]) + pd.Timedelta(hours=15, minutes=30)
-    dte = max((expiry - obs).total_seconds() / 86400, 0.0)
-    T = max(dte, 0.04) / 365
     k = g["strike"].to_numpy(float)
     ce_oi, pe_oi = g["ce_oi"].to_numpy(float), g["pe_oi"].to_numpy(float)
-    near = (np.abs(k / spot - 1) <= NEAR)
-    pnear = (np.abs(k / spot - 1) <= PCR_NEAR)
+    near = np.abs(k / spot - 1) <= NEAR
     above, below = k >= spot, k <= spot
-    atm_i = int(np.argmin(np.abs(k - spot)))
-    atm = g.iloc[atm_i]
-    straddle = float(atm["ce_ltp"]) + float(atm["pe_ltp"]) if atm["ce_ltp"] > 0 and atm["pe_ltp"] > 0 else np.nan
-
-    def side_iv(target, call):
-        i = int(np.argmin(np.abs(k - target)))
-        r = g.iloc[i]
-        if has_nse_iv:
-            v = float(r["ce_iv"] if call else r["pe_iv"])
-            return v if v > 0 else np.nan
-        return implied_vol(float(r["ce_ltp"] if call else r["pe_ltp"]), spot, float(r["strike"]), T, call)
-
-    if dte >= 0.5:
-        atm_iv = np.nanmean([side_iv(spot, True), side_iv(spot, False)])
-        skew = side_iv(spot * 0.97, False) - side_iv(spot * 1.03, True)
-    else:                                   # expiry day: option prices are mostly intrinsic
-        atm_iv = skew = np.nan
-    ce_flow, pe_flow = g.loc[near, "ce_chg_oi"].sum(), g.loc[near, "pe_chg_oi"].sum()
-    tot = abs(ce_flow) + abs(pe_flow)
+    atm = g.iloc[int(np.argmin(np.abs(k - spot)))]
+    ivs = [v for v in (atm["ce_iv"], atm["pe_iv"]) if v > 0]
+    straddle = atm["ce_ltp"] + atm["pe_ltp"] if atm["ce_ltp"] > 0 and atm["pe_ltp"] > 0 else np.nan
     return {
         "obs": obs, "date": g["date"].iloc[0], "expiry": g["expiry"].iloc[0],
-        "expiry_type": g["expiry_type"].iloc[0], "dte": round(dte, 2), "spot": spot,
+        "expiry_type": g["expiry_type"].iloc[0],
+        "dte": round(max((expiry - obs).total_seconds() / 86400, 0.0), 2), "spot": spot,
         "pcr": pe_oi.sum() / ce_oi.sum() if ce_oi.sum() else np.nan,
-        "pcr_near": pe_oi[pnear].sum() / ce_oi[pnear].sum() if ce_oi[pnear].sum() else np.nan,
+        "pcr_near": pe_oi[near].sum() / ce_oi[near].sum() if ce_oi[near].sum() else np.nan,
         "max_pain": max_pain(k, ce_oi, pe_oi),
         "call_wall": float(k[above][np.argmax(ce_oi[above])]) if above.any() else np.nan,
         "put_wall": float(k[below][np.argmax(pe_oi[below])]) if below.any() else np.nan,
-        "straddle": straddle,
-        "implied_move_pct": 100 * straddle / spot,
-        "atm_iv": atm_iv, "skew": skew,
-        # where today's (or this session's) new OI sits near the money; >0 = more put writing
-        "ce_flow_near": ce_flow, "pe_flow_near": pe_flow,
-        "flow_bias": (pe_flow - ce_flow) / tot if tot else 0.0,
+        "implied_move_pct": 100 * straddle / spot,      # ATM straddle ~ expected move to expiry
+        "atm_iv": float(np.mean(ivs)) if ivs else np.nan,
+        "oi_near": ce_oi[near].sum() + pe_oi[near].sum(),
+        # chg_oi is change since yesterday's close
+        "ce_chg_near": g.loc[near, "ce_chg_oi"].sum(), "pe_chg_near": g.loc[near, "pe_chg_oi"].sum(),
     }
 
 
-def build(raw, has_nse_iv):
-    if raw.empty:
-        return pd.DataFrame()
-    rows = [chain_features(g, has_nse_iv) for _, g in raw.groupby(["obs", "expiry"])]
-    f = pd.DataFrame(rows).sort_values(["expiry_type", "obs"]).reset_index(drop=True)
-    f["pos_in_walls"] = (f["spot"] - f["put_wall"]) / (f["call_wall"] - f["put_wall"])
-    f["mp_gap_pct"] = 100 * (f["max_pain"] / f["spot"] - 1)
-    # changes since the previous observation of the same contract
-    f = f.sort_values(["expiry", "obs"])
+def build(raw):
+    rows = [chain_features(g) for _, g in raw.groupby(["obs", "expiry"])]
+    return pd.DataFrame(rows).sort_values(["expiry", "obs"]).reset_index(drop=True)
+
+
+# ---------- patterns ----------
+
+def label_changes(f, layer):
+    """Adds the change columns and the pattern label. f is sorted by expiry, obs, and holds one
+    layer: every snapshot (intraday) or each day's last snapshot (day)."""
     prev = f.groupby("expiry").shift(1)
-    same_day = prev["date"] == f["date"]
-    for c in ("pcr", "pcr_near", "atm_iv", "skew"):
-        f[f"d_{c}"] = f[c] - prev[c]
-    f["d_call_wall"] = f["call_wall"] - prev["call_wall"]
-    f["d_put_wall"] = f["put_wall"] - prev["put_wall"]
-    f["d_max_pain"] = f["max_pain"] - prev["max_pain"]
-    # intraday: chg_oi is change since yesterday's close, so the flow during the interval is
-    # the difference between two snapshots of the same day
-    f["d_flow"] = np.where(same_day, (f["pe_flow_near"] - prev["pe_flow_near"])
-                           - (f["ce_flow_near"] - prev["ce_flow_near"]), np.nan)
-    f["prev_same_day"] = same_day
-    return f.sort_values(["expiry_type", "obs"]).reset_index(drop=True)
+    ok = prev["date"].eq(f["date"]) if layer == "intraday" else prev["date"].notna()
+    f["d_pcr_near"] = np.where(ok, f["pcr_near"] - prev["pcr_near"], np.nan)
+    f["d_put_wall"] = np.where(ok, f["put_wall"] - prev["put_wall"], np.nan)
+    f["d_call_wall"] = np.where(ok, f["call_wall"] - prev["call_wall"], np.nan)
+    f["d_atm_iv"] = np.where(ok, f["atm_iv"] - prev["atm_iv"], np.nan)
+    if layer == "intraday":   # OI written during this half hour
+        ce = f["ce_chg_near"] - prev["ce_chg_near"]
+        pe = f["pe_chg_near"] - prev["pe_chg_near"]
+    else:                     # OI written during the day
+        ce, pe = f["ce_chg_near"], f["pe_chg_near"]
+    f["new_ce_oi"] = np.where(ok, ce, np.nan)
+    f["new_pe_oi"] = np.where(ok, pe, np.nan)
 
+    def pattern(r):
+        if pd.isna(r["d_pcr_near"]):
+            return ""
+        step = PCR_STEP[layer]
+        pcr = "PCR up" if r["d_pcr_near"] >= step else "PCR down" if r["d_pcr_near"] <= -step else "PCR flat"
+        big = FLOW_STEP * r["oi_near"]
+        pw, cw = r["new_pe_oi"] >= big, r["new_ce_oi"] >= big
+        pu, cu = r["new_pe_oi"] <= -big, r["new_ce_oi"] <= -big
+        flow = ("put and call writing" if pw and cw else "put writing" if pw else "call writing" if cw
+                else "unwinding" if pu or cu else "quiet OI")
+        up = np.sign(r["d_put_wall"]) + np.sign(r["d_call_wall"])
+        walls = "walls up" if up > 0 else "walls down" if up < 0 else "walls same"
+        p = (r["spot"] - r["put_wall"]) / (r["call_wall"] - r["put_wall"]) if r["call_wall"] > r["put_wall"] else 0.5
+        where = ("below put wall" if p < 0 else "above call wall" if p > 1 else "near put wall" if p < 0.33
+                 else "near call wall" if p > 0.67 else "mid walls")
+        return " · ".join((pcr, flow, walls, where))
 
-# ---------- what happened next ----------
-
-def add_outcomes_daily(f):
-    spot = f.groupby("date")["spot"].first().sort_index()
-    days = list(spot.index)
-    idx = {d: i for i, d in enumerate(days)}
-
-    def fwd(d, n):
-        i = idx[d] + n
-        return 100 * (spot.iloc[i] / spot[d] - 1) if i < len(days) else np.nan
-
-    f["ret_1d"] = [fwd(d, 1) for d in f["date"]]
-    f["ret_3d"] = [fwd(d, 3) for d in f["date"]]
-    out = {"ret_exp": [], "held_walls": [], "move_ratio": [], "pinned": []}
-    for _, r in f.iterrows():
-        path = spot[(spot.index > r["date"]) & (spot.index <= r["expiry"])]
-        if r["expiry"] not in spot.index or path.empty:
-            for v in out.values():
-                v.append(np.nan)
-            continue
-        end = spot[r["expiry"]]
-        ret = 100 * (end / r["spot"] - 1)
-        out["ret_exp"].append(ret)
-        out["held_walls"].append(float(((path >= r["put_wall"]) & (path <= r["call_wall"])).all()))
-        out["move_ratio"].append(abs(ret) / r["implied_move_pct"] if r["implied_move_pct"] > 0 else np.nan)
-        out["pinned"].append(float(abs(end - r["max_pain"]) < abs(r["spot"] - r["max_pain"])))
-    for k, v in out.items():
-        f[k] = v
+    f["pattern"] = f.apply(pattern, axis=1)
+    f["layer"] = layer
     return f
 
 
-def add_outcomes_intraday(f):
-    f = f.sort_values(["expiry", "obs"])
-    nxt = f.groupby("expiry").shift(-1)
-    f["ret_next"] = np.where(nxt["date"] == f["date"], 100 * (nxt["spot"] / f["spot"] - 1), np.nan)
-    last = f.groupby(["expiry", "date"])["spot"].transform("last")
-    is_last = f.groupby(["expiry", "date"])["obs"].transform("max") == f["obs"]
-    f["ret_close"] = np.where(is_last, np.nan, 100 * (last / f["spot"] - 1))
-    return f.sort_values(["expiry_type", "obs"]).reset_index(drop=True)
+def add_outcomes(f, layer, closes):
+    """closes: the day's last spot per date (from the snapshots)."""
+    days = list(closes.index)
+    if layer == "intraday":
+        nxt = f.groupby("expiry").shift(-1)
+        f["move_next"] = np.where(nxt["date"].eq(f["date"]), 100 * (nxt["spot"] / f["spot"] - 1), np.nan)
+        last_obs = f.groupby(["expiry", "date"])["obs"].transform("max")
+        last_spot = f.groupby(["expiry", "date"])["spot"].transform("last")
+        f["move_close"] = np.where(f["obs"] < last_obs, 100 * (last_spot / f["spot"] - 1), np.nan)
+    else:
+        nxt = {d: days[i + 1] for i, d in enumerate(days[:-1])}
+        f["move_next"] = [100 * (closes[nxt[d]] / s - 1) if d in nxt else np.nan
+                          for d, s in zip(f["date"], f["spot"])]
+        f["move_close"] = np.nan
+    held, to_exp, ratio = [], [], []
+    for _, r in f.iterrows():
+        path = closes[(closes.index > r["date"]) & (closes.index <= r["expiry"])]
+        if r["expiry"] not in closes.index or path.empty:
+            held.append(np.nan), to_exp.append(np.nan), ratio.append(np.nan)
+            continue
+        mv = 100 * (closes[r["expiry"]] / r["spot"] - 1)
+        to_exp.append(mv)
+        held.append(float(((path >= r["put_wall"]) & (path <= r["call_wall"])).all()))
+        ratio.append(abs(mv) / r["implied_move_pct"] if r["implied_move_pct"] > 0 else np.nan)
+    f["move_to_expiry"], f["held_walls"], f["move_vs_implied"] = to_exp, held, ratio
+    return f
 
 
-# ---------- hypotheses ----------
+# ---------- library ----------
 
 def wilson(k, n):
     if n == 0:
@@ -237,202 +184,65 @@ def wilson(k, n):
     return (c - h, c + h)
 
 
-def two_prop_p(k1, n1, k2, n2):
-    if min(n1, n2) == 0:
-        return np.nan
-    p = (k1 + k2) / (n1 + n2)
-    se = math.sqrt(p * (1 - p) * (1 / n1 + 1 / n2))
-    if se == 0:
-        return np.nan
-    z = abs(k1 / n1 - k2 / n2) / se
-    return math.erfc(z / math.sqrt(2))
-
-
-def direction_test(df, signal, label, min_n):
-    """signal: +1 (expect up), -1 (expect down), 0/NaN (no call). Compares how often Nifty rose
-    after +1 versus after -1. Edge = enough data, p < 0.05, a gap of 10+ points, and the same
-    sign in both halves of the history."""
-    d = df[[signal, label]].dropna()
-    d = d[d[signal] != 0]
-    d = d[d[label] != 0]
-
-    def split(x):
-        up = x[label] > 0
-        b, s = x[signal] > 0, x[signal] < 0
-        return int(b.sum()), int((up & b).sum()), int(s.sum()), int((up & s).sum())
-
-    nb, kb, ns, ks = split(d)
-    res = {"n": nb + ns, "n_bull": nb, "n_bear": ns,
-           "up_after_bull": kb / nb if nb else np.nan, "up_after_bear": ks / ns if ns else np.nan}
-    res["gap"] = res["up_after_bull"] - res["up_after_bear"]
-    res["p_value"] = two_prop_p(kb, nb, ks, ns)
-    half = len(d) // 2
-    signs = []
-    for part in (d.iloc[:half], d.iloc[half:]):
-        b1, k1, s1, k2 = split(part)
-        signs.append(np.sign((k1 / b1 if b1 else 0.5) - (k2 / s1 if s1 else 0.5)))
-    res["halves_agree"] = bool(signs[0] == signs[1] != 0)
-    if min(nb, ns) < min_n:
-        res["status"] = f"collecting ({min(nb, ns)}/{min_n} on the smaller side)"
-    elif res["p_value"] < 0.05 and abs(res["gap"]) >= 0.10 and res["halves_agree"]:
-        res["status"] = "edge (works)" if res["gap"] > 0 else "edge (works in reverse)"
-    else:
-        res["status"] = "no edge so far"
-    return res
-
-
-def rate_test(df, label, min_n, good_above):
-    """How often a yes/no outcome happens. 'Usable' when the 95% lower bound clears good_above."""
-    x = df[label].dropna()
-    n, k = len(x), int(x.sum())
-    lo, hi = wilson(k, n)
-    res = {"n": n, "rate": k / n if n else np.nan, "ci_low": lo, "ci_high": hi}
-    if n < min_n:
-        res["status"] = f"collecting ({n}/{min_n})"
-    elif lo >= good_above:
-        res["status"] = f"usable (reliably above {good_above:.0%})"
-    else:
-        res["status"] = "not reliable"
-    return res
-
-
-def first_obs_per_expiry(f, kind):
-    """One observation per contract (the first day it is in the data as `kind`), so the
-    to-expiry outcomes don't count the same week many times."""
-    g = f[(f["expiry_type"] == kind)]
-    return g.sort_values("obs").groupby("expiry").head(1)
-
-
-def signals(f):
-    f = f.copy()
-    f["sig_pcr_rise"] = np.sign(f["d_pcr_near"])
-    f["sig_flow"] = np.sign(f["flow_bias"].where(f["flow_bias"].abs() >= 0.2, 0))
-    walls = np.sign(f["d_put_wall"].fillna(0)) + np.sign(f["d_call_wall"].fillna(0))
-    f["sig_walls_shift"] = np.sign(walls)
-    f["sig_max_pain"] = np.sign(f["mp_gap_pct"].where(f["mp_gap_pct"].abs() >= 0.5, 0))
-    f["sig_skew_fall"] = -np.sign(f["d_skew"])
-    f["sig_iv_fall"] = -np.sign(f["d_atm_iv"])
-    if "d_flow" in f:
-        f["sig_flow_now"] = np.sign(f["d_flow"])
-    return f
-
-
-DAILY_IDEAS = [
-    ("pcr_rise", "sig_pcr_rise", "Near-money PCR rose since yesterday, so Nifty rises next day"),
-    ("flow", "sig_flow", "Today's new OI near the money is mostly put writing, so Nifty rises next day"),
-    ("walls_shift", "sig_walls_shift", "Put and call walls moved up, so Nifty rises next day"),
-    ("max_pain_pull", "sig_max_pain", "Max pain is above spot (0.5%+), so Nifty rises next day"),
-    ("skew_fall", "sig_skew_fall", "Put skew eased, so Nifty rises next day"),
-    ("iv_fall", "sig_iv_fall", "ATM IV fell, so Nifty rises next day"),
-]
-INTRADAY_IDEAS = [
-    ("pcr_rise", "sig_pcr_rise", "Near-money PCR rose in the last 30 min, so Nifty rises to the close"),
-    ("flow_now", "sig_flow_now", "The last 30 min added more put than call OI near the money, so Nifty rises to the close"),
-    ("walls_shift", "sig_walls_shift", "Walls moved up in the last 30 min, so Nifty rises to the close"),
-]
-
-
-def run_hypotheses(daily, intra):
+def library(log):
     out = []
-    if not daily.empty:
-        sd = signals(daily)
-        for kind in ("weekly", "monthly"):
-            g = sd[sd["expiry_type"] == kind]
-            for key, sig, text in DAILY_IDEAS:
-                r = direction_test(g, sig, "ret_1d", 30)
-                out.append({"scope": f"daily/{kind}", "id": key, "idea": text, **r})
-            first = first_obs_per_expiry(daily, kind)
-            min_n = 20 if kind == "weekly" else 12
-            r = rate_test(first, "held_walls", min_n, 0.70)
-            out.append({"scope": f"to-expiry/{kind}", "id": "walls_hold",
-                        "idea": "Nifty closes every day between the put and call walls until expiry", **r})
-            r = rate_test(first.assign(seller=(first["move_ratio"] < 1).where(first["move_ratio"].notna())),
-                          "seller", min_n, 0.55)
-            r["median_ratio"] = float(first["move_ratio"].median()) if first["move_ratio"].notna().any() else np.nan
-            out.append({"scope": f"to-expiry/{kind}", "id": "move_lt_implied",
-                        "idea": "The move to expiry is smaller than the ATM straddle priced in", **r})
-            r = rate_test(first, "pinned", min_n, 0.60)
-            out.append({"scope": f"to-expiry/{kind}", "id": "max_pain_pin",
-                        "idea": "Nifty ends nearer max pain at expiry than when the contract started", **r})
-    if not intra.empty:
-        si = signals(intra)
-        si = si[si["prev_same_day"]]
-        for kind in ("weekly", "monthly"):
-            g = si[si["expiry_type"] == kind]
-            for key, sig, text in INTRADAY_IDEAS:
-                # 30-minute observations from one day are not independent, so ask for more
-                r = direction_test(g, sig, "ret_close", 100)
-                out.append({"scope": f"intraday/{kind}", "id": key, "idea": text, **r})
+    for (layer, kind, pat), g in log[log["pattern"] != ""].groupby(["layer", "expiry_type", "pattern"]):
+        mv = g["move_close" if layer == "intraday" else "move_next"].dropna()
+        mv = mv[mv != 0]
+        n, up = len(mv), int((mv > 0).sum())
+        lo, hi = wilson(up, n)
+        # to-expiry numbers: one observation per contract, so a long expiry isn't counted many times
+        e = g.dropna(subset=["held_walls"]).sort_values("obs").groupby("expiry").head(1)
+        hlo, _ = wilson(int(e["held_walls"].sum()), len(e))
+        if n < SEEN_MIN:
+            lean = f"too few ({n}/{SEEN_MIN})"
+        elif lo > 0.5:
+            lean = "up"
+        elif hi < 0.5:
+            lean = "down"
+        else:
+            lean = "no clear direction"
+        out.append({
+            "layer": layer, "expiry_type": kind, "pattern": pat, "seen": len(g), "with_outcome": n,
+            "up_share": up / n if n else np.nan, "up_low": lo, "up_high": hi,
+            "avg_move": mv.mean() if n else np.nan, "median_move": mv.median() if n else np.nan,
+            "worst_down": mv.min() if n else np.nan, "best_up": mv.max() if n else np.nan,
+            "expiries_seen": len(e), "held_walls_share": e["held_walls"].mean() if len(e) else np.nan,
+            "held_low": hlo,
+            "median_move_vs_implied": e["move_vs_implied"].median() if len(e) else np.nan,
+            "lean": lean, "last_seen": str(g["obs"].max()),
+        })
     return pd.DataFrame(out)
 
 
-# ---------- today's read ----------
-
-def todays_read(daily, intra, hyp):
-    src = intra if not intra.empty else daily
-    if src.empty:
-        return {}
-    last_t = src["obs"].max()
-    now = signals(src[src["obs"] == last_t])
-    read = {"as_of": str(last_t), "source": "intraday snapshot" if src is intra else "end of day", "expiries": []}
-    edges = hyp[hyp["status"].str.startswith("edge")] if not hyp.empty else hyp
-    # each learned edge is checked on the latest observation of its own kind: next-day ideas on
-    # the latest end-of-day chain, intraday ideas on the latest snapshot
-    latest = {}
-    for scope, f in (("daily", daily), ("intraday", intra)):
-        if not f.empty:
-            latest[scope] = signals(f[f["obs"] == f["obs"].max()]).set_index("expiry_type")
-    sig_of = {"pcr_rise": "sig_pcr_rise", "flow": "sig_flow", "flow_now": "sig_flow_now",
-              "walls_shift": "sig_walls_shift", "max_pain_pull": "sig_max_pain",
-              "skew_fall": "sig_skew_fall", "iv_fall": "sig_iv_fall"}
-    for _, r in now.iterrows():
-        kind = r["expiry_type"]
-        votes, used = 0, []
-        for _, h in edges.iterrows():
-            scope, hkind = h["scope"].split("/")
-            if hkind != kind or scope not in latest or kind not in latest[scope].index:
-                continue
-            v = latest[scope].loc[kind].get(sig_of[h["id"]], np.nan)
-            if pd.notna(v) and v != 0:
-                v = v if h["gap"] > 0 else -v
-                votes += v
-                used.append(f"{scope} {h['id']} says {'up' if v > 0 else 'down'}")
-        bias = "up" if votes > 0 else "down" if votes < 0 else "neutral"
-
-        def status(i):
-            x = hyp[(hyp["scope"] == f"to-expiry/{kind}") & (hyp["id"] == i)] if not hyp.empty else hyp
-            return x["status"].iloc[0] if len(x) else "no data"
-
-        sellers = status("move_lt_implied").startswith("usable")
-        walls = status("walls_hold").startswith("usable")
-        spot, im = r["spot"], r["implied_move_pct"]
-        lo, hi = spot * (1 - im / 100), spot * (1 + im / 100)
-        if not used and not sellers and not walls:
-            idea = ("Nothing learned yet is strong enough to lean on, so no structure is favoured. "
-                    "Any trade now is a guess; if you trade anyway keep it a defined-risk spread.")
-        elif sellers:
-            if bias == "up":
-                idea = f"Learned bias up and premium has tended to be overpriced: bull put spread, short put at or below the put wall ({r['put_wall']:.0f})."
-            elif bias == "down":
-                idea = f"Learned bias down and premium has tended to be overpriced: bear call spread, short call at or above the call wall ({r['call_wall']:.0f})."
-            else:
-                anchor = f"walls {r['put_wall']:.0f} / {r['call_wall']:.0f}" if walls else f"implied range {lo:.0f} / {hi:.0f}"
-                idea = f"No direction, premium has tended to be overpriced: iron condor with short strikes at the {anchor}."
-        else:
-            if bias == "up":
-                idea = "Learned bias up, premium not overpriced: bull call debit spread, ATM to about the call wall."
-            elif bias == "down":
-                idea = "Learned bias down, premium not overpriced: bear put debit spread, ATM to about the put wall."
-            else:
-                idea = "No direction and no premium edge: stand aside."
-        read["expiries"].append({
-            "expiry": r["expiry"], "type": kind, "dte": r["dte"], "spot": spot,
-            "pcr": round(r["pcr"], 3), "pcr_near": round(r["pcr_near"], 3), "max_pain": r["max_pain"],
-            "put_wall": r["put_wall"], "call_wall": r["call_wall"],
-            "implied_move_pct": round(im, 2), "implied_range": [round(lo), round(hi)],
-            "atm_iv": None if pd.isna(r["atm_iv"]) else round(r["atm_iv"], 2),
-            "learned_bias": bias, "signals_used": used, "structure_idea": idea})
-    return read
+def structure_for(row, lib):
+    """What the history of this pattern points to. Only hedged structures, never naked options."""
+    if row["pattern"] == "":
+        return "No pattern yet (needs an earlier snapshot to compare with)."
+    m = lib[(lib["layer"] == row["layer"]) & (lib["expiry_type"] == row["expiry_type"])
+            & (lib["pattern"] == row["pattern"])] if not lib.empty else lib
+    if m.empty:
+        return "New pattern, never seen before. Logged; nothing to go on yet."
+    m = m.iloc[0]
+    n = int(m["with_outcome"])
+    seen = (f"Seen {int(m['seen'])} times before"
+            + (f"; Nifty was up after it {m['up_share']:.0%} of the time, average {m['avg_move']:+.2f}%." if n else "."))
+    if n < TRADE_MIN:
+        return f"{seen} Too few outcomes ({n}/{TRADE_MIN}) to trade on."
+    premium_rich = m["expiries_seen"] >= 8 and m["median_move_vs_implied"] < 1
+    walls_hold = m["expiries_seen"] >= 8 and m["held_low"] >= 0.7
+    pw, cw = row["put_wall"], row["call_wall"]
+    if m["lean"] == "up":
+        s = (f"bull put spread, short put at or below the put wall {pw:.0f}" if premium_rich
+             else f"bull call debit spread, ATM to about the call wall {cw:.0f}")
+    elif m["lean"] == "down":
+        s = (f"bear call spread, short call at or above the call wall {cw:.0f}" if premium_rich
+             else f"bear put debit spread, ATM to about the put wall {pw:.0f}")
+    elif walls_hold:
+        s = f"iron condor, short strikes at the walls {pw:.0f} / {cw:.0f}"
+    else:
+        return f"{seen} No direction and the walls have not held reliably: no structure."
+    return f"{seen} History points to a {s}."
 
 
 # ---------- report ----------
@@ -441,87 +251,109 @@ def pct(x):
     return "" if pd.isna(x) else f"{100 * x:.0f}%"
 
 
-def write_report(daily, intra, hyp, read):
+def write_report(log, lib, read):
     now = datetime.now(IST)
-    L = [f"# Nifty option chain: what has been learned so far",
-         f"Updated {now:%Y-%m-%d %H:%M} IST. Analysis only, not trading advice.", ""]
-    nd = daily["date"].nunique() if not daily.empty else 0
-    ni = intra["obs"].nunique() if not intra.empty else 0
-    ndays_i = intra["date"].nunique() if not intra.empty else 0
-    L += ["## Data", f"- End of day history: {nd} trading days"
-          + (f" ({daily['date'].min()} to {daily['date'].max()})" if nd else ""),
-          f"- Intraday snapshots: {ni} kept, over {ndays_i} days", ""]
-    if read:
-        L += [f"## Today's read ({read['source']}, {read['as_of']})", "",
-              "| Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied range | ATM IV | Learned bias |",
-              "|---|---|---|---|---|---|---|---|---|---|"]
-        for e in read["expiries"]:
-            L.append(f"| {e['expiry']} ({e['type']}) | {e['dte']:.1f} | {e['spot']:.0f} | {e['pcr_near']} | "
-                     f"{e['max_pain']:.0f} | {e['put_wall']:.0f} | {e['call_wall']:.0f} | "
-                     f"{e['implied_range'][0]}-{e['implied_range'][1]} | {e['atm_iv'] or ''} | {e['learned_bias']} |")
-        L.append("")
-        for e in read["expiries"]:
-            L.append(f"- **{e['type'].title()}**: {e['structure_idea']}"
-                     + (f" (from {', '.join(e['signals_used'])})" if e["signals_used"] else ""))
-        L.append("")
-    if not hyp.empty:
-        L += ["## Ideas being tested",
-              "An idea is an edge only with enough data, p < 0.05, a 10+ point gap and the same "
-              "direction in both halves of the history.", ""]
-        for scope, g in hyp.groupby("scope", sort=False):
-            L.append(f"### {scope}")
-            if scope.startswith("to-expiry"):
-                L += ["| Idea | n | How often | 95% range | Status |", "|---|---|---|---|---|"]
-                for _, h in g.iterrows():
-                    extra = f" (median real/implied {h['median_ratio']:.2f})" if pd.notna(h.get("median_ratio", np.nan)) else ""
-                    L.append(f"| {h['idea']}{extra} | {h['n']} | {pct(h['rate'])} | "
-                             f"{pct(h['ci_low'])}-{pct(h['ci_high'])} | {h['status']} |")
-            else:
-                L += ["| Idea | n | Up after signal | Up after opposite | p | Status |", "|---|---|---|---|---|---|"]
-                for _, h in g.iterrows():
-                    p = "" if pd.isna(h["p_value"]) else f"{h['p_value']:.3f}"
-                    L.append(f"| {h['idea']} | {h['n']} | {pct(h['up_after_bull'])} | "
-                             f"{pct(h['up_after_bear'])} | {p} | {h['status']} |")
+    intra = log[log["layer"] == "intraday"]
+    L = ["# Nifty option chain pattern log",
+         f"Updated {now:%Y-%m-%d %H:%M} IST. Learns only from live snapshots since 14 Oct 2026. "
+         "Analysis only, not trading advice.", "",
+         "## Data",
+         f"- {intra['obs'].nunique()} snapshots over {intra['date'].nunique()} trading days",
+         f"- {int((log['pattern'] != '').sum())} patterns logged; {len(lib)} different patterns so far", ""]
+    L += [f"## Latest read ({read['as_of']})", "",
+          "| Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |",
+          "|---|---|---|---|---|---|---|---|---|"]
+    for e in read["expiries"]:
+        L.append(f"| {e['expiry']} ({e['type']}) | {e['dte']:.1f} | {e['spot']:.0f} | {e['pcr_near']} | "
+                 f"{e['max_pain']:.0f} | {e['put_wall']:.0f} | {e['call_wall']:.0f} | "
+                 f"±{e['implied_move_pct']}% ({e['implied_range'][0]}-{e['implied_range'][1]}) | {e['atm_iv'] or ''} |")
+    L.append("")
+    for e in read["expiries"]:
+        for layer, when in (("intraday", "last 30 min"), ("day", "today vs previous day")):
+            p = e.get(layer)
+            if p:
+                L.append(f"- **{e['type'].title()}, {when}**: `{p['pattern'] or '-'}`. {p['verdict']}")
+    L.append("")
+    if not lib.empty:
+        for layer, title, mv in (("intraday", "30-minute patterns (Nifty move to that day's close)", "to close"),
+                                 ("day", "Day patterns (Nifty move next day)", "next day")):
+            g = lib[lib["layer"] == layer].sort_values("seen", ascending=False)
+            if g.empty:
+                continue
+            L += [f"## {title}", "",
+                  f"| Expiry | Pattern | Seen | Up after | Avg move {mv} | Range | Walls held to expiry | Lean |",
+                  "|---|---|---|---|---|---|---|---|"]
+            for _, r in g.iterrows():
+                avg = "" if pd.isna(r["avg_move"]) else f"{r['avg_move']:+.2f}%"
+                rng = "" if pd.isna(r["worst_down"]) else f"{r['worst_down']:+.2f} to {r['best_up']:+.2f}%"
+                held = f"{pct(r['held_walls_share'])} of {int(r['expiries_seen'])}" if r["expiries_seen"] else ""
+                L.append(f"| {r['expiry_type']} | {r['pattern']} | {int(r['seen'])} | {pct(r['up_share'])} | "
+                         f"{avg} | {rng} | {held} | {r['lean']} |")
             L.append("")
-    L += ["## How much data is enough",
-          "- Next-day ideas: at least 30 days on each side of the signal; weekly and monthly are tested separately.",
-          "- To-expiry ideas count one observation per expiry: 20 weekly expiries (about 5 months) and 12 monthly "
-          "expiries (a year). End of day history from Nov 2024 covers most of that from the start.",
-          "- Intraday ideas: 100 snapshots on each side, because snapshots from one day move together. "
-          "That is roughly 4 to 6 weeks of 30-minute data.",
-          "- Testing many ideas means about one in twenty can look like an edge by luck; the both-halves check "
-          "and watching an edge survive new data over the next weeks are the guard against that.",
-          "- End of day walls-held uses daily closes only, so an intraday breach that closes back inside counts as held."]
+    L += ["## How to read this",
+          "- A pattern is: near-money PCR change · where new OI near the money went · how the put and call "
+          "walls (biggest OI strikes) moved · where spot sits between the walls.",
+          f"- A pattern shows a lean only after {SEEN_MIN} outcomes, and only when the 95% range of 'up after' "
+          f"sits fully above or below 50%. It points to a structure only after {TRADE_MIN} outcomes.",
+          "- Credit spreads and condors are suggested only after 8+ expiries showed the real move smaller than "
+          "the straddle priced in (or the walls holding 70%+ of the time); otherwise debit spreads.",
+          "- 30-minute patterns from one day move together, so trust a lean more once it has held across "
+          "several weeks, not one busy day.",
+          "- Roughly: common 30-minute patterns reach 20 outcomes in 3 to 6 weeks, day patterns in 3 to 6 months, "
+          "and the walls/expiry numbers need about 5 months of weekly expiries and a year of monthly ones.",
+          "- Walls held means every daily close stayed between the walls; an intraday breach that closed back "
+          "inside counts as held."]
     with open(os.path.join(OUT, "report.md"), "w") as f:
         f.write("\n".join(L) + "\n")
 
 
-def rnd(df):
+def rounded(df):
     return df.assign(**df.select_dtypes("number").round(4))
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    eod, snaps = load_eod(), load_snapshots()
-    daily = add_outcomes_daily(build(eod, has_nse_iv=False)) if not eod.empty else pd.DataFrame()
-    intra = add_outcomes_intraday(build(snaps, has_nse_iv=True)) if not snaps.empty else pd.DataFrame()
-    hyp = run_hypotheses(daily, intra)
-    read = todays_read(daily, intra, hyp)
-    if not daily.empty:
-        rnd(daily).to_csv(os.path.join(OUT, "daily_features.csv"), index=False)
-    if not intra.empty:
-        rnd(intra).to_csv(os.path.join(OUT, "intraday_features.csv"), index=False)
-    if not hyp.empty:
-        rnd(hyp).to_csv(os.path.join(OUT, "hypotheses.csv"), index=False)
-        hist = os.path.join(OUT, "hypotheses_history.csv")
-        h = hyp[["scope", "id", "n", "status"]].assign(run=f"{datetime.now(IST):%Y-%m-%d}")
-        if os.path.exists(hist):
-            old = pd.read_csv(hist)
-            h = pd.concat([old[old["run"] != h["run"].iloc[0]], h], ignore_index=True)
-        h.to_csv(hist, index=False)
+    raw = load_snapshots()
+    if raw.empty:
+        print("no snapshots yet")
+        return
+    snaps = build(raw)
+    closes = snaps.sort_values("obs").groupby("date")["spot"].last()
+    intra = add_outcomes(label_changes(snaps.copy(), "intraday"), "intraday", closes)
+    day = (snaps.sort_values("obs").groupby(["expiry", "date"]).tail(1)
+           .sort_values(["expiry", "obs"]).reset_index(drop=True))
+    day = add_outcomes(label_changes(day, "day"), "day", closes)
+    log = pd.concat([intra, day], ignore_index=True).sort_values(["obs", "layer", "expiry_type"])
+    lib = library(log)
+
+    # the weekly and monthly chains are read a few seconds apart, so "latest" is per expiry
+    latest = intra.loc[intra.groupby("expiry_type")["obs"].idxmax()].sort_values("expiry")
+    read = {"as_of": str(latest["obs"].max()), "expiries": []}
+    for _, r in latest.iterrows():
+        t = r["obs"]
+        past = library(log[log["obs"] < t])    # judge the latest pattern only by what came before it
+        im = r["implied_move_pct"]
+        e = {"expiry": r["expiry"], "type": r["expiry_type"], "dte": r["dte"], "spot": r["spot"],
+             "pcr_near": round(r["pcr_near"], 3), "max_pain": r["max_pain"], "put_wall": r["put_wall"],
+             "call_wall": r["call_wall"], "implied_move_pct": round(im, 2),
+             "implied_range": [round(r["spot"] * (1 - im / 100)), round(r["spot"] * (1 + im / 100))],
+             "atm_iv": None if pd.isna(r["atm_iv"]) else round(r["atm_iv"], 2)}
+        for layer in ("intraday", "day"):
+            x = log[(log["layer"] == layer) & (log["expiry"] == r["expiry"]) & (log["obs"] == t)]
+            if len(x):
+                e[layer] = {"pattern": x.iloc[0]["pattern"], "verdict": structure_for(x.iloc[0], past)}
+        read["expiries"].append(e)
+
+    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "pattern", "pcr", "pcr_near", "d_pcr_near",
+            "new_pe_oi", "new_ce_oi", "max_pain", "put_wall", "call_wall", "d_put_wall", "d_call_wall",
+            "atm_iv", "d_atm_iv", "implied_move_pct", "move_next", "move_close", "move_to_expiry",
+            "held_walls", "move_vs_implied"]
+    rounded(log[cols]).to_csv(os.path.join(OUT, "pattern_log.csv"), index=False)
+    if not lib.empty:
+        rounded(lib).to_csv(os.path.join(OUT, "pattern_library.csv"), index=False)
     with open(os.path.join(OUT, "latest.json"), "w") as f:
         json.dump(read, f, indent=1, default=str)
-    write_report(daily, intra, hyp, read)
+    write_report(log, lib, read)
     print(open(os.path.join(OUT, "report.md")).read())
 
 

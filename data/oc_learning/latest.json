@@ -1,23 +1,23 @@
 {
- "as_of": "2026-10-14 13:14:33",
+ "as_of": "2026-10-14 13:45:23",
  "expiries": [
   {
    "expiry": "2026-10-19",
    "type": "weekly",
-   "dte": 5.1,
-   "spot": 22565.55,
-   "pcr_near": 0.859,
-   "max_pain": 22650.0,
+   "dte": 5.07,
+   "spot": 22612.6,
+   "pcr_near": 0.741,
+   "max_pain": 22600.0,
    "put_wall": 22500.0,
    "call_wall": 22700.0,
-   "implied_move_pct": 1.36,
+   "implied_move_pct": 1.29,
    "implied_range": [
-    22259,
-    22872
+    22322,
+    22904
    ],
-   "atm_iv": 13.86,
+   "atm_iv": 13.87,
    "intraday": {
-    "pattern": "PCR down \u00b7 call writing \u00b7 walls down \u00b7 near put wall",
+    "pattern": "PCR down \u00b7 call writing \u00b7 walls same \u00b7 mid walls",
     "verdict": "New pattern, never seen before. Logged; nothing to go on yet."
    },
    "day": {
@@ -28,20 +28,20 @@
   {
    "expiry": "2026-10-27",
    "type": "monthly",
-   "dte": 13.09,
-   "spot": 22559.9,
-   "pcr_near": 1.045,
+   "dte": 13.07,
+   "spot": 22616.0,
+   "pcr_near": 0.987,
    "max_pain": 23000.0,
    "put_wall": 22000.0,
-   "call_wall": 23500.0,
-   "implied_move_pct": 2.09,
+   "call_wall": 23000.0,
+   "implied_move_pct": 2.06,
    "implied_range": [
-    22088,
-    23031
+    22151,
+    23081
    ],
-   "atm_iv": 13.62,
+   "atm_iv": 13.56,
    "intraday": {
-    "pattern": "PCR up \u00b7 call writing \u00b7 walls same \u00b7 mid walls",
+    "pattern": "PCR down \u00b7 call writing \u00b7 walls down \u00b7 mid walls",
     "verdict": "New pattern, never seen before. Logged; nothing to go on yet."
    },
    "day": {

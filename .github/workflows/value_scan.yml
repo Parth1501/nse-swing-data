@@ -1,0 +1,38 @@
+name: Weekly value screen
+
+on:
+  workflow_dispatch:           # started by the Friday value pick routine (Fridays, 7:15 PM IST), or by hand
+  push:                        # TEMPORARY: test run on the feature branch; removed before merge
+    branches: [claude/project-thread-ycit1e]
+    paths: [value_scan.py, .github/workflows/value_scan.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-value-screen
+  cancel-in-progress: false
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas numpy requests
+      - run: python value_scan.py
+      - name: Save data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4; do
+            git add data/value
+            git diff --cached --quiet && exit 0
+            git commit -q -m "Value screen $(TZ=Asia/Kolkata date +%F-%H%M)"
+            git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

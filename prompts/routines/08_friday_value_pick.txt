@@ -127,7 +127,7 @@ STEP 7 — DELIVERY
    GMAIL-SAFE RULES (learned from testing — Gmail web and the Android app strip things):
    - INLINE style="" attributes only. NO <style> block, no classes (Gmail removes them and the email turns into plain text).
    - Never use the "background:" shorthand and never rely on a background colour for readability (Gmail drops fills). Every coloured box = a 2px solid coloured BORDER + dark text; also add background-color and, on <td>, a bgcolor attribute as a bonus.
-   - No white text anywhere. No opacity. No scripts. No <img> tags at all: the Gmail send tool removes every image before sending (tested 1 Oct 2026: linked, cid and data: images were all stripped), so the chart is a link button (see CHART).
+   - No white text anywhere. No opacity. No scripts. No <img> tags at all: the Gmail send tool removes every image before sending (tested 1 Oct 2026: linked, cid and data: images were all stripped), this email has no chart.
    - Wrapper: <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;padding:4px;color:#111">. Headings as bold text with inline font-size (h2 ~20px, h3 ~16px). Minify whitespace between tags.
    - Tables: <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #9aa0a6">, every th/td style="padding:4px 3px;font-size:11px;line-height:1.3;border:1px solid #9aa0a6;vertical-align:middle" — at most 6 columns so they fit a 340 px phone; split wider tables.
    - Labels as bold coloured text: "Fact:" #1a56c4, "Analyst view:" #9a5b00. Checklist: Red #b3261e, Yellow/Orange #9a5b00, Green #137333. Sources as <a href> links.

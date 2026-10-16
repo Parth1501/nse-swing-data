@@ -28,9 +28,14 @@ Claude routines only *start* the GitHub workflows (via `workflow_dispatch`); the
 | 18:45 | Claude routine | Starts `daily.yml` (full run: global numbers, scan, charts, tracker, feedback) | [`06_daily_data_run.txt`](../prompts/routines/06_daily_data_run.txt) |
 | 19:05 | Claude routine | Dashboard refresh | [`05_dashboard_refresh.txt`](../prompts/routines/05_dashboard_refresh.txt) |
 | 19:28 | Claude routine "NSE Trade Review" | Reads `feedback.json`, `picks_log.csv`, `pick_features.csv`, past reviews; explains the day's results, keeps lessons, proposes (never applies) rule changes; sends the review email | trigger: [`07_trade_review_trigger.txt`](../prompts/routines/07_trade_review_trigger.txt) → full prompt: [`07_trade_review.txt`](../prompts/routines/07_trade_review.txt) |
+| Fri 19:45 | Claude routine "Friday value pick" | Starts `value_scan.yml`, waits for `data/value/`, screens the shortlist for manipulation and promoter quality, emails one Full teardown of a long-term mid/small-cap idea (never feeds the morning list) | [`08_friday_value_pick.txt`](../prompts/routines/08_friday_value_pick.txt) |
 | ~~19:45~~ | **Disabled** since 8 Oct 2026 | Evening red-flag screen + one-stock forensic teardown (its emails still feed the morning list's skip rules for 20 trading days) | [`disabled/setup_teardown.txt`](../prompts/routines/disabled/setup_teardown.txt) |
 
 ## Code: GitHub workflows and scripts
+
+### `value_scan.yml` — "Weekly value screen" (started Fridays 19:45 by the Friday value pick)
+
+`value_scan.py`: Nifty Midcap 150 + Smallcap 250, ₹2,000–40,000 cr, annual numbers from Yahoo Finance. Passes = ROCE > 15% (ROE for lenders), 3-year sales and profit CAGR > 15%, D/E < 0.5, 3-year CFO ≥ 70% of profit, P/E below its own 4-year-end median or its industry median. Writes `data/value/latest.csv`, `shortlist.csv` and `meta.json`. Never touches the swing data.
 
 ### `daily.yml` — "Daily NSE data" (started 18:45, and 07:45 in global-only mode)
 
@@ -78,6 +83,7 @@ next day, to expiry) and writes `data/oc_learning/pattern_log.csv`, `pattern_lib
 | Trade review | `meta.json`, `feedback.json`, `picks_log.csv`, `pick_features.csv`, past "Trade review" emails in Gmail | Optional web research (trusted sources) | Email (to you, bcc second recipient), thread reply |
 | Option chain / patterns / daily data | — | GitHub `workflow_dispatch` | Starts workflows only |
 | Dashboard refresh | Repo checkout + newest lessons file (`/mnt/project-files/nse-swing/reviews/`, written in a project thread; copy in [`docs/lessons/`](lessons/)) | Artifact publish | Runs [`dashboard/build.py`](../dashboard/build.py) with [`dashboard/template.html`](../dashboard/template.html) |
+| Friday value pick | `data/value/meta.json`, `shortlist.csv`, `latest.csv`, past "Friday value pick" emails (12-week no-repeat) | Sub-agents, web research (trusted sources), Playwright | Email (to you, bcc second recipient) + app message |
 | Teardown (disabled) | `meta.json`, `latest.csv`, Gmail | Sub-agents, web research, Playwright | Email + app message |
 
 ## Data files (all in `data/`)

@@ -1,0 +1,29 @@
+{
+  "generated_at_ist": "2026-10-16 16:30",
+  "data_date": "2026-10-16",
+  "universe_source": [
+    "https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv",
+    "https://nsearchives.nseindia.com/content/indices/ind_niftysmallcap250list.csv"
+  ],
+  "universe_count": 401,
+  "with_data": 397,
+  "in_size_band": 269,
+  "passed_count": 22,
+  "shortlist_count": 15,
+  "near_miss_count": 0,
+  "thresholds": {
+    "mcap_cr": [
+      2000,
+      40000
+    ],
+    "min_roce_or_roe_pct": 15.0,
+    "min_3y_sales_and_profit_cagr_pct": 15.0,
+    "max_debt_equity": 0.5,
+    "min_cfo_to_profit_3y": 0.7,
+    "valuation": "P/E below own 4-year-end median or industry median",
+    "lenders": [
+      "Financial Services"
+    ]
+  },
+  "source": "Yahoo Finance via yfinance (annual statements); the Claude routine re-checks key numbers on Screener/NSE"
+}

@@ -258,6 +258,7 @@ def main():
     if not frames:
         raise SystemExit("Could not load the Midcap 150 / Smallcap 250 lists")
     uni = pd.concat(frames).drop_duplicates("SYMBOL")
+    uni.columns = [c.replace(" ", "_") for c in uni.columns]    # NSE's header is "COMPANY NAME"
     rows = []
     for i, r in enumerate(uni.itertuples(index=False)):
         sym = str(r.SYMBOL).strip()

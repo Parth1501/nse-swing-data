@@ -1,10 +1,7 @@
 name: Weekly value screen
 
 on:
-  workflow_dispatch:           # started by the Friday value pick routine (Fridays, 7:15 PM IST), or by hand
-  push:                        # TEMPORARY: test run on the feature branch; removed before merge
-    branches: [claude/project-thread-ycit1e]
-    paths: [value_scan.py, .github/workflows/value_scan.yml]
+  workflow_dispatch:           # started by the Friday value pick routine (Fridays, 7:45 PM IST), or by hand
 
 permissions:
   contents: write

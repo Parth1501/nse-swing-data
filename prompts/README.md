@@ -14,6 +14,7 @@ fits together: [`docs/FLOW.md`](../docs/FLOW.md).
 | `routines/06_daily_data_run.txt` | 18:45 | Starts `daily.yml` |
 | `routines/07_trade_review_trigger.txt` | 19:28 | Tells the run to read the trade review file |
 | `routines/07_trade_review.txt` | (read by the 19:28 run) | Full evening trade review prompt |
+| `routines/08_friday_value_pick.txt` | Fri 19:45 | Starts `value_scan.yml`, screens for manipulation and promoter quality, one Full teardown |
 | `routines/disabled/setup_teardown.txt` | was 19:45, disabled 8 Oct | Red-flag screen + one-stock teardown |
 | `routines/disabled/one_time_*.txt` | one-off, already fired | Test and check-in runs from 30 Sep |
 | `history/morning_list_*.txt` | — | Earlier versions of the morning prompt |

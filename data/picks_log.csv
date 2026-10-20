@@ -70,7 +70,7 @@ list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_
 2026-09-30,8,SAILIFE,Cash (non-F&O),Pullback,1494.4,1539.23,1585.41,1631.59,,Healthcare,Leading,Running (T1 hit),2026-10-01,1516.0,2026-10-07,,,,,-7.92,-9.6,4.88,18.0,T1 hit (+3%),2026-10-07
 2026-09-30,9,WOCKPHARMA,Cash (non-F&O),Pullback,2067.7,2129.73,2193.62,2257.51,,Healthcare,Leading,Running (T1 hit),2026-10-01,2110.0,2026-10-07,,,,,-9.65,-9.92,4.12,18.0,T1 hit (+3%),2026-10-07
 2026-09-29,1,MANINDS,Cash (non-F&O),Retest,944.0,972.32,1001.49,1030.66,ASM,Unknown,No data,Running,2026-09-30,962.0,,,,,,-8.06,-13.5,0.0,19.0,Bought,2026-09-30
-2026-09-29,2,LIQUID1,Cash (non-F&O),Retest,1123.29,1156.99,1191.7,1226.41,5% band,Unknown,No data,Running,2026-09-30,1124.68,,,,,,0.28,-0.71,2.01,19.0,Bought,2026-09-30
+2026-09-29,2,LIQUID1,Cash (non-F&O),Retest,1123.29,1156.99,1191.7,1226.41,5% band,Unknown,No data,Running,2026-10-06,1133.66,,,,,,-0.51,-1.62,0.0,13.0,Bought,2026-10-06
 2026-09-29,3,SANSERA,Cash (non-F&O),Pullback,4040.4,4161.61,4286.46,4411.31,ASM,Automobile and Auto Components,Weakening,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-05
 2026-09-29,4,KIRIINDUS,Cash (non-F&O),Pullback,525.9,541.68,557.93,574.18,ASM,Unknown,No data,Running (T1 hit),2026-09-30,541.68,2026-10-05,,,,,-9.97,-10.42,4.8,19.0,T1 hit (+3%),2026-10-05
 2026-09-29,5,CENTUM,Cash (non-F&O),Candle at support,4450.0,4583.5,4721.01,4858.51,ASM,Unknown,No data,Running,2026-10-05,4583.5,,,,,,-13.05,-14.04,1.56,14.0,Bought,2026-10-05

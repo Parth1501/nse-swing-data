@@ -1,15 +1,15 @@
 {
-  "generated_at_ist": "2026-10-19 18:55",
+  "generated_at_ist": "2026-10-20 18:54",
   "data_date": "2026-10-19",
   "method": "price action + volume only; no indicators; no stop-loss; support trades only (no breakouts), support read from weekly candles",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
   "fno_count": 213,
   "midcap150_count": 150,
   "midcap150_non_fno_count": 58,
-  "liquid_non_fno_count": 227,
+  "liquid_non_fno_count": 226,
   "universe_count": 482,
   "stocks_analysed": 466,
-  "etfs_left_out": 16,
+  "etfs_left_out": 15,
   "stocks_failed_download": [
     "ARCIL",
     "AUGMONT",
@@ -86,7 +86,7 @@
   "asm_gsm": {
     "asm": {
       "status": "ok",
-      "count": 205
+      "count": 203
     },
     "gsm": {
       "status": "ok",
@@ -258,9 +258,9 @@
     {
       "sector": "Realty",
       "stocks": 8,
-      "median_1m": -2.32,
+      "median_1m": -2.25,
       "median_3m": -11.3,
-      "vs_nifty_1m": -0.68,
+      "vs_nifty_1m": -0.6,
       "vs_nifty_3m": -5.73,
       "tag": "Lagging"
     },

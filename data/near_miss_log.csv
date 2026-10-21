@@ -1,52 +1,64 @@
 list_date,rank,symbol,segment,entry_style,entry_low,entry_high,t1,t2,warning_at_listing,sector,sector_tag,near_miss_reason,score,status,fill_date,fill_price,t1_date,t2_date,close_date,exit_price,return_pct,current_pct,max_dip_pct,max_rise_pct,days_held,last_event,last_event_date
-2026-10-19,11,TI,Cash (non-F&O),Pullback,529.45,545.33,561.69,578.05,,Fast Moving Consumer Goods,Improving,room under 6%,8,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,14,DRREDDY,F&O,Retest,1208.1,1244.34,1281.67,1319.0,,Healthcare,Weakening,room under 6%,8,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
+2026-10-21,4,SHADOWFAX,Cash (non-F&O),Retest,268.65,276.71,285.01,293.31,,Services,Weakening,room under 6%,11,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,12,PNGSREVA,Cash (non-F&O),Pullback,644.0,663.32,683.22,703.12,,Unknown,No data,past T1,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,18,SHYAMMETL,Cash (non-F&O),Retest,1148.0,1182.44,1217.91,1253.39,,Capital Goods,Weakening,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,22,LGEINDIA,Midcap 150,Pullback,1599.0,1646.97,1696.38,1745.79,,Consumer Durables,Lagging,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,26,OIL,F&O,Pullback,434.65,447.69,461.12,474.55,,Oil Gas & Consumable Fuels,Weakening,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,27,SOLARINDS,F&O,Pullback,18480.0,19034.4,19605.43,20176.46,,Chemicals,Lagging,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,29,GLENMARK,F&O,Pullback,2162.0,2226.86,2293.67,2360.47,,Healthcare,Weakening,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,30,FEDERALBNK,F&O,Pullback,313.75,323.16,332.86,342.55,,Financial Services,Lagging,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,32,PGEL,F&O,Pullback,476.1,490.38,505.09,519.81,,Consumer Durables,Lagging,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,60,TECHM,F&O,Candle at support,1498.0,1542.94,1589.23,1635.52,,Information Technology,Leading,room under 6%,4,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,88,TITAN,F&O,Pullback,4335.6,4465.67,4599.64,4733.61,,Consumer Durables,Lagging,room under 6%,4,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-21,167,GICRE,Midcap 150,Candle at support,308.0,317.24,326.76,336.27,Low volume,Financial Services,Lagging,past T1,2,Waiting for entry,,,,,,,,,,,,Listed,2026-10-21
+2026-10-19,11,TI,Cash (non-F&O),Pullback,529.45,545.33,561.69,578.05,,Fast Moving Consumer Goods,Improving,room under 6%,8,Running,2026-10-21,545.0,,,,,,-5.38,-5.38,0.0,0.0,Bought,2026-10-21
+2026-10-19,14,DRREDDY,F&O,Retest,1208.1,1244.34,1281.67,1319.0,,Healthcare,Weakening,room under 6%,8,Running,2026-10-21,1244.34,,,,,,0.01,0.0,0.01,0.0,Bought,2026-10-21
 2026-10-19,15,KROSS,Cash (non-F&O),Pullback,237.6,244.73,252.07,259.41,,Unknown,No data,past T1,7,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,17,TIPSMUSIC,Cash (non-F&O),Retest,741.0,763.23,786.13,809.02,,Media Entertainment & Publication,Leading,room under 6%,7,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,35,TCS,F&O,Retest,2457.4,2531.12,2607.06,2682.99,,Information Technology,Leading,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,40,EDELWEISS,Cash (non-F&O),Pullback,126.33,130.12,134.02,137.93,,Financial Services,Lagging,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,45,ZYDUSLIFE,F&O,Pullback,1105.4,1138.56,1172.72,1206.88,,Healthcare,Weakening,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,47,HCLTECH,F&O,Retest,1379.8,1421.19,1463.83,1506.47,,Information Technology,Leading,room under 6%,5,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,48,ORIENTELEC,Cash (non-F&O),Retest,194.0,199.82,205.81,211.81,,Unknown,No data,room under 6%,5,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-19,51,ELECON,Cash (non-F&O),Retest,459.3,473.08,487.27,501.46,,Capital Goods,Weakening,room under 6%,5,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
+2026-10-19,17,TIPSMUSIC,Cash (non-F&O),Retest,741.0,763.23,786.13,809.02,,Media Entertainment & Publication,Leading,room under 6%,7,Running,2026-10-21,763.23,,,,,,-2.0,-2.0,0.0,0.0,Bought,2026-10-21
+2026-10-19,35,TCS,F&O,Retest,2457.4,2531.12,2607.06,2682.99,,Information Technology,Leading,room under 6%,6,Running,2026-10-21,2484.0,,,,,,1.81,0.0,1.81,0.0,Bought,2026-10-21
+2026-10-19,40,EDELWEISS,Cash (non-F&O),Pullback,126.33,130.12,134.02,137.93,,Financial Services,Lagging,room under 6%,6,Running,2026-10-21,130.12,,,,,,-4.4,-4.4,0.0,0.0,Bought,2026-10-21
+2026-10-19,45,ZYDUSLIFE,F&O,Pullback,1105.4,1138.56,1172.72,1206.88,,Healthcare,Weakening,room under 6%,6,Running,2026-10-21,1113.7,,,,,,0.32,0.0,0.32,0.0,Bought,2026-10-21
+2026-10-19,47,HCLTECH,F&O,Retest,1379.8,1421.19,1463.83,1506.47,,Information Technology,Leading,room under 6%,5,Running,2026-10-21,1402.5,,,,,,1.55,0.0,1.55,0.0,Bought,2026-10-21
+2026-10-19,48,ORIENTELEC,Cash (non-F&O),Retest,194.0,199.82,205.81,211.81,,Unknown,No data,room under 6%,5,Running,2026-10-21,194.0,,,,,,-2.27,-2.27,0.0,0.0,Bought,2026-10-21
+2026-10-19,51,ELECON,Cash (non-F&O),Retest,459.3,473.08,487.27,501.46,,Capital Goods,Weakening,room under 6%,5,Running,2026-10-21,459.3,,,,,,-5.67,-5.67,0.0,0.0,Bought,2026-10-21
 2026-10-19,67,PAYTM,F&O,Pullback,1558.8,1605.56,1653.73,1701.9,,Financial Services,Lagging,room under 6%,4,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
 2026-10-19,90,BHARTIHEXA,Midcap 150,Weekly reversal,1359.2,1399.98,1441.98,1483.97,Low volume,Telecommunication,Weakening,past T1,4,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
 2026-10-19,214,JAICORPLTD,Cash (non-F&O),Candle at support,82.2,84.67,87.21,89.75,,Unknown,No data,past T1,2,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
 2026-10-19,238,HINDPETRO,F&O,Candle at support,323.25,332.95,342.94,352.92,,Oil Gas & Consumable Fuels,Weakening,past T1,1,Waiting for entry,,,,,,,,,,,,Listed,2026-10-19
-2026-10-16,11,DIVISLAB,F&O,Pullback,8923.0,9190.69,9466.41,9742.13,,Healthcare,Weakening,room under 6%,8,Running,2026-10-19,9190.69,,,,,,-1.13,-1.13,0.0,0.0,Bought,2026-10-19
-2026-10-16,16,OFSS,F&O,Pullback,9937.0,10235.11,10542.16,10849.22,,Information Technology,Leading,room under 6%,7,Running,2026-10-19,10235.11,,,,,,-0.21,-0.21,0.0,0.0,Bought,2026-10-19
-2026-10-16,40,AUROPHARMA,F&O,Pullback,1636.8,1685.9,1736.48,1787.06,,Healthcare,Weakening,room under 6%,6,Running,2026-10-19,1662.1,,,,,,-2.45,-2.45,0.0,0.0,Bought,2026-10-19
-2026-10-16,41,SAGILITY,F&O,Pullback,42.11,43.37,44.67,45.98,,Information Technology,Leading,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-16
-2026-10-16,42,JASH,Cash (non-F&O),Retest,520.0,535.6,551.67,567.74,,Unknown,No data,room under 6%,6,Running,2026-10-19,535.6,,,,,,-0.08,-0.08,0.0,0.0,Bought,2026-10-19
-2026-10-16,44,JSL,Midcap 150,Pullback,696.05,716.93,738.44,759.95,,Metals & Mining,Weakening,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-16
-2026-10-16,47,HDFCLIFE,F&O,Candle at support,530.5,546.41,562.81,579.2,,Financial Services,Lagging,room under 6%,6,Running,2026-10-19,546.41,,,,,,-0.17,-0.17,0.0,0.0,Bought,2026-10-19
-2026-10-16,49,WHIRLPOOL,Cash (non-F&O),Retest,832.7,857.68,883.41,909.14,,Consumer Durables,Leading,room under 6%,5,Running,2026-10-19,857.68,,,,,,-2.21,-2.21,0.0,0.0,Bought,2026-10-19
-2026-10-16,50,CRISIL,Midcap 150,Pullback,4345.0,4475.35,4609.61,4743.87,Low volume,Financial Services,Lagging,room under 6%,5,Running,2026-10-19,4475.35,,,,,,1.16,0.0,1.16,0.0,Bought,2026-10-19
+2026-10-16,11,DIVISLAB,F&O,Pullback,8923.0,9190.69,9466.41,9742.13,,Healthcare,Weakening,room under 6%,8,Running,2026-10-19,9190.69,,,,,,-0.01,-1.63,0.57,2.0,Bought,2026-10-19
+2026-10-16,16,OFSS,F&O,Pullback,9937.0,10235.11,10542.16,10849.22,,Information Technology,Leading,room under 6%,7,Running,2026-10-19,10235.11,,,,,,0.27,-0.53,1.36,2.0,Bought,2026-10-19
+2026-10-16,40,AUROPHARMA,F&O,Pullback,1636.8,1685.9,1736.48,1787.06,,Healthcare,Weakening,room under 6%,6,Running,2026-10-19,1662.1,,,,,,-5.01,-5.9,0.0,2.0,Bought,2026-10-19
+2026-10-16,41,SAGILITY,F&O,Pullback,42.11,43.37,44.67,45.98,,Information Technology,Leading,room under 6%,6,Running,2026-10-21,43.37,,,,,,2.4,0.0,2.4,0.0,Bought,2026-10-21
+2026-10-16,42,JASH,Cash (non-F&O),Retest,520.0,535.6,551.67,567.74,,Unknown,No data,room under 6%,6,Running,2026-10-19,535.6,,,,,,-5.04,-5.87,1.42,2.0,Bought,2026-10-19
+2026-10-16,44,JSL,Midcap 150,Pullback,696.05,716.93,738.44,759.95,,Metals & Mining,Weakening,room under 6%,6,Running,2026-10-21,716.93,,,,,,2.35,0.0,2.35,0.0,Bought,2026-10-21
+2026-10-16,47,HDFCLIFE,F&O,Candle at support,530.5,546.41,562.81,579.2,,Financial Services,Lagging,room under 6%,6,Running,2026-10-19,546.41,,,,,,-1.24,-2.71,0.21,2.0,Bought,2026-10-19
+2026-10-16,49,WHIRLPOOL,Cash (non-F&O),Retest,832.7,857.68,883.41,909.14,,Consumer Durables,Leading,room under 6%,5,Running,2026-10-19,857.68,,,,,,-4.04,-6.52,0.0,2.0,Bought,2026-10-19
+2026-10-16,50,CRISIL,Midcap 150,Pullback,4345.0,4475.35,4609.61,4743.87,Low volume,Financial Services,Lagging,room under 6%,5,Running,2026-10-19,4475.35,,,,,,2.48,0.0,2.79,2.0,Bought,2026-10-19
 2026-10-16,51,UNIONBANK,F&O,Pullback,164.81,169.75,174.85,179.94,,Financial Services,Lagging,room under 6%,5,Waiting for entry,,,,,,,,,,,,Listed,2026-10-16
 2026-10-16,248,HAVELLS,F&O,Candle at support,1015.1,1045.55,1076.92,1108.29,,Consumer Durables,Leading,past T1,1,Waiting for entry,,,,,,,,,,,,Listed,2026-10-16
-2026-10-15,8,NEOGEN,Cash (non-F&O),Retest,2420.0,2492.6,2567.38,2642.16,,Chemicals,Lagging,room under 6%,9,Running,2026-10-16,2492.6,,,,,,-0.43,-2.1,1.28,3.0,Bought,2026-10-16
-2026-10-15,10,ASHOKLEY,F&O,Pullback,144.5,148.84,153.3,157.77,,Capital Goods,Leading,room under 6%,8,Running,2026-10-16,148.84,,,,,,-0.75,-1.1,0.38,3.0,Bought,2026-10-16
-2026-10-15,11,KOTAKBANK,F&O,Retest,434.9,447.95,461.39,474.82,,Financial Services,Lagging,room under 6%,7,Running,2026-10-16,447.95,,,,,,-1.26,-2.09,0.0,3.0,Bought,2026-10-16
-2026-10-15,12,ETERNAL,F&O,Pullback,308.55,317.81,327.34,336.87,,Consumer Services,Weakening,room under 6%,7,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-15,13,KISSHT,Cash (non-F&O),Retest,351.5,362.05,372.91,383.77,New listing,Financial Services,Lagging,room under 6%,7,Running,2026-10-16,356.1,,,,,,-3.76,-4.52,0.0,3.0,Bought,2026-10-16
-2026-10-15,14,CASTROLIND,Cash (non-F&O),Retest,195.0,200.85,206.88,212.9,,Oil Gas & Consumable Fuels,Weakening,room under 6%,7,Running,2026-10-16,196.02,,,,,,0.39,0.0,1.89,3.0,Bought,2026-10-16
-2026-10-15,15,TMCV,Cash (non-F&O),Pullback,398.0,409.94,422.24,434.54,,Capital Goods,Leading,room under 6%,7,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-15,17,INDUSINDBK,F&O,Pullback,870.2,896.31,923.2,950.08,,Financial Services,Lagging,room under 6%,7,Running,2026-10-16,887.9,,,,,,-2.78,-3.18,0.0,3.0,Bought,2026-10-16
-2026-10-15,32,ABDL,Cash (non-F&O),Pullback,679.8,700.19,721.2,742.21,,Fast Moving Consumer Goods,Improving,room under 6%,6,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-15,34,GRAPHITE,Cash (non-F&O),Pullback,756.9,779.61,803.0,826.38,,Capital Goods,Leading,room under 6%,6,Running,2026-10-16,768.9,,,,,,-3.04,-3.76,0.92,3.0,Bought,2026-10-16
-2026-10-15,65,SKYGOLD,Cash (non-F&O),Candle at support,868.8,894.86,921.71,948.56,ASM,Consumer Durables,Leading,past T1,4,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-15,222,HDFCAMC,F&O,Candle at support,2223.3,2290.0,2358.7,2427.4,,Financial Services,Lagging,past T1,2,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-15,224,GALLANTT,Cash (non-F&O),Candle at support,508.8,524.06,539.79,555.51,,Capital Goods,Leading,past T1,2,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-15,259,FIRSTCRY,Cash (non-F&O),Candle at support,163.37,168.27,173.32,178.37,,Consumer Services,Weakening,past T1,1,Waiting for entry,,,,,,,,,,,,Listed,2026-10-15
-2026-10-14,9,MEESHO,Midcap 150,Retest,227.65,234.48,241.51,248.55,,Consumer Services,Leading,room under 6%,12,Running,2026-10-15,227.65,,,,,,0.85,-2.37,1.16,4.0,Bought,2026-10-15
-2026-10-14,10,MARINE,Cash (non-F&O),Retest,450.0,463.5,477.41,491.31,,Unknown,No data,room under 6%,11,Running,2026-10-15,463.5,,,,,,-6.73,-8.62,0.0,4.0,Bought,2026-10-15
-2026-10-14,11,PTCIL,Cash (non-F&O),Retest,24125.0,24848.75,25594.21,26339.68,,Capital Goods,Leading,room under 6%,9,Running,2026-10-15,24848.75,,,,,,0.79,-2.89,2.22,4.0,Bought,2026-10-15
-2026-10-14,13,GLAND,Cash (non-F&O),Retest,3042.0,3133.26,3227.26,3321.26,,Healthcare,Weakening,room under 6%,9,Running,2026-10-15,3042.0,,,,,,-0.73,-1.29,1.8,4.0,Bought,2026-10-15
-2026-10-14,14,APARINDS,Midcap 150,Pullback,17157.0,17671.71,18201.86,18732.01,,Capital Goods,Leading,room under 6%,8,Running,2026-10-15,17671.71,,,,,,-10.95,-11.72,0.0,4.0,Bought,2026-10-15
-2026-10-14,15,TEGA,Cash (non-F&O),Retest,1894.0,1950.82,2009.34,2067.87,,Capital Goods,Leading,room under 6%,8,Running,2026-10-15,1950.82,,,,,,-4.38,-4.96,0.06,4.0,Bought,2026-10-15
-2026-10-14,17,MOTILALOFS,F&O,Pullback,989.75,1019.44,1050.03,1080.61,,Financial Services,Lagging,room under 6%,8,Running,2026-10-19,1019.44,,,,,,0.15,0.0,0.15,0.0,Bought,2026-10-19
-2026-10-14,18,AXISCADES,Cash (non-F&O),Retest,2030.0,2090.9,2153.63,2216.35,,Capital Goods,Leading,room under 6%,7,Running (T1 hit),2026-10-15,2090.9,2026-10-19,,,,,0.28,-3.23,3.35,4.0,T1 hit (+3%),2026-10-19
-2026-10-14,20,CPPLUS,Cash (non-F&O),Pullback,3866.0,3981.98,4101.44,4220.9,,Capital Goods,Leading,room under 6%,7,Running,2026-10-19,3981.98,,,,,,0.7,0.0,0.7,0.0,Bought,2026-10-19
+2026-10-15,8,NEOGEN,Cash (non-F&O),Retest,2420.0,2492.6,2567.38,2642.16,,Chemicals,Lagging,room under 6%,9,Running,2026-10-16,2492.6,,,,,,-5.32,-6.32,1.28,5.0,Bought,2026-10-16
+2026-10-15,10,ASHOKLEY,F&O,Pullback,144.5,148.84,153.3,157.77,,Capital Goods,Leading,room under 6%,8,Running,2026-10-16,148.84,,,,,,-1.41,-3.23,0.38,5.0,Bought,2026-10-16
+2026-10-15,11,KOTAKBANK,F&O,Retest,434.9,447.95,461.39,474.82,,Financial Services,Lagging,room under 6%,7,Running,2026-10-16,447.95,,,,,,-2.27,-3.0,0.0,5.0,Bought,2026-10-16
+2026-10-15,12,ETERNAL,F&O,Pullback,308.55,317.81,327.34,336.87,,Consumer Services,Weakening,room under 6%,7,Running,2026-10-21,317.81,,,,,,-1.72,-1.72,0.0,0.0,Bought,2026-10-21
+2026-10-15,13,KISSHT,Cash (non-F&O),Retest,351.5,362.05,372.91,383.77,New listing,Financial Services,Lagging,room under 6%,7,Running,2026-10-16,356.1,,,,,,-7.32,-8.35,0.0,5.0,Bought,2026-10-16
+2026-10-15,14,CASTROLIND,Cash (non-F&O),Retest,195.0,200.85,206.88,212.9,,Oil Gas & Consumable Fuels,Weakening,room under 6%,7,Running,2026-10-16,196.02,,,,,,0.09,-0.6,1.89,5.0,Bought,2026-10-16
+2026-10-15,15,TMCV,Cash (non-F&O),Pullback,398.0,409.94,422.24,434.54,,Capital Goods,Leading,room under 6%,7,Running,2026-10-21,409.94,,,,,,1.84,0.0,1.84,0.0,Bought,2026-10-21
+2026-10-15,17,INDUSINDBK,F&O,Pullback,870.2,896.31,923.2,950.08,,Financial Services,Lagging,room under 6%,7,Running,2026-10-16,887.9,,,,,,-4.32,-6.39,0.0,5.0,Bought,2026-10-16
+2026-10-15,32,ABDL,Cash (non-F&O),Pullback,679.8,700.19,721.2,742.21,,Fast Moving Consumer Goods,Improving,room under 6%,6,Running,2026-10-21,700.19,,,,,,-0.77,-0.77,0.0,0.0,Bought,2026-10-21
+2026-10-15,34,GRAPHITE,Cash (non-F&O),Pullback,756.9,779.61,803.0,826.38,,Capital Goods,Leading,room under 6%,6,Running,2026-10-16,768.9,,,,,,-5.4,-6.35,0.92,5.0,Bought,2026-10-16
+2026-10-15,65,SKYGOLD,Cash (non-F&O),Candle at support,868.8,894.86,921.71,948.56,ASM,Consumer Durables,Leading,past T1,4,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-21
+2026-10-15,222,HDFCAMC,F&O,Candle at support,2223.3,2290.0,2358.7,2427.4,,Financial Services,Lagging,past T1,2,Running,2026-10-21,2290.0,,,,,,0.93,0.0,0.93,0.0,Bought,2026-10-21
+2026-10-15,224,GALLANTT,Cash (non-F&O),Candle at support,508.8,524.06,539.79,555.51,,Capital Goods,Leading,past T1,2,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-21
+2026-10-15,259,FIRSTCRY,Cash (non-F&O),Candle at support,163.37,168.27,173.32,178.37,,Consumer Services,Weakening,past T1,1,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-21
+2026-10-14,9,MEESHO,Midcap 150,Retest,227.65,234.48,241.51,248.55,,Consumer Services,Leading,room under 6%,12,Running,2026-10-15,227.65,,,,,,-4.63,-6.58,1.16,6.0,Bought,2026-10-15
+2026-10-14,10,MARINE,Cash (non-F&O),Retest,450.0,463.5,477.41,491.31,,Unknown,No data,room under 6%,11,Running,2026-10-15,463.5,,,,,,-9.37,-12.46,0.0,6.0,Bought,2026-10-15
+2026-10-14,11,PTCIL,Cash (non-F&O),Retest,24125.0,24848.75,25594.21,26339.68,,Capital Goods,Leading,room under 6%,9,Running (T1 hit),2026-10-15,24848.75,2026-10-21,,,,,1.07,-2.89,3.71,6.0,T1 hit (+3%),2026-10-21
+2026-10-14,13,GLAND,Cash (non-F&O),Retest,3042.0,3133.26,3227.26,3321.26,,Healthcare,Weakening,room under 6%,9,Running,2026-10-15,3042.0,,,,,,-3.52,-6.65,1.8,6.0,Bought,2026-10-15
+2026-10-14,14,APARINDS,Midcap 150,Pullback,17157.0,17671.71,18201.86,18732.01,,Capital Goods,Leading,room under 6%,8,Running,2026-10-15,17671.71,,,,,,-14.43,-15.79,0.0,6.0,Bought,2026-10-15
+2026-10-14,15,TEGA,Cash (non-F&O),Retest,1894.0,1950.82,2009.34,2067.87,,Capital Goods,Leading,room under 6%,8,Running,2026-10-15,1950.82,,,,,,-8.14,-8.98,0.06,6.0,Bought,2026-10-15
+2026-10-14,17,MOTILALOFS,F&O,Pullback,989.75,1019.44,1050.03,1080.61,,Financial Services,Lagging,room under 6%,8,Running,2026-10-19,1019.44,,,,,,-3.38,-4.26,1.28,2.0,Bought,2026-10-19
+2026-10-14,18,AXISCADES,Cash (non-F&O),Retest,2030.0,2090.9,2153.63,2216.35,,Capital Goods,Leading,room under 6%,7,Running (T1 hit),2026-10-15,2090.9,2026-10-19,,,,,-5.75,-6.68,3.35,6.0,T1 hit (+3%),2026-10-19
+2026-10-14,20,CPPLUS,Cash (non-F&O),Pullback,3866.0,3981.98,4101.44,4220.9,,Capital Goods,Leading,room under 6%,7,Running,2026-10-19,3981.98,,,,,,-1.95,-2.72,2.86,2.0,Bought,2026-10-19
 2026-10-14,21,APLAPOLLO,F&O,Pullback,2041.3,2102.54,2165.62,2228.69,,Capital Goods,Leading,room under 6%,7,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-19
 2026-10-14,34,SAMBHV,Cash (non-F&O),Pullback,149.4,153.88,158.5,163.11,,Unknown,No data,past T1,6,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-19
 2026-10-14,143,APOLLO,Cash (non-F&O),Candle at support,374.0,385.22,396.78,408.33,,Capital Goods,Leading,past T1,3,Not bought,,,,,,,,,,,,Not bought (entry never reached),2026-10-19

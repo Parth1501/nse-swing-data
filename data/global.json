@@ -1,118 +1,118 @@
 {
- "generated_at_ist": "2026-10-20 18:51",
+ "generated_at_ist": "2026-10-21 18:47",
  "items": [
   {
    "name": "S&P 500",
-   "value": 7690.73,
-   "for_date": "2026-10-19",
-   "change_pct": 0.41,
+   "value": 7712.57,
+   "for_date": "2026-10-20",
+   "change_pct": 0.28,
    "source": "Yahoo Finance ^GSPC",
    "source_url": "https://finance.yahoo.com/quote/^GSPC",
    "check_source": "CNBC .SPX",
-   "check_value": 7690.73,
+   "check_value": 7712.57,
    "agree": true,
    "errors": [],
-   "prev_close": 7659.44,
-   "prev_date": "2026-10-16",
+   "prev_close": 7690.73,
+   "prev_date": "2026-10-19",
    "check_url": "https://www.cnbc.com/quotes/.SPX",
-   "check_date": "2026-10-19"
+   "check_date": "2026-10-20"
   },
   {
    "name": "Nasdaq Composite",
-   "value": 26430.89,
-   "for_date": "2026-10-19",
-   "change_pct": 1.11,
+   "value": 26424.82,
+   "for_date": "2026-10-20",
+   "change_pct": -0.02,
    "source": "Yahoo Finance ^IXIC",
    "source_url": "https://finance.yahoo.com/quote/^IXIC",
    "check_source": "CNBC .IXIC",
-   "check_value": 26430.886,
+   "check_value": 26424.817,
    "agree": true,
    "errors": [],
-   "prev_close": 26140.03,
-   "prev_date": "2026-10-16",
+   "prev_close": 26430.89,
+   "prev_date": "2026-10-19",
    "check_url": "https://www.cnbc.com/quotes/.IXIC",
-   "check_date": "2026-10-19"
+   "check_date": "2026-10-20"
   },
   {
    "name": "Nikkei 225",
-   "value": 64075.42,
-   "for_date": "2026-10-20",
-   "change_pct": -1.3,
+   "value": 64621.24,
+   "for_date": "2026-10-21",
+   "change_pct": 0.85,
    "source": "Yahoo Finance ^N225",
    "source_url": "https://finance.yahoo.com/quote/^N225",
    "check_source": "CNBC .N225",
-   "check_value": 64075.42,
+   "check_value": 64621.24,
    "agree": true,
    "errors": [],
-   "prev_close": 64916.7,
-   "prev_date": "2026-10-19",
+   "prev_close": 64075.42,
+   "prev_date": "2026-10-20",
    "check_url": "https://www.cnbc.com/quotes/.N225",
-   "check_date": "2026-10-20T15:45:02.000+0900"
+   "check_date": "2026-10-21T15:45:03.000+0900"
   },
   {
    "name": "Hang Seng",
-   "value": 23867.74,
-   "for_date": "2026-10-20",
-   "change_pct": -1.32,
+   "value": 23651.87,
+   "for_date": "2026-10-21",
+   "change_pct": -0.9,
    "source": "Yahoo Finance ^HSI",
    "source_url": "https://finance.yahoo.com/quote/^HSI",
    "check_source": "CNBC .HSI",
-   "check_value": 23867.74,
+   "check_value": 23651.87,
    "agree": true,
    "errors": [],
-   "prev_close": 24186.83,
-   "prev_date": "2026-10-16",
+   "prev_close": 23867.74,
+   "prev_date": "2026-10-20",
    "check_url": "https://www.cnbc.com/quotes/.HSI",
-   "check_date": "2026-10-20T16:08:42.000+0800"
+   "check_date": "2026-10-21T16:08:42.000+0800"
   },
   {
    "name": "Brent crude (front-month future, $/bbl)",
-   "value": 110.25,
-   "for_date": "2026-10-20",
-   "change_pct": 0.64,
+   "value": 107.9,
+   "for_date": "2026-10-21",
+   "change_pct": -0.82,
    "source": "Yahoo Finance BZ=F",
    "source_url": "https://finance.yahoo.com/quote/BZ=F",
    "check_source": "CNBC @LCO.1",
-   "check_value": 110.29,
+   "check_value": 107.87,
    "agree": true,
    "errors": [],
-   "prev_close": 109.55,
-   "prev_date": "2026-10-19",
-   "change_1m_pct": 6.14,
+   "prev_close": 108.79,
+   "prev_date": "2026-10-20",
+   "change_1m_pct": 7.53,
    "check_url": "https://www.cnbc.com/quotes/@LCO.1",
-   "check_date": "2026-10-20T14:11:24.000+0100"
+   "check_date": "2026-10-21T14:07:04.000+0100"
   },
   {
    "name": "USD/INR",
-   "value": 94.915,
-   "for_date": "2026-10-20",
-   "change_pct": -0.07,
+   "value": 94.45,
+   "for_date": "2026-10-21",
+   "change_pct": -0.57,
    "source": "Yahoo Finance INR=X",
    "source_url": "https://finance.yahoo.com/quote/INR=X",
    "check_source": "CNBC INR=",
-   "check_value": 94.91,
+   "check_value": 94.46,
    "agree": true,
    "errors": [],
-   "prev_close": 94.9777,
-   "prev_date": "2026-10-19",
+   "prev_close": 94.9936,
+   "prev_date": "2026-10-20",
    "check_url": "https://www.cnbc.com/quotes/INR=",
-   "check_date": "2026-10-19T21:49:00.000-0400"
+   "check_date": "2026-10-21T06:02:00.000-0400"
   },
   {
    "name": "US 10-yr yield (%)",
-   "value": 5.104,
-   "for_date": "2026-10-20",
-   "change_pct": -0.62,
+   "value": 5.088,
+   "for_date": "2026-10-21",
+   "change_pct": -0.57,
    "source": "Yahoo Finance ^TNX",
    "source_url": "https://finance.yahoo.com/quote/^TNX",
    "check_source": "US Treasury par yield curve",
-   "check_value": 5.15,
+   "check_value": 5.12,
    "agree": true,
    "errors": [],
-   "prev_close": 5.136,
-   "prev_date": "2026-10-19",
+   "prev_close": 5.117,
+   "prev_date": "2026-10-20",
    "check_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&page&_format=csv",
-   "check_date": "2026-10-19"
+   "check_date": "2026-10-20"
   }
  ],
  "fii_dii": {
@@ -120,31 +120,31 @@
   "source_url": "https://www.nseindia.com/reports/fii-dii",
   "all_exchanges": {
    "DII": {
-    "net_cr": 3201.19,
-    "buy_cr": 14781.31,
-    "sell_cr": 11580.12,
-    "date": "2026-10-19"
+    "net_cr": 1614.32,
+    "buy_cr": 14931.57,
+    "sell_cr": 13317.25,
+    "date": "2026-10-21"
    },
    "FII/FPI": {
-    "net_cr": -1148.64,
-    "buy_cr": 11240.64,
-    "sell_cr": 12389.28,
-    "date": "2026-10-19"
+    "net_cr": 1022.32,
+    "buy_cr": 17003.9,
+    "sell_cr": 15981.58,
+    "date": "2026-10-21"
    },
    "api_url": "https://www.nseindia.com/api/fiidiiTradeReact"
   },
   "nse_only": {
    "DII": {
-    "net_cr": 1936.78,
-    "buy_cr": 12862.7,
-    "sell_cr": 10925.92,
-    "date": "2026-10-19"
+    "net_cr": 1182.04,
+    "buy_cr": 13402.08,
+    "sell_cr": 12220.04,
+    "date": "2026-10-21"
    },
    "FII/FPI": {
-    "net_cr": -265.2,
-    "buy_cr": 10789.99,
-    "sell_cr": 11055.19,
-    "date": "2026-10-19"
+    "net_cr": 1203.14,
+    "buy_cr": 16314.46,
+    "sell_cr": 15111.32,
+    "date": "2026-10-21"
    },
    "api_url": "https://www.nseindia.com/api/fiidiiTradeNse"
   }

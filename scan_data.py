@@ -1086,6 +1086,12 @@ def replay_pick(p, df):
         elif r["Low"] <= hi and r["High"] >= lo:
             fill_i, fill = i, min(max(r["Open"], lo), hi)
             break
+    if fill_i is not None and fill >= float(p["t1"]):
+        # a fill at or above T1 (only possible with a what-if entry rule) is a missed trade, like a setup
+        # that has already run past T1 in the scan; scoring it against T1/T2 would book a loss as a win
+        out.update(status="Not bought", last_event="Not bought (fill would be at or above T1)",
+                   last_event_date=str(after.index[fill_i].date()))
+        return out
     if fill_i is None:
         if len(after) >= ENTRY_WINDOW:
             out.update(status="Not bought", last_event="Not bought (entry never reached)",

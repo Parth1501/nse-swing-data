@@ -87,6 +87,8 @@ NEAR_MISS = {"rank 11-20": 10, "room under 6%": 10, "past T1": 5}   # how many o
 BAD_LIST_DATES = {"2026-09-28"}      # a run just after midnight got stale Yahoo data and logged these by mistake
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
                "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
+PICK_FROZEN = ["fill_date", "fill_price"]   # once a pick is bought, its fill is kept: Yahoo revises past candles
+FILL_REVISIONS_FILE = os.path.join("data", "fill_revisions.csv")   # runs where Yahoo's prices gave another fill
 MIN_SECTOR_STOCKS = 3                # need at least 3 stocks to judge a sector
 SECTOR_CACHE = os.path.join("data", "sector_map.csv")
 MAX_SECTOR_LOOKUPS = 150             # NSE quote lookups per run (the cache means later runs need only a few)
@@ -1086,7 +1088,14 @@ def replay_pick(p, df):
         elif r["Low"] <= hi and r["High"] >= lo:
             fill_i, fill = i, min(max(r["Open"], lo), hi)
             break
-    if fill_i is not None and fill >= float(p["t1"]):
+    frozen = _frozen_fill(p, after)
+    if frozen is not None:
+        if fill_i is None or str(after.index[fill_i].date()) != str(p["fill_date"]) or \
+                round(float(fill), 2) != round(frozen[1], 2):
+            out.update(yahoo_fill_date=str(after.index[fill_i].date()) if fill_i is not None else "none",
+                       yahoo_fill_price=round(float(fill), 2) if fill_i is not None else None)
+        fill_i, fill = frozen
+    if fill_i is not None and fill >= float(p["t1"]) and frozen is None:
         # a fill at or above T1 (only possible with a what-if entry rule) is a missed trade, like a setup
         # that has already run past T1 in the scan; scoring it against T1/T2 would book a loss as a win
         out.update(status="Not bought", last_event="Not bought (fill would be at or above T1)",
@@ -1148,6 +1157,42 @@ def replay_pick(p, df):
     return out
 
 
+def _frozen_fill(p, after):
+    """(row index, price) of the fill already recorded for this pick, or None if it was never bought.
+    The recorded fill is kept for good: Yahoo sometimes revises past candles, and a replay on the new
+    prices can move a past fill to another day or price (LIQUID1 swung between 30 Sep and 6 Oct)."""
+    fd = p.get("fill_date")
+    if not isinstance(fd, str) or not fd or pd.isna(p.get("fill_price")):
+        return None
+    i = int(after.index.searchsorted(pd.Timestamp(fd)))
+    if i >= len(after):                        # a re-run of a past day (SCAN_END) ends before the fill
+        return None
+    return i, float(p["fill_price"])
+
+
+def _log_revisions(full, kind, data_date):
+    """Move the "Yahoo now gives another fill" notes out of a replayed log into FILL_REVISIONS_FILE."""
+    cols = ["yahoo_fill_date", "yahoo_fill_price"]
+    if full.empty or "yahoo_fill_date" not in full:
+        return full, 0
+    rev = full[full["yahoo_fill_date"].notna()]
+    if len(rev) and data_date:
+        new = pd.DataFrame({
+            "run_date": data_date, "log": kind, "list_date": rev["list_date"], "symbol": rev["symbol"],
+            "recorded_fill_date": rev["fill_date"], "recorded_fill_price": rev["fill_price"],
+            "yahoo_fill_date": rev["yahoo_fill_date"], "yahoo_fill_price": rev["yahoo_fill_price"],
+        })
+        old = pd.read_csv(FILL_REVISIONS_FILE, dtype=str) if os.path.exists(FILL_REVISIONS_FILE) else None
+        if old is not None:
+            old = old[~((old["run_date"] == data_date) & (old["log"] == kind))]   # a re-run replaces its rows
+            new = pd.concat([old, new], ignore_index=True)
+        new.to_csv(FILL_REVISIONS_FILE, index=False, encoding="utf-8")
+        for _, r in rev.iterrows():
+            print(f"fill kept for {r['symbol']} ({r['list_date']}): {r['fill_date']} @ {r['fill_price']}, "
+                  f"Yahoo now gives {r['yahoo_fill_date']} @ {r['yahoo_fill_price']}")
+    return full.drop(columns=cols, errors="ignore"), int(len(rev))
+
+
 def _replay_all(log, frames):
     missing = [s + ".NS" for s in log["symbol"].unique() if s + ".NS" not in frames]
     if missing:
@@ -1155,8 +1200,9 @@ def _replay_all(log, frames):
     rows = []
     for _, p in log.iterrows():
         df = frames.get(p["symbol"] + ".NS")
-        res = replay_pick(p, df) if df is not None else {"status": "Price data unavailable"}
-        rows.append({**p.to_dict(), **res})
+        res = replay_pick(p, df) if df is not None else {"status": "Price data unavailable",
+                                                         **{k: p[k] for k in PICK_FROZEN if k in p}}
+        rows.append({**p.drop(PICK_FROZEN, errors="ignore").to_dict(), **res})
     return pd.DataFrame(rows)
 
 
@@ -1174,7 +1220,7 @@ def _held(frames, data_date):
         return {}
     try:
         log = pd.read_csv(PICKS_FILE, dtype={"list_date": str})
-        log = log[[c for c in PICK_STATIC if c in log.columns]]
+        log = log[[c for c in PICK_STATIC + PICK_FROZEN if c in log.columns]]
         log = log[~log["list_date"].isin(BAD_LIST_DATES) & (log["list_date"] < str(data_date))]
         if log.empty:
             return {}
@@ -1191,7 +1237,7 @@ def update_near_misses(table, frames, data_date, listed):
     see whether the cut-off or a filter throws away winners. Kinds: eligible but ranked 11-20; a setup at weekly
     support blocked only by the room-to-resistance rule; a setup that had already bounced past T1.
     Nothing here changes the list. A stock with an open near-miss (or on today's list) is not logged again."""
-    cols = PICK_STATIC + ["near_miss_reason", "score"]
+    cols = PICK_STATIC + ["near_miss_reason", "score"] + PICK_FROZEN
     if os.path.exists(NEAR_MISS_FILE):
         log = pd.read_csv(NEAR_MISS_FILE, dtype={"list_date": str})
         log = log[[c for c in cols if c in log.columns]]
@@ -1219,6 +1265,7 @@ def update_near_misses(table, frames, data_date, listed):
             }))
         log = pd.concat([log] + today, ignore_index=True)
     full = _replay_all(log, frames) if not log.empty else pd.DataFrame()
+    full, _ = _log_revisions(full, "near_miss", data_date)
     if not full.empty:
         full = full.sort_values(["list_date", "rank"], ascending=[False, True])
     full.to_csv(NEAR_MISS_FILE, index=False, encoding="utf-8")
@@ -1231,10 +1278,10 @@ def update_track_record(table, frames, data_date):
     so one trade is never counted twice."""
     if os.path.exists(PICKS_FILE):
         log = pd.read_csv(PICKS_FILE, dtype={"list_date": str})
-        log = log[[c for c in PICK_STATIC if c in log.columns]]
+        log = log[[c for c in PICK_STATIC + PICK_FROZEN if c in log.columns]]
         log = log[~log["list_date"].isin(BAD_LIST_DATES)]
     else:
-        log = pd.DataFrame(columns=PICK_STATIC)
+        log = pd.DataFrame(columns=PICK_STATIC + PICK_FROZEN)
     if data_date and not table.empty:
         log = log[log["list_date"] != data_date]            # idempotent: rebuild today's entries
         prior = _replay_all(log, frames) if not log.empty else pd.DataFrame(columns=["symbol", "status"])
@@ -1250,6 +1297,7 @@ def update_track_record(table, frames, data_date):
         log = pd.concat([log, today], ignore_index=True)
 
     full = _replay_all(log, frames) if not log.empty else pd.DataFrame()
+    full, revised = _log_revisions(full, "picks", data_date)
     if not full.empty:
         full = full.sort_values(["list_date", "rank"], ascending=[False, True])
     full.to_csv(PICKS_FILE, index=False, encoding="utf-8")
@@ -1274,6 +1322,7 @@ def update_track_record(table, frames, data_date):
         "avg_max_dip_closed_pct": r2(done["max_dip_pct"].mean()) if closed else None,
         "avg_max_rise_closed_pct": r2(done["max_rise_pct"].mean()) if closed else None,
         "new_events_today": int(len(new)),
+        "fill_revisions_today": revised,     # bought picks whose fill Yahoo's revised prices would now move
         "file": PICKS_FILE,
     }
 

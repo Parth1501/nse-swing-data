@@ -1,11 +1,13 @@
 # Nifty option chain pattern log
-Updated 2026-10-23 15:55 IST. Learns only from live snapshots since 14 Oct 2026. Analysis only, not trading advice.
+Updated 2026-10-23 17:17 IST. Learns only from live snapshots since 14 Oct 2026. Analysis only, not trading advice.
 
 ## Data
 - 172 snapshots over 7 trading days
 - 187 patterns logged; 98 different patterns so far
 
 ## Latest read (2026-10-23 15:40:00)
+
+Nifty trend: weekly **bearish**, 125-min **down**, 25-min (timing) **up**. Each is up when the close is above its fast average and the fast average above the slow one, down when both are the other way, sideways otherwise (weekly 20/50 weeks; 125-min and 25-min 6/15 candles).
 
 | Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |
 |---|---|---|---|---|---|---|---|---|
@@ -14,12 +16,16 @@ Updated 2026-10-23 15:55 IST. Learns only from live snapshots since 14 Oct 2026.
 
 - **Weekly, last 30 min**: `PCR down · unwinding · walls same · mid walls`. Seen 3 times before; Nifty was up after it 50% of the time, average +0.25%. Too few outcomes (2/20) to trade on.
   - Writers: `writers even · weak puts`. Seen 9 times before; Nifty was up after it 67% of the time, average -0.04%. Too few outcomes (9/20) to trade on.
+  - Same, only when the trend was `weekly bearish · 125m down`: Seen 5 times before; Nifty was up after it 80% of the time, average +0.08%. Too few outcomes (5/20) to trade on.
 - **Weekly, today vs previous day**: `PCR down · call writing · walls down · mid walls`. New pattern, never seen before. Logged; nothing to go on yet.
   - Writers: `writers even · weak puts`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Same, only when the trend was `weekly bearish · 125m down`: New pattern, never seen before. Logged; nothing to go on yet.
 - **Monthly, last 30 min**: `PCR down · quiet OI · walls same · mid walls`. Seen 2 times before; Nifty was up after it 100% of the time, average +0.28%. Too few outcomes (2/20) to trade on.
   - Writers: `writers even · few weak writers`. Seen 29 times before; Nifty was up after it 59% of the time, average -0.04%. No direction and the walls have not held reliably: no structure.
+  - Same, only when the trend was `weekly bearish · 125m down`: Seen 15 times before; Nifty was up after it 62% of the time, average -0.03%. Too few outcomes (13/20) to trade on.
 - **Monthly, today vs previous day**: `PCR up · put and call writing · walls same · mid walls`. New pattern, never seen before. Logged; nothing to go on yet.
   - Writers: `writers even · few weak writers`. Seen 2 times before; Nifty was up after it 0% of the time, average -0.46%. Too few outcomes (2/20) to trade on.
+  - Same, only when the trend was `weekly bearish · 125m down`: Seen 2 times before; Nifty was up after it 0% of the time, average -0.46%. Too few outcomes (2/20) to trade on.
 
 ## Strong vs weak writers, weekly 2026-10-27
 
@@ -222,9 +228,54 @@ Strongest call writers at 23000, strongest put writers at 22000; weakest call wr
 | day | weekly | writers even · few weak writers | 1 | 0% | -0.39% | too few (1/10) |
 | day | weekly | writers even · weak puts | 1 |  |  | too few (0/10) |
 
+## Writer patterns by market trend
+
+| Layer | Expiry | Writers · trend | Seen | Up after | Avg move | Lean |
+|---|---|---|---|---|---|---|
+| intraday | monthly | writers even · weak calls · weekly bearish · 125m up | 20 | 89% | +0.05% | up |
+| intraday | weekly | put writers stronger · weak calls · weekly bearish · 125m up | 18 | 76% | +0.13% | up |
+| intraday | weekly | call writers stronger · weak puts · weekly bearish · 125m down | 17 | 94% | +0.43% | up |
+| intraday | monthly | writers even · few weak writers · weekly bearish · 125m down | 16 | 62% | -0.03% | no clear direction |
+| intraday | weekly | call writers stronger · weak puts · weekly bearish · 125m sideways | 11 | 90% | +0.32% | up |
+| intraday | monthly | call writers stronger · few weak writers · weekly bearish · 125m up | 10 | 56% | +0.05% | too few (9/10) |
+| intraday | monthly | writers even · weak puts · weekly bearish · 125m down | 10 | 100% | +0.42% | up |
+| intraday | weekly | put writers stronger · few weak writers · weekly bearish · 125m up | 10 | 89% | -0.02% | too few (9/10) |
+| intraday | weekly | call writers stronger · few weak writers · weekly bearish · 125m up | 8 | 57% | +0.20% | too few (7/10) |
+| intraday | monthly | writers even · few weak writers · weekly bearish · 125m sideways | 7 | 71% | +0.00% | too few (7/10) |
+| intraday | monthly | writers even · few weak writers · weekly bearish · 125m up | 7 | 43% | -0.11% | too few (7/10) |
+| intraday | weekly | writers even · few weak writers · weekly bearish · 125m up | 7 | 14% | -0.40% | too few (7/10) |
+| intraday | weekly | writers even · weak puts · weekly bearish · 125m down | 6 | 80% | +0.08% | too few (5/10) |
+| intraday | weekly | writers even · few weak writers · weekly bearish · 125m down | 5 | 50% | -0.20% | too few (4/10) |
+| intraday | monthly | call writers stronger · few weak writers · weekly bearish · 125m sideways | 4 | 67% | +0.09% | too few (3/10) |
+| intraday | monthly | put writers stronger · weak calls · weekly bearish · 125m up | 4 | 25% | -0.08% | too few (4/10) |
+| intraday | monthly | call writers stronger · weak puts · weekly bearish · 125m down | 3 | 100% | +0.84% | too few (3/10) |
+| intraday | monthly | put writers stronger · few weak writers · weekly bearish · 125m sideways | 3 | 0% | -0.83% | too few (3/10) |
+| intraday | monthly | writers even · weak puts · weekly bearish · 125m up | 3 | 0% | -0.20% | too few (3/10) |
+| intraday | weekly | writers even · few weak writers · weekly bearish · 125m sideways | 3 | 0% | -0.92% | too few (3/10) |
+| intraday | weekly | writers even · weak puts · weekly bearish · 125m sideways | 3 | 67% | -0.18% | too few (3/10) |
+| intraday | monthly | call writers stronger · weak puts · weekly bearish · 125m sideways | 2 | 100% | +0.39% | too few (2/10) |
+| intraday | monthly | put writers stronger · few weak writers · weekly bearish · 125m up | 2 | 100% | +0.23% | too few (2/10) |
+| intraday | monthly | writers even · weak puts · weekly bearish · 125m sideways | 2 | 100% | +0.59% | too few (2/10) |
+| intraday | weekly | call writers stronger · few weak writers · weekly bearish · 125m sideways | 2 | 0% | -0.49% | too few (2/10) |
+| intraday | weekly | call writers stronger · weak puts · weekly bearish · 125m up | 2 | 0% | -0.16% | too few (2/10) |
+| intraday | weekly | call writers stronger · few weak writers · weekly bearish · 125m down | 1 | 100% | +0.01% | too few (1/10) |
+| intraday | weekly | writers even · weak puts · weekly bearish · 125m up | 1 | 0% | -0.27% | too few (1/10) |
+| day | monthly | writers even · few weak writers · weekly bearish · 125m down | 3 | 0% | -0.46% | too few (2/10) |
+| day | monthly | writers even · weak calls · weekly bearish · 125m up | 2 | 50% | -0.23% | too few (2/10) |
+| day | monthly | call writers stronger · few weak writers · weekly bearish · 125m sideways | 1 | 0% | -0.34% | too few (1/10) |
+| day | monthly | call writers stronger · few weak writers · weekly bearish · 125m up | 1 | 100% | +1.66% | too few (1/10) |
+| day | weekly | call writers stronger · few weak writers · weekly bearish · 125m up | 1 | 100% | +1.66% | too few (1/10) |
+| day | weekly | call writers stronger · weak puts · weekly bearish · 125m down | 1 | 0% | -0.54% | too few (1/10) |
+| day | weekly | call writers stronger · weak puts · weekly bearish · 125m sideways | 1 | 0% | -0.34% | too few (1/10) |
+| day | weekly | put writers stronger · few weak writers · weekly bearish · 125m up | 1 | 100% | +0.65% | too few (1/10) |
+| day | weekly | put writers stronger · weak calls · weekly bearish · 125m up | 1 | 0% | -1.11% | too few (1/10) |
+| day | weekly | writers even · few weak writers · weekly bearish · 125m down | 1 | 0% | -0.39% | too few (1/10) |
+| day | weekly | writers even · weak puts · weekly bearish · 125m down | 1 |  |  | too few (0/10) |
+
 ## How to read this
 - A pattern is: near-money PCR change · where new OI near the money went · how the put and call walls (biggest OI strikes) moved · where spot sits between the walls.
 - A pattern shows a lean only after 10 outcomes, and only when the 95% range of 'up after' sits fully above or below 50%. It points to a structure only after 20 outcomes.
+- Every reading is also tagged with the Nifty trend at the time on the weekly chart (10 years of candles) and the 125-min chart, and each pattern is learned again within each trend pair, so a lean that only held in a bearish market shows up as such. The 25-min trend is shown for timing entries but does not split the learning.
 - Credit spreads and condors are suggested only after 8+ expiries showed the real move smaller than the straddle priced in (or the walls holding 70%+ of the time); otherwise debit spreads.
 - 30-minute patterns from one day move together, so trust a lean more once it has held across several weeks, not one busy day.
 - Roughly: common 30-minute patterns reach 20 outcomes in 3 to 6 weeks, day patterns in 3 to 6 months, and the walls/expiry numbers need about 5 months of weekly expiries and a year of monthly ones.

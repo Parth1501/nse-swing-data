@@ -1,5 +1,8 @@
 {
  "as_of": "2026-10-23 15:40:00",
+ "trend_weekly": "bearish",
+ "trend_125m": "down",
+ "trend_25m": "up",
  "expiries": [
   {
    "expiry": "2026-10-27",
@@ -20,13 +23,19 @@
     "pattern": "PCR down \u00b7 unwinding \u00b7 walls same \u00b7 mid walls",
     "verdict": "Seen 3 times before; Nifty was up after it 50% of the time, average +0.25%. Too few outcomes (2/20) to trade on.",
     "writers": "writers even \u00b7 weak puts",
-    "writers_verdict": "Seen 9 times before; Nifty was up after it 67% of the time, average -0.04%. Too few outcomes (9/20) to trade on."
+    "writers_verdict": "Seen 9 times before; Nifty was up after it 67% of the time, average -0.04%. Too few outcomes (9/20) to trade on.",
+    "trend": "weekly bearish \u00b7 125m down",
+    "pattern_trend_verdict": "Seen 2 times before; Nifty was up after it 50% of the time, average +0.25%. Too few outcomes (2/20) to trade on.",
+    "writers_trend_verdict": "Seen 5 times before; Nifty was up after it 80% of the time, average +0.08%. Too few outcomes (5/20) to trade on."
    },
    "day": {
     "pattern": "PCR down \u00b7 call writing \u00b7 walls down \u00b7 mid walls",
     "verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
     "writers": "writers even \u00b7 weak puts",
-    "writers_verdict": "New pattern, never seen before. Logged; nothing to go on yet."
+    "writers_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "trend": "weekly bearish \u00b7 125m down",
+    "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "writers_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet."
    },
    "writers": {
     "label": "writers even \u00b7 weak puts",
@@ -819,13 +828,19 @@
     "pattern": "PCR down \u00b7 quiet OI \u00b7 walls same \u00b7 mid walls",
     "verdict": "Seen 2 times before; Nifty was up after it 100% of the time, average +0.28%. Too few outcomes (2/20) to trade on.",
     "writers": "writers even \u00b7 few weak writers",
-    "writers_verdict": "Seen 29 times before; Nifty was up after it 59% of the time, average -0.04%. No direction and the walls have not held reliably: no structure."
+    "writers_verdict": "Seen 29 times before; Nifty was up after it 59% of the time, average -0.04%. No direction and the walls have not held reliably: no structure.",
+    "trend": "weekly bearish \u00b7 125m down",
+    "pattern_trend_verdict": "Seen 2 times before; Nifty was up after it 100% of the time, average +0.28%. Too few outcomes (2/20) to trade on.",
+    "writers_trend_verdict": "Seen 15 times before; Nifty was up after it 62% of the time, average -0.03%. Too few outcomes (13/20) to trade on."
    },
    "day": {
     "pattern": "PCR up \u00b7 put and call writing \u00b7 walls same \u00b7 mid walls",
     "verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
     "writers": "writers even \u00b7 few weak writers",
-    "writers_verdict": "Seen 2 times before; Nifty was up after it 0% of the time, average -0.46%. Too few outcomes (2/20) to trade on."
+    "writers_verdict": "Seen 2 times before; Nifty was up after it 0% of the time, average -0.46%. Too few outcomes (2/20) to trade on.",
+    "trend": "weekly bearish \u00b7 125m down",
+    "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "writers_trend_verdict": "Seen 2 times before; Nifty was up after it 0% of the time, average -0.46%. Too few outcomes (2/20) to trade on."
    },
    "writers": {
     "label": "writers even \u00b7 few weak writers",

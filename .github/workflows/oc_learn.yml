@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pandas numpy
+      - run: pip install pandas numpy yfinance
       - name: Update the pattern log and save it
         run: |
           # Start each try from the latest copy of the branch so the snapshot runs' pushes never clash.
@@ -28,7 +28,7 @@ jobs:
           for i in 1 2 3 4; do
             git fetch -q origin "$GITHUB_REF_NAME" && git reset -q --hard "origin/$GITHUB_REF_NAME" || { sleep $((i * 5)); continue; }
             python oc_learn.py
-            git add data/oc_learning
+            git add data/oc_learning data/nifty_trend
             git diff --cached --quiet && exit 0
             git commit -q -m "Option chain patterns $(TZ=Asia/Kolkata date +%F-%H%M)"
             git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0

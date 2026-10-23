@@ -1,27 +1,27 @@
 group,layer,expiry_type,pattern,seen,with_outcome,up_share,up_low,up_high,avg_move,median_move,worst_down,best_up,expiries_seen,held_walls_share,held_low,median_move_vs_implied,lean,last_seen
 pattern,day,monthly,PCR down · put writing · walls same · mid walls,1,1,1.0,0.2065,1.0,0.647,0.647,0.647,0.647,0,,,,too few (1/10),2026-10-15 15:40:00
 pattern,day,monthly,PCR flat · put and call writing · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.339,-0.339,-0.339,-0.339,0,,,,too few (1/10),2026-10-19 15:40:00
-pattern,day,monthly,PCR flat · put and call writing · walls same · near call wall,1,1,0.0,0.0,0.7935,-1.282,-1.282,-1.282,-1.282,0,,,,too few (1/10),2026-10-22 15:40:00
-pattern,day,monthly,PCR up · put and call writing · walls same · mid walls,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 12:45:34
+pattern,day,monthly,PCR flat · put and call writing · walls same · near call wall,1,1,0.0,0.0,0.7935,-0.5931,-0.5931,-0.5931,-0.5931,0,,,,too few (1/10),2026-10-22 15:40:00
+pattern,day,monthly,PCR up · put and call writing · walls same · mid walls,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 13:45:44
 pattern,day,monthly,PCR up · put and call writing · walls up · mid walls,1,1,0.0,0.0,0.7935,-1.1112,-1.1112,-1.1112,-1.1112,0,,,,too few (1/10),2026-10-16 15:40:00
 pattern,day,weekly,PCR down · call writing · walls same · near call wall,1,1,0.0,0.0,0.7935,-0.339,-0.339,-0.339,-0.339,0,,,,too few (1/10),2026-10-19 15:40:00
 pattern,day,weekly,PCR down · put and call writing · walls down · mid walls,1,1,0.0,0.0,0.7935,-1.1112,-1.1112,-1.1112,-1.1112,1,1.0,0.2065,1.402,too few (1/10),2026-10-16 15:40:00
 pattern,day,weekly,PCR down · put and call writing · walls down · near call wall,1,1,0.0,0.0,0.7935,-0.5423,-0.5423,-0.5423,-0.5423,0,,,,too few (1/10),2026-10-21 15:40:00
-pattern,day,weekly,PCR up · put and call writing · walls down · mid walls,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 12:45:34
-pattern,day,weekly,PCR up · put and call writing · walls up · mid walls,1,1,0.0,0.0,0.7935,-1.282,-1.282,-1.282,-1.282,0,,,,too few (1/10),2026-10-22 15:40:00
+pattern,day,weekly,PCR flat · put and call writing · walls same · near put wall,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 13:43:58
+pattern,day,weekly,PCR up · put and call writing · walls up · mid walls,1,1,0.0,0.0,0.7935,-0.5931,-0.5931,-0.5931,-0.5931,0,,,,too few (1/10),2026-10-22 15:40:00
 pattern,day,weekly,PCR up · put writing · walls up · mid walls,1,1,1.0,0.2065,1.0,0.647,0.647,0.647,0.647,1,1.0,0.2065,0.4675,too few (1/10),2026-10-15 15:40:00
 pattern,intraday,monthly,PCR down · call writing · walls down · mid walls,2,1,1.0,0.2065,1.0,0.0296,0.0296,0.0296,0.0296,0,,,,too few (1/10),2026-10-15 15:40:00
 pattern,intraday,monthly,PCR down · call writing · walls same · mid walls,4,4,0.5,0.15,0.85,-0.0634,0.0381,-0.4679,0.1382,0,,,,too few (4/10),2026-10-19 14:15:22
 pattern,intraday,monthly,PCR down · call writing · walls same · near call wall,2,2,0.5,0.0945,0.9055,-0.3767,-0.3767,-0.7779,0.0245,0,,,,too few (2/10),2026-10-22 13:15:09
 pattern,intraday,monthly,PCR down · call writing · walls up · mid walls,1,0,,,,,,,,0,,,,too few (0/10),2026-10-19 15:40:00
 pattern,intraday,monthly,PCR down · put and call writing · walls down · near call wall,1,1,0.0,0.0,0.7935,-1.1326,-1.1326,-1.1326,-1.1326,0,,,,too few (1/10),2026-10-19 09:45:08
-pattern,intraday,monthly,PCR down · put and call writing · walls same · mid walls,5,5,0.6,0.2307,0.8824,-0.0553,0.1028,-0.4396,0.1662,0,,,,too few (5/10),2026-10-23 10:44:47
+pattern,intraday,monthly,PCR down · put and call writing · walls same · mid walls,5,5,0.8,0.3755,0.9638,0.0837,0.106,-0.2117,0.2552,0,,,,too few (5/10),2026-10-23 10:44:47
 pattern,intraday,monthly,PCR down · put and call writing · walls same · near call wall,5,5,0.6,0.2307,0.8824,0.1095,0.0739,-0.1415,0.3206,0,,,,too few (5/10),2026-10-22 14:45:23
-pattern,intraday,monthly,PCR down · put writing · walls same · mid walls,1,1,1.0,0.2065,1.0,0.0085,0.0085,0.0085,0.0085,0,,,,too few (1/10),2026-10-15 12:45:09
+pattern,intraday,monthly,PCR down · put writing · walls same · mid walls,2,1,1.0,0.2065,1.0,0.0085,0.0085,0.0085,0.0085,0,,,,too few (1/10),2026-10-23 13:45:44
 pattern,intraday,monthly,PCR down · quiet OI · walls same · mid walls,2,2,1.0,0.3424,1.0,0.276,0.276,0.2654,0.2867,0,,,,too few (2/10),2026-10-22 14:12:54
 pattern,intraday,monthly,PCR down · quiet OI · walls same · near call wall,2,0,,,,,,,,0,,,,too few (0/10),2026-10-22 15:40:00
 pattern,intraday,monthly,PCR down · unwinding · walls same · mid walls,1,1,1.0,0.2065,1.0,0.3756,0.3756,0.3756,0.3756,0,,,,too few (1/10),2026-10-15 10:15:43
-pattern,intraday,monthly,PCR flat · call writing · walls same · mid walls,4,4,0.25,0.0456,0.6994,-0.1687,-0.2734,-0.3783,0.2502,0,,,,too few (4/10),2026-10-23 12:15:34
+pattern,intraday,monthly,PCR flat · call writing · walls same · mid walls,5,5,0.8,0.3755,0.9638,0.28,0.3169,-0.3734,0.6833,0,,,,too few (5/10),2026-10-23 13:14:50
 pattern,intraday,monthly,PCR flat · call writing · walls same · near call wall,1,1,1.0,0.2065,1.0,0.3999,0.3999,0.3999,0.3999,0,,,,too few (1/10),2026-10-21 13:15:09
 pattern,intraday,monthly,PCR flat · put and call writing · walls down · mid walls,1,1,1.0,0.2065,1.0,0.0505,0.0505,0.0505,0.0505,0,,,,too few (1/10),2026-10-19 14:45:48
 pattern,intraday,monthly,PCR flat · put and call writing · walls same · mid walls,3,2,1.0,0.3424,1.0,0.0473,0.0473,0.0155,0.0791,0,,,,too few (2/10),2026-10-19 15:14:38
@@ -35,19 +35,19 @@ pattern,intraday,monthly,PCR up · call writing · walls down · near call wall,
 pattern,intraday,monthly,PCR up · call writing · walls same · mid walls,1,1,1.0,0.2065,1.0,0.2784,0.2784,0.2784,0.2784,0,,,,too few (1/10),2026-10-14 13:14:33
 pattern,intraday,monthly,PCR up · call writing · walls same · near call wall,2,2,0.5,0.0945,0.9055,-0.1094,-0.1094,-0.5055,0.2866,0,,,,too few (2/10),2026-10-21 12:14:09
 pattern,intraday,monthly,PCR up · call writing · walls up · mid walls,1,1,1.0,0.2065,1.0,0.7774,0.7774,0.7774,0.7774,0,,,,too few (1/10),2026-10-16 09:44:49
-pattern,intraday,monthly,PCR up · put and call writing · walls same · mid walls,4,4,0.5,0.15,0.85,-0.0764,-0.0544,-0.3471,0.1504,0,,,,too few (4/10),2026-10-23 10:15:34
-pattern,intraday,monthly,PCR up · put and call writing · walls same · near call wall,5,5,0.4,0.1176,0.7693,-0.1952,-0.0712,-1.3392,0.6171,0,,,,too few (5/10),2026-10-23 09:45:07
+pattern,intraday,monthly,PCR up · put and call writing · walls same · mid walls,4,4,0.75,0.3006,0.9544,0.0975,0.1396,-0.2375,0.3484,0,,,,too few (4/10),2026-10-23 10:15:34
+pattern,intraday,monthly,PCR up · put and call writing · walls same · near call wall,5,5,0.4,0.1176,0.7693,-0.0575,-0.0712,-0.7413,0.6171,0,,,,too few (5/10),2026-10-23 09:45:07
 pattern,intraday,monthly,PCR up · put writing · walls same · mid walls,1,1,1.0,0.2065,1.0,0.2401,0.2401,0.2401,0.2401,0,,,,too few (1/10),2026-10-16 11:15:29
 pattern,intraday,monthly,PCR up · put writing · walls same · near call wall,2,2,0.0,0.0,0.6576,-0.2346,-0.2346,-0.4041,-0.0652,0,,,,too few (2/10),2026-10-22 11:13:31
 pattern,intraday,monthly,PCR up · put writing · walls same · near put wall,1,1,0.0,0.0,0.7935,-1.2233,-1.2233,-1.2233,-1.2233,0,,,,too few (1/10),2026-10-21 09:45:28
-pattern,intraday,monthly,PCR up · quiet OI · walls same · mid walls,5,4,0.5,0.15,0.85,-0.0625,-0.1001,-0.3916,0.3421,0,,,,too few (4/10),2026-10-23 12:45:34
+pattern,intraday,monthly,PCR up · quiet OI · walls same · mid walls,5,5,0.8,0.3755,0.9638,0.2288,0.3421,-0.3916,0.6979,0,,,,too few (5/10),2026-10-23 12:45:34
 pattern,intraday,monthly,PCR up · quiet OI · walls same · near call wall,1,1,1.0,0.2065,1.0,0.5027,0.5027,0.5027,0.5027,0,,,,too few (1/10),2026-10-21 13:45:04
 pattern,intraday,monthly,PCR up · unwinding · walls same · mid walls,4,4,1.0,0.5101,1.0,0.1762,0.1676,0.0714,0.2984,0,,,,too few (4/10),2026-10-22 13:44:31
 pattern,intraday,monthly,PCR up · unwinding · walls up · mid walls,1,1,1.0,0.2065,1.0,0.0177,0.0177,0.0177,0.0177,0,,,,too few (1/10),2026-10-14 14:14:01
-pattern,intraday,weekly,PCR down · call writing · walls down · mid walls,2,2,0.0,0.0,0.6576,-0.2138,-0.2138,-0.3566,-0.071,0,,,,too few (2/10),2026-10-23 11:15:26
+pattern,intraday,weekly,PCR down · call writing · walls down · mid walls,2,2,0.5,0.0945,0.9055,0.165,0.165,-0.071,0.4011,0,,,,too few (2/10),2026-10-23 11:15:26
 pattern,intraday,weekly,PCR down · call writing · walls down · near call wall,1,1,1.0,0.2065,1.0,0.3038,0.3038,0.3038,0.3038,0,,,,too few (1/10),2026-10-21 12:44:55
 pattern,intraday,weekly,PCR down · call writing · walls down · near put wall,3,3,0.3333,0.0615,0.7923,-0.1746,-0.2656,-0.5114,0.2533,1,0.0,0.0,1.0563,too few (3/10),2026-10-19 12:14:22
-pattern,intraday,weekly,PCR down · call writing · walls same · mid walls,3,3,0.6667,0.2077,0.9385,0.0773,0.0447,-0.1696,0.357,1,0.0,0.0,0.9493,too few (3/10),2026-10-23 12:15:12
+pattern,intraday,weekly,PCR down · call writing · walls same · mid walls,3,3,1.0,0.4385,1.0,0.3304,0.357,0.0447,0.5895,1,0.0,0.0,0.9493,too few (3/10),2026-10-23 12:15:12
 pattern,intraday,weekly,PCR down · call writing · walls same · near call wall,2,2,1.0,0.3424,1.0,0.5296,0.5296,0.5069,0.5523,0,,,,too few (2/10),2026-10-21 14:15:18
 pattern,intraday,weekly,PCR down · call writing · walls same · near put wall,1,1,0.0,0.0,0.7935,-0.3702,-0.3702,-0.3702,-0.3702,1,0.0,0.0,0.633,too few (1/10),2026-10-14 11:45:28
 pattern,intraday,weekly,PCR down · call writing · walls up · near put wall,1,1,1.0,0.2065,1.0,0.2725,0.2725,0.2725,0.2725,0,,,,too few (1/10),2026-10-22 12:44:54
@@ -55,11 +55,11 @@ pattern,intraday,weekly,PCR down · put and call writing · walls down · near p
 pattern,intraday,weekly,PCR down · put and call writing · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.6797,-0.6797,-0.6797,-0.6797,0,,,,too few (1/10),2026-10-21 10:44:34
 pattern,intraday,weekly,PCR down · put and call writing · walls same · near put wall,1,1,0.0,0.0,0.7935,-0.6909,-0.6909,-0.6909,-0.6909,0,,,,too few (1/10),2026-10-19 10:44:54
 pattern,intraday,weekly,PCR down · put and call writing · walls up · near call wall,1,1,1.0,0.2065,1.0,0.1094,0.1094,0.1094,0.1094,1,1.0,0.2065,1.0946,too few (1/10),2026-10-16 11:45:22
-pattern,intraday,weekly,PCR down · put and call writing · walls up · near put wall,3,3,0.6667,0.2077,0.9385,-0.0156,0.1304,-0.4629,0.2855,0,,,,too few (3/10),2026-10-23 10:45:29
+pattern,intraday,weekly,PCR down · put and call writing · walls up · near put wall,3,3,1.0,0.4385,1.0,0.2366,0.2855,0.1304,0.294,0,,,,too few (3/10),2026-10-23 10:45:29
 pattern,intraday,weekly,PCR down · put writing · walls same · mid walls,1,1,0.0,0.0,0.7935,-0.0832,-0.0832,-0.0832,-0.0832,0,,,,too few (1/10),2026-10-22 10:45:33
 pattern,intraday,weekly,PCR down · put writing · walls up · near put wall,1,1,1.0,0.2065,1.0,0.1831,0.1831,0.1831,0.1831,1,0.0,0.0,0.9764,too few (1/10),2026-10-16 10:14:39
 pattern,intraday,weekly,PCR down · unwinding · walls down · near call wall,1,1,1.0,0.2065,1.0,0.0057,0.0057,0.0057,0.0057,0,,,,too few (1/10),2026-10-22 14:45:01
-pattern,intraday,weekly,PCR down · unwinding · walls same · mid walls,2,1,0.0,0.0,0.7935,-0.4041,-0.4041,-0.4041,-0.4041,1,1.0,0.2065,0.4675,too few (1/10),2026-10-22 11:13:37
+pattern,intraday,weekly,PCR down · unwinding · walls same · mid walls,3,2,0.5,0.0945,0.9055,0.1742,0.1742,-0.4041,0.7525,1,1.0,0.2065,0.4675,too few (2/10),2026-10-23 13:14:39
 pattern,intraday,weekly,PCR down · unwinding · walls same · near call wall,3,3,1.0,0.4385,1.0,0.2363,0.2502,0.1382,0.3206,1,0.0,0.0,0.2235,too few (3/10),2026-10-21 15:15:28
 pattern,intraday,weekly,PCR down · unwinding · walls same · near put wall,1,1,0.0,0.0,0.7935,-0.0108,-0.0108,-0.0108,-0.0108,1,0.0,0.0,0.9633,too few (1/10),2026-10-14 15:14:48
 pattern,intraday,weekly,PCR down · unwinding · walls up · mid walls,2,0,,,,,,,,1,1.0,0.2065,1.402,too few (0/10),2026-10-22 15:40:00
@@ -79,10 +79,11 @@ pattern,intraday,weekly,PCR flat · unwinding · walls down · near put wall,1,1
 pattern,intraday,weekly,PCR flat · unwinding · walls same · near call wall,2,1,1.0,0.2065,1.0,0.0673,0.0673,0.0673,0.0673,0,,,,too few (1/10),2026-10-21 15:40:00
 pattern,intraday,weekly,PCR flat · unwinding · walls same · near put wall,1,1,1.0,0.2065,1.0,0.0272,0.0272,0.0272,0.0272,1,0.0,0.0,0.9612,too few (1/10),2026-10-14 14:44:58
 pattern,intraday,weekly,PCR flat · unwinding · walls up · near call wall,1,0,,,,,,,,0,,,,too few (0/10),2026-10-19 15:40:00
-pattern,intraday,weekly,PCR up · call writing · walls down · mid walls,2,2,0.0,0.0,0.6576,-0.5031,-0.5031,-0.6143,-0.3918,0,,,,too few (2/10),2026-10-23 10:11:18
+pattern,intraday,weekly,PCR flat · unwinding · walls up · near put wall,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 13:43:58
+pattern,intraday,weekly,PCR up · call writing · walls down · mid walls,2,2,0.5,0.0945,0.9055,-0.1244,-0.1244,-0.6143,0.3656,0,,,,too few (2/10),2026-10-23 10:11:18
 pattern,intraday,weekly,PCR up · call writing · walls same · mid walls,1,1,1.0,0.2065,1.0,0.2928,0.2928,0.2928,0.2928,0,,,,too few (1/10),2026-10-21 12:14:52
 pattern,intraday,weekly,PCR up · call writing · walls same · near call wall,1,1,1.0,0.2065,1.0,0.6171,0.6171,0.6171,0.6171,0,,,,too few (1/10),2026-10-21 14:44:58
-pattern,intraday,weekly,PCR up · put and call writing · walls same · mid walls,4,3,0.0,0.0,0.5615,-0.7974,-0.7798,-1.3163,-0.296,0,,,,too few (3/10),2026-10-23 12:45:34
+pattern,intraday,weekly,PCR up · put and call writing · walls same · mid walls,4,4,0.5,0.15,0.85,-0.0308,-0.0519,-0.7798,0.7603,0,,,,too few (4/10),2026-10-23 12:45:34
 pattern,intraday,weekly,PCR up · put and call writing · walls same · near call wall,1,1,1.0,0.2065,1.0,0.1714,0.1714,0.1714,0.1714,1,0.0,0.0,0.2611,too few (1/10),2026-10-15 12:15:29
 pattern,intraday,weekly,PCR up · put and call writing · walls same · near put wall,1,1,0.0,0.0,0.7935,-1.222,-1.222,-1.222,-1.222,0,,,,too few (1/10),2026-10-21 09:45:18
 pattern,intraday,weekly,PCR up · put and call writing · walls up · near put wall,1,1,1.0,0.2065,1.0,1.0344,1.0344,1.0344,1.0344,1,0.0,0.0,0.4902,too few (1/10),2026-10-15 09:45:16
@@ -95,24 +96,25 @@ pattern,intraday,weekly,PCR up · put writing · walls up · near put wall,1,1,0
 pattern,intraday,weekly,PCR up · unwinding · walls down · near call wall,3,3,1.0,0.4385,1.0,0.0998,0.0714,0.0168,0.2113,1,0.0,0.0,0.3877,too few (3/10),2026-10-19 14:44:49
 pattern,intraday,weekly,PCR up · unwinding · walls same · mid walls,2,2,1.0,0.3424,1.0,0.1205,0.1205,0.0931,0.148,1,0.0,0.0,1.2077,too few (2/10),2026-10-22 15:15:29
 writers,day,monthly,call writers stronger · few weak writers,2,2,0.5,0.0945,0.9055,0.6585,0.6585,-0.339,1.6561,0,,,,too few (2/10),2026-10-19 15:40:00
-writers,day,monthly,call writers stronger · weak puts,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 12:45:34
-writers,day,monthly,writers even · few weak writers,2,2,0.0,0.0,0.6576,-0.9121,-0.9121,-1.282,-0.5423,0,,,,too few (2/10),2026-10-22 15:40:00
+writers,day,monthly,writers even · few weak writers,2,2,0.0,0.0,0.6576,-0.5677,-0.5677,-0.5931,-0.5423,0,,,,too few (2/10),2026-10-22 15:40:00
 writers,day,monthly,writers even · weak calls,2,2,0.5,0.0945,0.9055,-0.2321,-0.2321,-1.1112,0.647,0,,,,too few (2/10),2026-10-16 15:40:00
+writers,day,monthly,writers even · weak puts,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 13:45:44
 writers,day,weekly,call writers stronger · few weak writers,1,1,1.0,0.2065,1.0,1.6561,1.6561,1.6561,1.6561,1,0.0,0.0,0.9534,too few (1/10),2026-10-14 15:40:00
-writers,day,weekly,call writers stronger · weak puts,3,2,0.0,0.0,0.6576,-0.4407,-0.4407,-0.5423,-0.339,0,,,,too few (2/10),2026-10-23 12:45:34
+writers,day,weekly,call writers stronger · weak puts,2,2,0.0,0.0,0.6576,-0.4407,-0.4407,-0.5423,-0.339,0,,,,too few (2/10),2026-10-21 15:40:00
 writers,day,weekly,put writers stronger · few weak writers,1,1,1.0,0.2065,1.0,0.647,0.647,0.647,0.647,1,1.0,0.2065,0.4675,too few (1/10),2026-10-15 15:40:00
 writers,day,weekly,put writers stronger · weak calls,1,1,0.0,0.0,0.7935,-1.1112,-1.1112,-1.1112,-1.1112,1,1.0,0.2065,1.402,too few (1/10),2026-10-16 15:40:00
-writers,day,weekly,writers even · few weak writers,1,1,0.0,0.0,0.7935,-1.282,-1.282,-1.282,-1.282,0,,,,too few (1/10),2026-10-22 15:40:00
+writers,day,weekly,writers even · few weak writers,1,1,0.0,0.0,0.7935,-0.5931,-0.5931,-0.5931,-0.5931,0,,,,too few (1/10),2026-10-22 15:40:00
+writers,day,weekly,writers even · weak puts,1,0,,,,,,,,0,,,,too few (0/10),2026-10-23 13:43:58
 writers,intraday,monthly,call writers stronger · few weak writers,14,12,0.5833,0.3195,0.8067,0.0632,0.0166,-0.4679,1.3908,0,,,,no clear direction,2026-10-21 13:15:09
-writers,intraday,monthly,call writers stronger · weak puts,4,3,0.6667,0.2077,0.9385,0.2053,0.2866,-0.1734,0.5027,0,,,,too few (3/10),2026-10-23 12:45:34
+writers,intraday,monthly,call writers stronger · weak puts,5,5,1.0,0.5655,1.0,0.5387,0.5233,0.2866,0.6979,0,,,,too few (5/10),2026-10-23 13:14:50
 writers,intraday,monthly,put writers stronger · few weak writers,5,5,0.4,0.1176,0.7693,-0.4095,-0.6078,-1.2233,0.2401,0,,,,too few (5/10),2026-10-21 10:45:09
 writers,intraday,monthly,put writers stronger · weak calls,4,4,0.25,0.0456,0.6994,-0.0832,-0.0887,-0.2267,0.0714,0,,,,too few (4/10),2026-10-15 14:45:09
-writers,intraday,monthly,writers even · few weak writers,29,27,0.5926,0.4073,0.7549,-0.1073,0.0739,-1.5056,1.0222,0,,,,no clear direction,2026-10-23 09:45:07
+writers,intraday,monthly,writers even · few weak writers,29,27,0.5926,0.4073,0.7549,-0.0563,0.0739,-0.8182,1.0222,0,,,,no clear direction,2026-10-23 09:45:07
 writers,intraday,monthly,writers even · weak calls,20,18,0.8889,0.672,0.969,0.0467,0.1421,-1.1326,0.5415,0,,,,up,2026-10-19 09:45:08
-writers,intraday,monthly,writers even · weak puts,11,11,0.3636,0.1517,0.6462,-0.0141,-0.2117,-0.4396,0.6171,0,,,,no clear direction,2026-10-23 11:45:24
+writers,intraday,monthly,writers even · weak puts,12,11,0.7273,0.4343,0.9025,0.2388,0.3421,-0.2375,0.6171,0,,,,no clear direction,2026-10-23 13:45:44
 writers,intraday,weekly,call writers stronger · few weak writers,11,10,0.5,0.2366,0.7634,0.0446,-0.0014,-0.5712,1.4776,1,0.0,0.0,0.6027,no clear direction,2026-10-22 14:45:01
-writers,intraday,weekly,call writers stronger · weak puts,28,25,0.64,0.4452,0.7975,0.1142,0.1304,-0.4629,0.6171,0,,,,no clear direction,2026-10-23 12:45:34
+writers,intraday,weekly,call writers stronger · weak puts,29,27,0.8519,0.6752,0.9408,0.3021,0.3108,-0.1866,0.7603,0,,,,up,2026-10-23 13:14:39
 writers,intraday,weekly,put writers stronger · few weak writers,10,9,0.8889,0.565,0.9801,-0.0161,0.1248,-1.114,0.2113,1,0.0,0.0,0.3863,too few (9/10),2026-10-19 09:44:38
 writers,intraday,weekly,put writers stronger · weak calls,18,17,0.7647,0.5274,0.9045,0.1251,0.1714,-1.1313,1.0344,1,0.0,0.0,0.4902,up,2026-10-19 09:14:02
-writers,intraday,weekly,writers even · few weak writers,15,14,0.2143,0.0757,0.4759,-0.5845,-0.6853,-1.4305,0.7774,1,0.0,0.0,0.5582,down,2026-10-23 09:44:59
-writers,intraday,weekly,writers even · weak puts,6,6,0.5,0.1876,0.8124,-0.1803,-0.1244,-0.6143,0.118,0,,,,too few (6/10),2026-10-22 11:44:18
+writers,intraday,weekly,writers even · few weak writers,15,14,0.2143,0.0757,0.4759,-0.4773,-0.6228,-1.222,0.7774,1,0.0,0.0,0.5582,down,2026-10-23 09:44:59
+writers,intraday,weekly,writers even · weak puts,7,6,0.5,0.1876,0.8124,-0.1803,-0.1244,-0.6143,0.118,0,,,,too few (6/10),2026-10-23 13:43:58

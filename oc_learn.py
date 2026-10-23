@@ -41,6 +41,9 @@ TRADE_MIN = 20                # ... and before it can point to a structure
 # selling price), in % of spot. ~0.45% is about 100 Nifty points, ~0.22% about 50.
 STRONG_CUSHION = 0.45
 WEAK_CUSHION = 0.22
+# Market trend at each reading: spot vs the close TREND_DAYS trading days earlier (from the snapshots).
+TREND_DAYS = 3
+TREND_STEP = 0.5              # % move that counts as rising or falling; smaller is "sideways"
 
 
 # ---------- loading ----------
@@ -264,6 +267,25 @@ def add_outcomes(f, layer, closes):
     return f
 
 
+def add_trend(f, closes):
+    """Tags each reading with the market trend at that moment, so a pattern can be learned separately
+    for rising, falling and sideways markets. Uses only closes from earlier days."""
+    days = list(closes.index)
+    ref = {d: closes[days[i - TREND_DAYS]] for i, d in enumerate(days) if i >= TREND_DAYS}
+
+    def trend(r):
+        if r["date"] not in ref:
+            return "trend unknown"
+        mv = 100 * (r["spot"] / ref[r["date"]] - 1)
+        return "rising market" if mv >= TREND_STEP else "falling market" if mv <= -TREND_STEP else "sideways market"
+
+    f["trend"] = f.apply(trend, axis=1)
+    for key in ("pattern", "writers"):
+        v = f[key].fillna("")
+        f[f"{key}_trend"] = np.where(v.ne(""), v + " · " + f["trend"], "")
+    return f
+
+
 # ---------- library ----------
 
 def wilson(k, n):
@@ -276,7 +298,8 @@ def wilson(k, n):
 
 
 def library(log, key="pattern"):
-    """key: "pattern" (the chain pattern) or "writers" (the strong/weak writer label)."""
+    """key: "pattern" (the chain pattern), "writers" (the strong/weak writer label), or either with
+    "_trend" (the same label split by the market trend at the time)."""
     out = []
     use = log[log[key].fillna("").ne("")]
     for (layer, kind, pat), g in use.groupby(["layer", "expiry_type", key]):
@@ -311,7 +334,7 @@ def library(log, key="pattern"):
 def structure_for(row, lib, key="pattern"):
     """What the history of this pattern points to. Only hedged structures, never naked options."""
     if not isinstance(row[key], str) or row[key] == "":
-        return ("No pattern yet (needs an earlier snapshot to compare with)." if key == "pattern"
+        return ("No pattern yet (needs an earlier snapshot to compare with)." if key.startswith("pattern")
                 else "No writer data yet (needs OI added while being watched).")
     m = lib[(lib["group"] == key) & (lib["layer"] == row["layer"]) & (lib["expiry_type"] == row["expiry_type"])
             & (lib["pattern"] == row[key])] if not lib.empty else lib
@@ -356,6 +379,8 @@ def write_report(log, lib, read):
          f"- {int((log['pattern'] != '').sum())} patterns logged; "
          f"{int((lib['group'] == 'pattern').sum()) if not lib.empty else 0} different patterns so far", ""]
     L += [f"## Latest read ({read['as_of']})", "",
+          f"Market trend: **{read['trend']}** (Nifty vs the close {TREND_DAYS} trading days earlier; "
+          f"a move under {TREND_STEP}% either way counts as sideways).", "",
           "| Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |",
           "|---|---|---|---|---|---|---|---|---|"]
     for e in read["expiries"]:
@@ -370,6 +395,8 @@ def write_report(log, lib, read):
                 L.append(f"- **{e['type'].title()}, {when}**: `{p['pattern'] or '-'}`. {p['verdict']}")
                 if p.get("writers"):
                     L.append(f"  - Writers: `{p['writers']}`. {p['writers_verdict']}")
+                    L.append(f"  - Same, in a {p['trend'].replace(' market', '')} market only: "
+                             f"{p['writers_trend_verdict']}")
     L.append("")
     for e in read["expiries"]:
         w = e.get("writers")
@@ -418,11 +445,23 @@ def write_report(log, lib, read):
                 L.append(f"| {r['layer']} | {r['expiry_type']} | {r['pattern']} | {int(r['seen'])} | "
                          f"{pct(r['up_share'])} | {avg} | {r['lean']} |")
             L.append("")
+        g = lib[lib["group"] == "writers_trend"].sort_values(["layer", "seen"], ascending=[False, False])
+        if not g.empty:
+            L += ["## Writer patterns by market trend", "",
+                  "| Layer | Expiry | Writers · trend | Seen | Up after | Avg move | Lean |", "|---|---|---|---|---|---|---|"]
+            for _, r in g.iterrows():
+                avg = "" if pd.isna(r["avg_move"]) else f"{r['avg_move']:+.2f}%"
+                L.append(f"| {r['layer']} | {r['expiry_type']} | {r['pattern']} | {int(r['seen'])} | "
+                         f"{pct(r['up_share'])} | {avg} | {r['lean']} |")
+            L.append("")
     L += ["## How to read this",
           "- A pattern is: near-money PCR change · where new OI near the money went · how the put and call "
           "walls (biggest OI strikes) moved · where spot sits between the walls.",
           f"- A pattern shows a lean only after {SEEN_MIN} outcomes, and only when the 95% range of 'up after' "
           f"sits fully above or below 50%. It points to a structure only after {TRADE_MIN} outcomes.",
+          "- Every reading is also tagged with the market trend at the time (rising, falling or sideways), "
+          "and each pattern is learned again within each trend, so a lean that only held in a falling "
+          "market shows up as such.",
           "- Credit spreads and condors are suggested only after 8+ expiries showed the real move smaller than "
           "the straddle priced in (or the walls holding 70%+ of the time); otherwise debit spreads.",
           "- 30-minute patterns from one day move together, so trust a lean more once it has held across "
@@ -471,16 +510,19 @@ def main():
     day = (snaps.sort_values("obs").groupby(["expiry", "date"]).tail(1)
            .sort_values(["expiry", "obs"]).reset_index(drop=True))
     day = add_outcomes(label_changes(day, "day"), "day", closes)
+    intra, day = add_trend(intra, closes), add_trend(day, closes)
     log = pd.concat([intra, day], ignore_index=True).sort_values(["obs", "layer", "expiry_type"])
-    lib = pd.concat([library(log, "pattern"), library(log, "writers")], ignore_index=True)
+    keys = ("pattern", "writers", "pattern_trend", "writers_trend")
+    lib = pd.concat([library(log, k) for k in keys], ignore_index=True)
 
     # the weekly and monthly chains are read a few seconds apart, so "latest" is per expiry
     latest = intra.loc[intra.groupby("expiry_type")["obs"].idxmax()].sort_values("expiry")
-    read = {"as_of": str(latest["obs"].max()), "expiries": []}
+    read = {"as_of": str(latest["obs"].max()), "trend": latest.sort_values("obs").iloc[-1]["trend"],
+            "expiries": []}
     for _, r in latest.iterrows():
         t = r["obs"]
         before = log[log["obs"] < t]            # judge the latest pattern only by what came before it
-        past = pd.concat([library(before, "pattern"), library(before, "writers")], ignore_index=True)
+        past = pd.concat([library(before, k) for k in keys], ignore_index=True)
         im = r["implied_move_pct"]
         e = {"expiry": r["expiry"], "type": r["expiry_type"], "dte": r["dte"], "spot": r["spot"],
              "pcr_near": round(r["pcr_near"], 3), "max_pain": r["max_pain"], "put_wall": r["put_wall"],
@@ -492,7 +534,10 @@ def main():
             if len(x):
                 e[layer] = {"pattern": x.iloc[0]["pattern"], "verdict": structure_for(x.iloc[0], past),
                             "writers": x.iloc[0]["writers"] if isinstance(x.iloc[0]["writers"], str) else "",
-                            "writers_verdict": structure_for(x.iloc[0], past, "writers")}
+                            "writers_verdict": structure_for(x.iloc[0], past, "writers"),
+                            "trend": x.iloc[0]["trend"],
+                            "pattern_trend_verdict": structure_for(x.iloc[0], past, "pattern_trend"),
+                            "writers_trend_verdict": structure_for(x.iloc[0], past, "writers_trend")}
         if not wb.empty:
             w = wb[(wb["obs"] == t) & (wb["expiry"] == r["expiry"])].sort_values(["side", "strike"])
             e["writers"] = {
@@ -509,7 +554,7 @@ def main():
                             for row in w.to_dict("records")]}
         read["expiries"].append(e)
 
-    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "pattern", "writers", "pcr", "pcr_near",
+    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "trend", "pattern", "writers", "pcr", "pcr_near",
             "d_pcr_near", "new_pe_oi", "new_ce_oi", "max_pain", "put_wall", "call_wall", "d_put_wall",
             "d_call_wall", "strong_call_strike", "strong_put_strike", "weak_call_strike", "weak_put_strike",
             "strong_call_oi", "weak_call_oi", "strong_put_oi", "weak_put_oi", "atm_iv", "d_atm_iv",

@@ -1,14 +1,14 @@
 {
-  "generated_at_ist": "2026-10-16 19:48",
-  "data_date": "2026-10-16",
+  "generated_at_ist": "2026-10-23 19:47",
+  "data_date": "2026-10-23",
   "universe_source": [
     "https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv",
     "https://nsearchives.nseindia.com/content/indices/ind_niftysmallcap250list.csv"
   ],
   "universe_count": 401,
-  "with_data": 397,
-  "in_size_band": 269,
-  "passed_count": 22,
+  "with_data": 390,
+  "in_size_band": 272,
+  "passed_count": 24,
   "shortlist_count": 15,
   "near_miss_count": 0,
   "thresholds": {

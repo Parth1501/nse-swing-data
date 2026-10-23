@@ -28,6 +28,8 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pandas as pd
 
+import nifty_trend
+
 IST = timezone(timedelta(hours=5, minutes=30))
 SNAP_DIR = os.path.join("data", "option_chain")
 OUT = os.path.join("data", "oc_learning")
@@ -41,9 +43,6 @@ TRADE_MIN = 20                # ... and before it can point to a structure
 # selling price), in % of spot. ~0.45% is about 100 Nifty points, ~0.22% about 50.
 STRONG_CUSHION = 0.45
 WEAK_CUSHION = 0.22
-# Market trend at each reading: spot vs the close TREND_DAYS trading days earlier (from the snapshots).
-TREND_DAYS = 3
-TREND_STEP = 0.5              # % move that counts as rising or falling; smaller is "sideways"
 
 
 # ---------- loading ----------
@@ -267,19 +266,13 @@ def add_outcomes(f, layer, closes):
     return f
 
 
-def add_trend(f, closes):
-    """Tags each reading with the market trend at that moment, so a pattern can be learned separately
-    for rising, falling and sideways markets. Uses only closes from earlier days."""
-    days = list(closes.index)
-    ref = {d: closes[days[i - TREND_DAYS]] for i, d in enumerate(days) if i >= TREND_DAYS}
-
-    def trend(r):
-        if r["date"] not in ref:
-            return "trend unknown"
-        mv = 100 * (r["spot"] / ref[r["date"]] - 1)
-        return "rising market" if mv >= TREND_STEP else "falling market" if mv <= -TREND_STEP else "sideways market"
-
-    f["trend"] = f.apply(trend, axis=1)
+def add_trend(f, tr):
+    """Tags each reading with the Nifty trend at that moment (weekly and 125-min, from nifty_trend.py),
+    so a pattern can be learned separately for each. The 25-min trend is kept as the timing view only."""
+    t = tr.reindex(f["obs"].to_numpy())
+    for col in ("trend_weekly", "trend_125m", "trend_25m"):
+        f[col] = t[col].fillna("unknown").to_numpy()
+    f["trend"] = "weekly " + f["trend_weekly"] + " · 125m " + f["trend_125m"]
     for key in ("pattern", "writers"):
         v = f[key].fillna("")
         f[f"{key}_trend"] = np.where(v.ne(""), v + " · " + f["trend"], "")
@@ -379,8 +372,10 @@ def write_report(log, lib, read):
          f"- {int((log['pattern'] != '').sum())} patterns logged; "
          f"{int((lib['group'] == 'pattern').sum()) if not lib.empty else 0} different patterns so far", ""]
     L += [f"## Latest read ({read['as_of']})", "",
-          f"Market trend: **{read['trend']}** (Nifty vs the close {TREND_DAYS} trading days earlier; "
-          f"a move under {TREND_STEP}% either way counts as sideways).", "",
+          f"Nifty trend: weekly **{read['trend_weekly']}**, 125-min **{read['trend_125m']}**, "
+          f"25-min (timing) **{read['trend_25m']}**. Each is up when the close is above its fast average "
+          "and the fast average above the slow one, down when both are the other way, sideways otherwise "
+          "(weekly 20/50 weeks; 125-min and 25-min 6/15 candles).", "",
           "| Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |",
           "|---|---|---|---|---|---|---|---|---|"]
     for e in read["expiries"]:
@@ -395,8 +390,7 @@ def write_report(log, lib, read):
                 L.append(f"- **{e['type'].title()}, {when}**: `{p['pattern'] or '-'}`. {p['verdict']}")
                 if p.get("writers"):
                     L.append(f"  - Writers: `{p['writers']}`. {p['writers_verdict']}")
-                    L.append(f"  - Same, in a {p['trend'].replace(' market', '')} market only: "
-                             f"{p['writers_trend_verdict']}")
+                    L.append(f"  - Same, only when the trend was `{p['trend']}`: {p['writers_trend_verdict']}")
     L.append("")
     for e in read["expiries"]:
         w = e.get("writers")
@@ -459,9 +453,10 @@ def write_report(log, lib, read):
           "walls (biggest OI strikes) moved · where spot sits between the walls.",
           f"- A pattern shows a lean only after {SEEN_MIN} outcomes, and only when the 95% range of 'up after' "
           f"sits fully above or below 50%. It points to a structure only after {TRADE_MIN} outcomes.",
-          "- Every reading is also tagged with the market trend at the time (rising, falling or sideways), "
-          "and each pattern is learned again within each trend, so a lean that only held in a falling "
-          "market shows up as such.",
+          "- Every reading is also tagged with the Nifty trend at the time on the weekly chart (10 years "
+          "of candles) and the 125-min chart, and each pattern is learned again within each trend pair, "
+          "so a lean that only held in a bearish market shows up as such. The 25-min trend is shown for "
+          "timing entries but does not split the learning.",
           "- Credit spreads and condors are suggested only after 8+ expiries showed the real move smaller than "
           "the straddle priced in (or the walls holding 70%+ of the time); otherwise debit spreads.",
           "- 30-minute patterns from one day move together, so trust a lean more once it has held across "
@@ -510,15 +505,19 @@ def main():
     day = (snaps.sort_values("obs").groupby(["expiry", "date"]).tail(1)
            .sort_values(["expiry", "obs"]).reset_index(drop=True))
     day = add_outcomes(label_changes(day, "day"), "day", closes)
-    intra, day = add_trend(intra, closes), add_trend(day, closes)
+    weekly, five = nifty_trend.fetch()
+    tr = nifty_trend.trends_at(snaps["obs"].drop_duplicates(), weekly, five)
+    tr.index = snaps["obs"].drop_duplicates().to_numpy()
+    intra, day = add_trend(intra, tr), add_trend(day, tr)
     log = pd.concat([intra, day], ignore_index=True).sort_values(["obs", "layer", "expiry_type"])
     keys = ("pattern", "writers", "pattern_trend", "writers_trend")
     lib = pd.concat([library(log, k) for k in keys], ignore_index=True)
 
     # the weekly and monthly chains are read a few seconds apart, so "latest" is per expiry
     latest = intra.loc[intra.groupby("expiry_type")["obs"].idxmax()].sort_values("expiry")
-    read = {"as_of": str(latest["obs"].max()), "trend": latest.sort_values("obs").iloc[-1]["trend"],
-            "expiries": []}
+    now = latest.sort_values("obs").iloc[-1]
+    read = {"as_of": str(latest["obs"].max()), "trend_weekly": now["trend_weekly"],
+            "trend_125m": now["trend_125m"], "trend_25m": now["trend_25m"], "expiries": []}
     for _, r in latest.iterrows():
         t = r["obs"]
         before = log[log["obs"] < t]            # judge the latest pattern only by what came before it
@@ -554,7 +553,7 @@ def main():
                             for row in w.to_dict("records")]}
         read["expiries"].append(e)
 
-    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "trend", "pattern", "writers", "pcr", "pcr_near",
+    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "trend_weekly", "trend_125m", "trend_25m", "pattern", "writers", "pcr", "pcr_near",
             "d_pcr_near", "new_pe_oi", "new_ce_oi", "max_pain", "put_wall", "call_wall", "d_put_wall",
             "d_call_wall", "strong_call_strike", "strong_put_strike", "weak_call_strike", "weak_put_strike",
             "strong_call_oi", "weak_call_oi", "strong_put_oi", "weak_put_oi", "atm_iv", "d_atm_iv",

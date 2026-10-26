@@ -92,7 +92,8 @@ next day, to expiry) and writes `data/oc_learning/pattern_log.csv`, `pattern_lib
 |---|---|---|---|
 | `latest.csv` | scan_data.py | yes | 70 columns: patterns, score, rank, eligible, entry/T1/T2, support/resistance, flags, warning, sector, chart path |
 | `meta.json` | scan_data.py | yes | data_date, universe stats, Nifty context, ban/ASM lists, track_record |
-| `picks_log.csv` | scan_data.py | appended + updated | every pick ever listed and its simulated outcome |
+| `picks_log.csv` | scan_data.py | appended + updated | every pick ever listed and its simulated outcome; a fill, once recorded, is never moved by later Yahoo price revisions |
+| `fill_revisions.csv` | scan_data.py | appended | runs where Yahoo's revised prices would have given a bought pick another fill (the recorded fill is kept) |
 | `pick_features.csv` | feedback.py | appended | listing-day setup per pick |
 | `feedback.json` | feedback.py | yes | evening review input |
 | `global.json` | global_data.py | yes | morning/evening global numbers |

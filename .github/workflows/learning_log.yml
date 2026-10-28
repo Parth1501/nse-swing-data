@@ -1,0 +1,37 @@
+name: Learning log
+
+on:
+  workflow_dispatch:           # started by the 7:45 AM morning routine after it sends the email
+    inputs:
+      entries:
+        description: 'Topics to add, "YYYY-MM-DD|topic|source_url", several split by ";;"'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:                   # shares the daily run's lock so the two never push at once
+  group: daily-nse-data
+  cancel-in-progress: false
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python learning_log.py
+        env:
+          LEARNING_ENTRIES: ${{ inputs.entries }}
+      - name: Save log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/learning_log.csv
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Learning log $(TZ=Asia/Kolkata date +%F-%H%M)"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push

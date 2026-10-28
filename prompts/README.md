@@ -19,5 +19,5 @@ fits together: [`docs/FLOW.md`](../docs/FLOW.md).
 | `routines/disabled/one_time_*.txt` | one-off, already fired | Test and check-in runs from 30 Sep |
 | `history/morning_list_*.txt` | — | Earlier versions of the morning prompt |
 
-Email addresses are replaced with `<YOUR_EMAIL>`, `<SECOND_EMAIL>` and `<SENDER_GMAIL>` because
+Email addresses are replaced with `<YOUR_EMAIL>`, `<SECOND_EMAIL>`, `<BCC_EMAIL_1>`…`<BCC_EMAIL_4>` and `<SENDER_GMAIL>` because
 the repo is public. Put your own back before running a prompt.

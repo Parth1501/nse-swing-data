@@ -75,6 +75,12 @@ wall moves, spot between walls, writer strength), records what Nifty did afterwa
 next day, to expiry) and writes `data/oc_learning/pattern_log.csv`, `pattern_library.csv`,
 `latest.json`, `report.md`, `writers/`. Learns forward only from 14 Oct 2026.
 
+### `learning_log.yml` — "Learning log" (started by the 07:45 morning routine after its email)
+
+`learning_log.py` appends the day's "Today's learning" topic (plus any the file was missing) to
+`data/learning_log.csv`, skipping rows already on file. The morning routine reads this file, together
+with the "Learning log:" line of its recent emails, and never reuses a topic on either.
+
 ## LLM routines: what each step needs
 
 | Routine | Reads | Uses web / tools | Writes / sends |
@@ -100,6 +106,7 @@ next day, to expiry) and writes `data/oc_learning/pattern_log.csv`, `pattern_lib
 | `charts/<date>/*.png` | charts.py | new folder per day | |
 | `option_chain/<date>.csv` | option_chain.py | new file per day | 30-minute snapshots |
 | `oc_learning/*` | oc_learn.py | rebuilt each run | pattern log and library |
+| `learning_log.csv` | learning_log.py | appended | every "Today's learning" topic used, so none repeats |
 
 Every daily version of `latest.csv`, `meta.json` and `global.json` is in git history, so past days can
 be recovered with `git log --format='%h %s' -- data/latest.csv` and `git show <sha>:data/latest.csv`.

@@ -220,19 +220,21 @@ def todays_events(df, data_date):
 # ---------------------------------------------------------------- completed wins
 def completed_trades(df):
     """Every closed winner (T2, or T1 by day 30) with buy and sell price and days held,
-    plus open trades that have already booked T1 (half sold at T1). Newest first."""
+    plus open trades that have already booked T1 (half sold at T1). Newest first.
+    A partial win sells its last half at the day-30 close, so its sell date is the close date and its
+    sell price and return are the blend of the T1 half and the day-30 half (as in the picks log)."""
     out = {"closed": [], "t1_booked_open": []}
     if "status" not in df:
         return out
     won = df[df["status"].isin(["Full win (T2)", "Partial win (T1)"])].copy()
     for _, p in won.sort_values("close_date", ascending=False).iterrows():
-        sell_date = p["t2_date"] if p["status"] == "Full win (T2)" else p["t1_date"]
+        sell_date = p["close_date"]
         out["closed"].append({
             "symbol": p["symbol"], "entry_style": p["entry_style"], "list_date": p["list_date"],
             "result": p["status"], "buy_date": p["fill_date"], "buy_price": r2(p["fill_price"]),
             "sell_date": sell_date, "sell_price": r2(p["exit_price"]), "return_pct": r2(p["return_pct"]),
             "days_held": int((pd.Timestamp(sell_date) - pd.Timestamp(p["fill_date"])).days),
-            "closed_on": p["close_date"]})
+            "t1_date": p["t1_date"], "closed_on": p["close_date"]})
     t1o = df[df["status"] == "Running (T1 hit)"]
     for _, p in t1o.sort_values("t1_date", ascending=False).iterrows():
         out["t1_booked_open"].append({

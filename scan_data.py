@@ -1066,7 +1066,8 @@ def replay_pick(p, df):
     """Replay one pick against the prices after its list date.
     Entry: within ENTRY_WINDOW sessions. Breakout = stop-limit (skip a day that opens above entry_high);
     buy zone = limit order, filled when the day trades inside the zone. Targets checked from the day after
-    the fill (plus the fill day's close). T2 = full win; T1 only by day 30 = partial win; neither = failed."""
+    the fill (plus the fill day's close). T2 = full win; T1 only by day 30 = partial win (half sold at T1,
+    half at the day-30 close, return is the blend of both); neither = failed."""
     df = _naive(df)
     out = {"status": "Waiting for entry", "fill_date": None, "fill_price": None, "t1_date": None,
            "t2_date": None, "close_date": None, "exit_price": None, "return_pct": None,
@@ -1142,11 +1143,14 @@ def replay_pick(p, df):
                    days_held=(t2d - fd).days)
     elif expired:
         ev = df.index[df.index >= expiry][0]
+        px = float(hold["Close"].iloc[-1])
         if t1d is not None:
-            out.update(status="Partial win (T1)", close_date=str(ev.date()), exit_price=round(t1, 2),
-                       return_pct=r2(pct(t1, fill)), last_event="Closed: partial win (30 days, T1 only)")
+            # half was booked at T1 and half held to the day-30 close; equal halves, so the blended
+            # exit is the plain average of the two prices and the return is the average of the two returns
+            out.update(status="Partial win (T1)", close_date=str(ev.date()), exit_price=round((t1 + px) / 2, 2),
+                       return_pct=r2((pct(t1, fill) + pct(px, fill)) / 2),
+                       last_event="Closed: partial win (half at T1, half at the 30-day close)")
         else:
-            px = float(hold["Close"].iloc[-1])
             out.update(status="Failed", close_date=str(ev.date()), exit_price=round(px, 2),
                        return_pct=r2(pct(px, fill)), last_event="Failed (30 days, no target)")
         out.update(last_event_date=str(ev.date()), days_held=(ev - fd).days)

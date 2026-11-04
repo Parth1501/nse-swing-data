@@ -91,6 +91,10 @@ BAD_LIST_DATES = {"2026-09-28"}      # a run just after midnight got stale Yahoo
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
                "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
 PICK_FROZEN = ["fill_date", "fill_price"]   # once a pick is bought, its fill is kept: Yahoo revises past candles
+CLOSED_FILE = os.path.join("data", "closed_results.csv")   # results of closed trades, kept as first scored
+CLOSED = ("Full win (T2)", "Partial win (T1)", "Failed")
+RESULT_COLS = ["status", "fill_date", "fill_price", "t1_date", "t2_date", "close_date", "exit_price", "return_pct",
+               "current_pct", "max_dip_pct", "max_rise_pct", "days_held", "last_event", "last_event_date"]
 FILL_REVISIONS_FILE = os.path.join("data", "fill_revisions.csv")   # runs where Yahoo's prices gave another fill
 MIN_SECTOR_STOCKS = 3                # need at least 3 stocks to judge a sector
 SECTOR_CACHE = os.path.join("data", "sector_map.csv")
@@ -1204,24 +1208,65 @@ def _log_revisions(full, kind, data_date):
     return full.drop(columns=cols, errors="ignore"), int(len(rev))
 
 
-def _replay_all(log, frames):
+def _load_closed(kind):
+    """{(list_date, symbol): result} of the trades in one log ("picks" or "near_miss") that have closed."""
+    if not os.path.exists(CLOSED_FILE):
+        return {}
+    c = pd.read_csv(CLOSED_FILE, dtype={"list_date": str, "fill_date": str, "t1_date": str, "t2_date": str,
+                                        "close_date": str, "last_event_date": str})
+    c = c[c["log"] == kind].astype(object).where(c.notna(), None)
+    return {(r["list_date"], r["symbol"]): {k: r[k] for k in RESULT_COLS} for _, r in c.iterrows()}
+
+
+def _save_closed(full, kind, closed):
+    """Add the trades that closed in this replay to CLOSED_FILE. Rows already there keep their result."""
+    if full.empty:
+        return
+    new = full[full["status"].isin(CLOSED)]
+    new = new[[(d, s) not in closed for d, s in zip(new["list_date"], new["symbol"])]]
+    old = pd.read_csv(CLOSED_FILE, dtype={"list_date": str}) if os.path.exists(CLOSED_FILE) else pd.DataFrame()
+    if not old.empty:                            # max_rise_pct keeps updating until the 30-day window ends
+        for i, r in old[old["log"] == kind].iterrows():
+            res = closed.get((r["list_date"], r["symbol"]))
+            if res is not None:
+                old.at[i, "max_rise_pct"] = res["max_rise_pct"]
+    new = new[["list_date", "symbol"] + RESULT_COLS].assign(log=kind)
+    out = pd.concat([old, new], ignore_index=True)[["log", "list_date", "symbol"] + RESULT_COLS]
+    out.sort_values(["log", "list_date", "symbol"]).to_csv(CLOSED_FILE, index=False, encoding="utf-8")
+
+
+def _replay_all(log, frames, kind=None):
+    """Replay every pick in a log. A trade that has already closed (in CLOSED_FILE for this log kind) keeps the
+    result it closed with: Yahoo revises past candles, and a replay on the new prices can move the close date,
+    exit and dip of a finished trade and report it again as new (LIQUID1 closed 30 Oct, re-scored on 4 Nov).
+    Only its best rise keeps updating until the 30-day window ends."""
     missing = [s + ".NS" for s in log["symbol"].unique() if s + ".NS" not in frames]
     if missing:
         frames.update(download(missing, period="6mo", min_rows=1))
+    closed = _load_closed(kind) if kind else {}
     rows = []
     for _, p in log.iterrows():
         df = frames.get(p["symbol"] + ".NS")
         res = replay_pick(p, df) if df is not None else {"status": "Price data unavailable",
                                                          **{k: p[k] for k in PICK_FROZEN if k in p}}
+        kept = closed.get((p["list_date"], p["symbol"]))
+        if kept is not None and df is not None and str(_naive(df).index[-1].date()) >= kept["close_date"]:
+            last = _naive(df).index[-1]
+            if last < pd.Timestamp(kept["fill_date"]) + pd.Timedelta(days=TIME_EXIT_DAYS) and \
+                    res.get("fill_date") == kept["fill_date"]:
+                kept["max_rise_pct"] = res["max_rise_pct"]
+            res = dict(kept)
         rows.append({**p.drop(PICK_FROZEN, errors="ignore").to_dict(), **res})
-    return pd.DataFrame(rows)
+    out = pd.DataFrame(rows)
+    out.attrs["closed"] = closed
+    return out
 
 
-def _active(log, frames):
+def _active(log, frames, kind):
     """Symbols with an open pick (waiting for entry or running) in a log."""
     if log.empty:
         return set()
-    prior = _replay_all(log, frames)
+    prior = _replay_all(log, frames, kind)
     return set(prior.loc[prior["status"].astype(str).str.startswith(("Running", "Waiting")), "symbol"])
 
 
@@ -1235,7 +1280,7 @@ def _held(frames, data_date):
         log = log[~log["list_date"].isin(BAD_LIST_DATES) & (log["list_date"] < str(data_date))]
         if log.empty:
             return {}
-        prior = _replay_all(log, frames)
+        prior = _replay_all(log, frames, "picks")
         run = prior[prior["status"].astype(str).str.startswith("Running")].sort_values("list_date")
         return dict(zip(run["symbol"], run["list_date"]))
     except Exception as e:                     # never block the daily list
@@ -1257,7 +1302,7 @@ def update_near_misses(table, frames, data_date, listed):
         log = pd.DataFrame(columns=cols)
     if data_date and not table.empty:
         log = log[log["list_date"] != data_date]
-        skip = _active(log, frames) | set(listed)
+        skip = _active(log, frames, "near_miss") | set(listed)
         fresh = table[~table["stale"]] if "stale" in table else table
         picks = {
             "rank 11-20": fresh[fresh["eligible"]].iloc[TOP_N:TOP_N + 10],
@@ -1277,7 +1322,9 @@ def update_near_misses(table, frames, data_date, listed):
                 "score": rows["score"],
             }))
         log = pd.concat([log] + today, ignore_index=True)
-    full = _replay_all(log, frames) if not log.empty else pd.DataFrame()
+    full = _replay_all(log, frames, "near_miss") if not log.empty else pd.DataFrame()
+    if not SCAN_END:
+        _save_closed(full, "near_miss", full.attrs.get("closed", {}))
     full, _ = _log_revisions(full, "near_miss", data_date)
     if not full.empty:
         full = full.sort_values(["list_date", "rank"], ascending=[False, True])
@@ -1297,7 +1344,7 @@ def update_track_record(table, frames, data_date):
         log = pd.DataFrame(columns=PICK_STATIC + PICK_FROZEN)
     if data_date and not table.empty:
         log = log[log["list_date"] != data_date]            # idempotent: rebuild today's entries
-        prior = _replay_all(log, frames) if not log.empty else pd.DataFrame(columns=["symbol", "status"])
+        prior = _replay_all(log, frames, "picks") if not log.empty else pd.DataFrame(columns=["symbol", "status"])
         active = set(prior.loc[prior["status"].astype(str).str.startswith(("Running", "Waiting")), "symbol"])
         top = table[table["eligible"]].head(TOP_N)
         top = top[~top["symbol"].isin(active)]
@@ -1309,7 +1356,9 @@ def update_track_record(table, frames, data_date):
         })
         log = pd.concat([log, today], ignore_index=True)
 
-    full = _replay_all(log, frames) if not log.empty else pd.DataFrame()
+    full = _replay_all(log, frames, "picks") if not log.empty else pd.DataFrame()
+    if not SCAN_END:
+        _save_closed(full, "picks", full.attrs.get("closed", {}))
     full, revised = _log_revisions(full, "picks", data_date)
     if not full.empty:
         full = full.sort_values(["list_date", "rank"], ascending=[False, True])

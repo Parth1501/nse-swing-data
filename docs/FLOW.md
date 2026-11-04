@@ -98,7 +98,8 @@ with the "Learning log:" line of its recent emails, and never reuses a topic on 
 |---|---|---|---|
 | `latest.csv` | scan_data.py | yes | 70 columns: patterns, score, rank, eligible, entry/T1/T2, support/resistance, flags, warning, sector, chart path |
 | `meta.json` | scan_data.py | yes | data_date, universe stats, Nifty context, ban/ASM lists, track_record |
-| `picks_log.csv` | scan_data.py | appended + updated | every pick ever listed and its simulated outcome; a fill, once recorded, is never moved by later Yahoo price revisions |
+| `picks_log.csv` | scan_data.py | appended + updated | every pick ever listed and its simulated outcome; a fill, once recorded, is never moved by later Yahoo price revisions, and a closed trade keeps the result it closed with |
+| `closed_results.csv` | scan_data.py | appended | the result of every closed trade (picks and near misses) as first scored; the replay reads it back so a later Yahoo revision can't re-score or re-report a finished trade (only its best rise updates until day 30) |
 | `fill_revisions.csv` | scan_data.py | appended | runs where Yahoo's revised prices would have given a bought pick another fill (the recorded fill is kept) |
 | `pick_features.csv` | feedback.py | appended | listing-day setup per pick |
 | `feedback.json` | feedback.py | yes | evening review input |

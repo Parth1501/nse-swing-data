@@ -83,7 +83,10 @@ PICKS_FILE = os.path.join("data", "picks_log.csv")
 TOP_N = 10                           # the daily list = top 10 eligible
 ENTRY_WINDOW = 3                     # a pick can be bought within the first 3 sessions after the list date
 NEAR_MISS_FILE = os.path.join("data", "near_miss_log.csv")   # stocks that just missed the list, replayed the same way
-NEAR_MISS = {"rank 11-20": 10, "room under 6%": 10, "past T1": 5}   # how many of each kind are kept per day
+NEAR_MISS = {"rank 11-20": 10, "room under 6%": 10, "past T1": 5, "retest": 15}   # how many of each kind are kept per day
+# Entry styles kept off the daily list but still scored, ranked and replayed in the near-miss log.
+# Retest: off since 3 Nov 2026 (evening trade review: 31 bought retests averaged -5.0%, 8 of 12 decided reached T1).
+LIST_STYLES_OFF = {"Retest"}
 BAD_LIST_DATES = {"2026-09-28"}      # a run just after midnight got stale Yahoo data and logged these by mistake
 PICK_STATIC = ["list_date", "rank", "symbol", "segment", "entry_style", "entry_low", "entry_high",
                "t1", "t2", "warning_at_listing", "sector", "sector_tag"]
@@ -818,7 +821,8 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
     has_setup = bool(C or D or E or W)
     # a bounce off weekly support that has already run past T1 is a missed trade, not a setup
     ran_away = bool(has_setup and c[-1] > t1)
-    eligible = has_setup and F and not ran_away
+    style_off = bool(has_setup and style in LIST_STYLES_OFF)   # setup is fine, but this entry style is off the list
+    eligible = has_setup and F and not ran_away and not style_off
     # which weekly support the trade is built on (for the reason, the report and the chart)
     if D:
         sup_info = {"level": D["P"], "kind": "old weekly high", "wk": D["wk"], "broke_wk": D["bwk"]}
@@ -881,6 +885,8 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         missing.append(f"Already bounced to ₹{c[-1]:.2f}, above T1 ₹{t1:.2f}: the move off weekly support is done")
     if not F:
         missing.append(f"Room to next resistance only {room:.1f}% (need {MIN_ROOM_PCT:.0f}%)")
+    if style_off and F and not ran_away:
+        missing.append(f"{style} entry: kept off the list since 3 Nov 2026 (trade review), tracked as a near miss")
 
     # ---- warning flags (information only, never exclusions)
     band = bands.get(sym, "unknown")
@@ -922,7 +928,8 @@ def analyse(sym, df, bands, banned, nifty, segment="F&O", surveillance=None, in_
         "pat_W_weekly_reversal": pats["W"], "hammer_score": hq, "strong_hammer": pats["HQ"],
         "weekly_reversal_week": wdates[W["k"]].strftime("%Y-%m-%d") if W else None,
         "weekly_reversal_low": r2(W["low"]) if W else None,
-        "blocked_by": ("" if eligible or not has_setup else "room" if not F else "past T1" if ran_away else ""),
+        "blocked_by": ("" if eligible or not has_setup else "room" if not F else "past T1" if ran_away
+                       else "retest" if style_off else ""),
         "vol_ok": pats["VOL"],
         "smc_sweep": pats["SWEEP"], "smc_order_block": pats["OB"], "smc_fvg": pats["FVG"], "smc_choch": pats["CHOCH"],
         "sweep_level": r2(SW["L"]) if SW else None,
@@ -1239,7 +1246,8 @@ def _held(frames, data_date):
 def update_near_misses(table, frames, data_date, listed):
     """Log the stocks that just missed today's list and replay them exactly like real picks, so the review can
     see whether the cut-off or a filter throws away winners. Kinds: eligible but ranked 11-20; a setup at weekly
-    support blocked only by the room-to-resistance rule; a setup that had already bounced past T1.
+    support blocked only by the room-to-resistance rule; a setup that had already bounced past T1;
+    a Retest-style setup that passed every rule but is kept off the list (since 3 Nov 2026).
     Nothing here changes the list. A stock with an open near-miss (or on today's list) is not logged again."""
     cols = PICK_STATIC + ["near_miss_reason", "score"] + PICK_FROZEN
     if os.path.exists(NEAR_MISS_FILE):
@@ -1255,6 +1263,7 @@ def update_near_misses(table, frames, data_date, listed):
             "rank 11-20": fresh[fresh["eligible"]].iloc[TOP_N:TOP_N + 10],
             "room under 6%": fresh[fresh["blocked_by"] == "room"],
             "past T1": fresh[fresh["blocked_by"] == "past T1"],
+            "retest": fresh[fresh["blocked_by"] == "retest"],
         }
         today = []
         for why, rows in picks.items():

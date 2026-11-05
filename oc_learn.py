@@ -97,6 +97,9 @@ def chain_features(g):
         "max_pain": max_pain(k, ce_oi, pe_oi),
         "call_wall": float(k[above][np.argmax(ce_oi[above])]) if above.any() else np.nan,
         "put_wall": float(k[below][np.argmax(pe_oi[below])]) if below.any() else np.nan,
+        # where the most fresh writing (change in OI since yesterday) sits on each side of spot
+        "fresh_put_strike": float(k[below][np.argmax(g.loc[below, "pe_chg_oi"].to_numpy(float))]) if below.any() else np.nan,
+        "fresh_call_strike": float(k[above][np.argmax(g.loc[above, "ce_chg_oi"].to_numpy(float))]) if above.any() else np.nan,
         "implied_move_pct": 100 * straddle / spot,      # ATM straddle ~ expected move to expiry
         "atm_iv": float(np.mean(ivs)) if ivs else np.nan,
         "oi_near": ce_oi[near].sum() + pe_oi[near].sum(),
@@ -208,6 +211,8 @@ def label_changes(f, layer):
     f["d_put_wall"] = np.where(ok, f["put_wall"] - prev["put_wall"], np.nan)
     f["d_call_wall"] = np.where(ok, f["call_wall"] - prev["call_wall"], np.nan)
     f["d_atm_iv"] = np.where(ok, f["atm_iv"] - prev["atm_iv"], np.nan)
+    f["d_fresh_put"] = np.where(ok, f["fresh_put_strike"] - prev["fresh_put_strike"], np.nan)
+    f["d_fresh_call"] = np.where(ok, f["fresh_call_strike"] - prev["fresh_call_strike"], np.nan)
     if layer == "intraday":   # OI written during this half hour
         ce = f["ce_chg_near"] - prev["ce_chg_near"]
         pe = f["pe_chg_near"] - prev["pe_chg_near"]
@@ -233,7 +238,15 @@ def label_changes(f, layer):
                  else "near call wall" if p > 0.67 else "mid walls")
         return " · ".join((pcr, flow, walls, where))
 
+    def drift(r):
+        """Is the fresh writing moving up or down the chain? (put writers stepping up = support rising)"""
+        if pd.isna(r["d_fresh_put"]) or pd.isna(r["d_fresh_call"]):
+            return ""
+        side = lambda v: "rising" if v > 0 else "falling" if v < 0 else "same"
+        return f"fresh puts {side(r['d_fresh_put'])} · fresh calls {side(r['d_fresh_call'])}"
+
     f["pattern"] = f.apply(pattern, axis=1)
+    f["drift"] = f.apply(drift, axis=1)
     f["layer"] = layer
     return f
 
@@ -510,7 +523,7 @@ def main():
     tr.index = snaps["obs"].drop_duplicates().to_numpy()
     intra, day = add_trend(intra, tr), add_trend(day, tr)
     log = pd.concat([intra, day], ignore_index=True).sort_values(["obs", "layer", "expiry_type"])
-    keys = ("pattern", "writers", "pattern_trend", "writers_trend")
+    keys = ("pattern", "writers", "pattern_trend", "writers_trend", "drift")
     lib = pd.concat([library(log, k) for k in keys], ignore_index=True)
 
     # the weekly and monthly chains are read a few seconds apart, so "latest" is per expiry
@@ -553,9 +566,9 @@ def main():
                             for row in w.to_dict("records")]}
         read["expiries"].append(e)
 
-    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "trend_weekly", "trend_125m", "trend_25m", "pattern", "writers", "pcr", "pcr_near",
+    cols = ["obs", "layer", "expiry", "expiry_type", "dte", "spot", "trend_weekly", "trend_125m", "trend_25m", "pattern", "writers", "drift", "pcr", "pcr_near",
             "d_pcr_near", "new_pe_oi", "new_ce_oi", "max_pain", "put_wall", "call_wall", "d_put_wall",
-            "d_call_wall", "strong_call_strike", "strong_put_strike", "weak_call_strike", "weak_put_strike",
+            "d_call_wall", "fresh_put_strike", "fresh_call_strike", "strong_call_strike", "strong_put_strike", "weak_call_strike", "weak_put_strike",
             "strong_call_oi", "weak_call_oi", "strong_put_oi", "weak_put_oi", "atm_iv", "d_atm_iv",
             "implied_move_pct", "move_next", "move_close", "move_to_expiry", "held_walls", "move_vs_implied"]
     rounded(log.reindex(columns=cols)).to_csv(os.path.join(OUT, "pattern_log.csv"), index=False)

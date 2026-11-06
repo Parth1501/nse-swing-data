@@ -4,7 +4,7 @@
 #   First time:  ./app/deploy/install.sh stock.unisolution.co.in you@email.com
 #   Update:      git pull && ./app/deploy/install.sh
 #
-# What it does: Python venv in ~/.swingdesk-venv, settings in /etc/swingdesk.env (keys made once),
+# What it does: Python 3.12 venv in ~/.swingdesk-venv (via uv), settings in /etc/swingdesk.env (keys made once),
 # a systemd service on 127.0.0.1:$PORT (default 8765, never 8080), an nginx site for the domain,
 # and a Let's Encrypt certificate for it through certbot. Other nginx sites are not touched.
 set -euo pipefail
@@ -25,20 +25,26 @@ if ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$PORT\$" && ! systemct
   exit 1
 fi
 
-say "1/5 Packages (python venv, git, nginx, certbot)"
+say "1/5 Packages (git, curl, nginx, certbot)"
 if command -v apt-get >/dev/null; then
   sudo apt-get update -qq
-  sudo apt-get install -y -qq python3-venv python3-pip git nginx certbot python3-certbot-nginx >/dev/null
+  sudo apt-get install -y -qq git curl nginx certbot python3-certbot-nginx >/dev/null
 elif command -v dnf >/dev/null; then
-  sudo dnf install -y -q python3 python3-pip git nginx certbot python3-certbot-nginx
+  sudo dnf install -y -q git curl nginx certbot python3-certbot-nginx
 else
-  echo "Unknown Linux; install python3-venv, git, nginx and certbot by hand, then re-run." >&2
+  echo "Unknown Linux; install git, curl, nginx and certbot by hand, then re-run." >&2
 fi
 
 say "2/5 Python environment"
-[ -d "$VENV" ] || python3 -m venv "$VENV"
-"$VENV/bin/pip" install -q --upgrade pip
-"$VENV/bin/pip" install -q -r "$APP/backend/requirements.txt"
+# The app needs Python 3.10+. uv downloads its own Python 3.12 into ~/.local/share/uv,
+# so the system Python (3.8 on Ubuntu 20.04) and other apps are left as they are.
+export PATH="$HOME/.local/bin:$PATH"
+command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
+if [ -x "$VENV/bin/python" ] && ! "$VENV/bin/python" -c 'import sys; sys.exit(sys.version_info < (3, 10))'; then
+  rm -rf "$VENV"   # left over from an older run with the system Python
+fi
+[ -x "$VENV/bin/python" ] || uv venv -q --python 3.12 "$VENV"
+uv pip install -q --python "$VENV/bin/python" -r "$APP/backend/requirements.txt"
 
 say "3/5 Settings"
 sudo mkdir -p "$DATA_DIR" && sudo chown "$ME" "$DATA_DIR"

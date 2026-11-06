@@ -1,0 +1,23 @@
+{
+ "id": "2026-11-06-value_pick",
+ "kind": "value_pick",
+ "title": "Friday value pick: no clean stock this week (6 Nov 2026)",
+ "summary": "No value pick this week: all 12 shortlisted Midcap/Smallcap stocks (FORCEMOT, BLS, KPITTECH and others) had a manipulation flag.",
+ "body_md": "**Friday value pick, 6 Nov 2026.** Long-term idea, not a swing trade.\n\n**No clean stock this week.** 22 of 401 Midcap 150 + Smallcap 250 stocks passed the numbers screen. After skipping the last three picks (IndiaMART, Endurance, HBL Engineering), all 12 stocks checked had at least one manipulation flag, so there is no teardown this week.\n\n**Why each stock was ruled out**\n\n| # | Stock (score) | Flag |\n|---|---|---|\n| 1 | FORCEMOT (88) | live SEBI insider-trading examination (Feb 2026) |\n| 2 | BLS (84) | Ministry of External Affairs tender debarment (Oct 2025, later set aside); repeated trading-firm bulk deals |\n| 3 | EMMVEE (83) | customs penalty order including a director (Mar 2026) |\n| 4 | KPITTECH (75) | promoter holding 38.6%, below 40%; Graviton in 10 bulk deals in a year |\n| 5 | RAILTEL (73) | exchange fines for board composition; Indian Railways related-party sales about 13% of revenue |\n| 6 | KPIL (71) | 31.5% of promoter holding pledged; promoter holding 33.6% |\n| 7 | KARURVYSYA (68) | RBI penalty Rs 8.3 lakh (Feb 2025); promoter encumbrance; promoter holding 2.07% |\n| 8 | RRKABEL (68), new | promoter holding fell 2.43 points in a year (61.76% to 59.33%) |\n| 9 | IKS (67) | SEZ and customs penalty orders on the company and a subsidiary |\n| 10 | OLECTRA (64) | CBI FIR naming promoter company MEIL; Rs 300 cr undertaking backing a MEIL-group firm |\n| 11 | DOMS (64), new | promoter holding fell 7 points in a year (70.38% to 63.38%) after F.I.L.A.'s June 2026 block sale |\n| 12 | IGIL (63), new | Ministry of Corporate Affairs proceedings over related-party violations (Sep 2024); statutory auditor resigned mid-term in 2023 |\n\nSource links for every flag are in the HTML version of this email.\n\n**No pick this week:** every shortlisted stock had a manipulation flag, an unfinished check or a promoter score below 6.\n\nResearch for your own analysis, not investment advice.",
+ "symbols": [
+  "FORCEMOT",
+  "BLS",
+  "EMMVEE",
+  "KPITTECH",
+  "RAILTEL",
+  "KPIL",
+  "KARURVYSYA",
+  "RRKABEL",
+  "IKS",
+  "OLECTRA",
+  "DOMS",
+  "IGIL"
+ ],
+ "created_at": "2026-11-06T20:18:38+05:30",
+ "notify": true
+}

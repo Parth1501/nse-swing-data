@@ -1,0 +1,17 @@
+{
+ "kind": "option_trade",
+ "title": "Exit: bull call spread 24700/24850 at ~94, target almost hit",
+ "summary": "Exit before 15:00. Spread ~94 vs entry 61: +33 pts, about +Rs 2,120 per lot. No weekend hold.",
+ "body_md": "EXIT before 15:00. Bull call spread buy 24700 CE / sell 24850 CE (9 Nov), entry ~61 at 12:48. Now Nifty 24,855, spread ~94 (273 / 179). Profit ~33 pts = ~Rs 2,120 per lot. Reasons: near the 95-100 target, Friday (no weekend hold), most realistic gain captured. Close both legs together, spread limit 90 or better. Analysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-06-bcs-24700-24850",
+  "event": "exit",
+  "exit": 94,
+  "result": "Target nearly hit, Friday time exit",
+  "spot": 24855
+ },
+ "created_at": "2026-11-06T14:49:15+05:30",
+ "id": "2026-11-06-144915-option_trade",
+ "symbols": [],
+ "notify": true
+}

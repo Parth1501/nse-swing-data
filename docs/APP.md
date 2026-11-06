@@ -86,6 +86,41 @@ APP_URL=https://stock.unisolution.co.in APP_ADMIN_TOKEN=... \
 or plain curl: `POST /api/admin/items` with `Authorization: Bearer <admin token>` and JSON
 `{"kind","title","summary","body_md","symbols","notify"}`.
 
+### From a Claude routine or thread (no git push there)
+
+Build the item as JSON, base64 it, and start the **App feed** workflow; it writes the file with
+`feed.py import` and pushes. The server shows it within about two minutes.
+
+```bash
+ITEM=$(python3 -c 'import base64,json,sys; print(base64.b64encode(json.dumps(json.load(sys.stdin)).encode()).decode())' < /tmp/item.json)
+curl -sS -X POST -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+  https://api.github.com/repos/Parth1501/nse-swing-data/actions/workflows/app_feed.yml/dispatches \
+  -d "{\"ref\":\"main\",\"inputs\":{\"item\":\"$ITEM\"}}" -w 'HTTP %{http_code}'   # expect 204
+```
+
+`/tmp/item.json` is one item (or a list):
+`{"kind":"morning_list","title":"…","summary":"one or two lines (the notification)","body_md":"full Markdown","symbols":["…"]}`.
+
+### Option trades (F&O trades tab)
+
+Every emailed Nifty option trade is posted as `kind: "option_trade"` with a `trade` object. Use the
+same `trade_id` for the entry, its updates and the exit; the app folds them into one card with
+levels, live P&L per lot (65) and a timeline.
+
+```json
+{"kind":"option_trade","title":"Nifty 8/10: bull call spread 24700/24850 (9 Nov)",
+ "summary":"Buy 24700 CE (~146), sell 24850 CE (~85) for ~61. Target 95-100, stop 40 or close < 24600.",
+ "body_md":"<the email text>",
+ "trade":{"trade_id":"2026-11-06-bcs-24700-24850","event":"open","strategy":"Bull call spread",
+          "expiry":"2026-11-09","legs":["BUY 24700 CE @ 146","SELL 24850 CE @ 85"],"entry":61,
+          "target":"95-100","stop":"40 or close < 24600","conviction":8,"spot":24684,"now":61}}
+```
+
+Update: `"trade":{"trade_id":"…","event":"update","now":68,"spot":24728}` (no notification unless `"notify":true`).
+Exit: `"trade":{"trade_id":"…","event":"exit","exit":96,"result":"Target hit","spot":24805}`.
+Credit trades (iron condor, short strangle) add `"side":"credit"` so P&L is entry minus current.
+
+
 ## Working on it from VS Code
 
 Clone the repo, open the folder, and install the **Claude Code** extension (or run `claude` in

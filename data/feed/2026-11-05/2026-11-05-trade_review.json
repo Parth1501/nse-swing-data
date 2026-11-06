@@ -1,0 +1,19 @@
+{
+ "id": "2026-11-05-trade_review",
+ "kind": "trade_review",
+ "title": "Trade review 5 Nov: 19 results, 5 lessons",
+ "summary": "6 closed at T2 (GMRAIRPORT +8.1%, M&M, SBILIFE, PREMIERENE, HINDALCO, MARUTI), 9 hit T1, SMLMAH failed −18.6%. Win rate 82.7%.",
+ "body_md": "**Trade review, Thu 5 Nov:** 6 trades closed at T2, 9 hit T1, SMLMAH failed at 30 days (a retest), 2 missed winners.\n\nNifty jumped 2.40% to 24,536.60, and the open trades rode it. All 52 closed trades now total +189.4% (average +3.6%), against +168.8% from 43 last night. Running trades below their buy price fell to 23 of 48. Friday's 30-day exits are GNA (−8.7%) and GRANULES (T1 booked, now −4.1%). Monday has nine, including GKSL (−16.4%), QUADFUTURE (−16.4%) and NRBBEARING (−14.7%).\n\n**Today's results**\n- ✅✅ **GMRAIRPORT** (listed 14 Oct): bought ₹90.02, sold ₹97.30 after 21 days, **+8.09%**, back from a −6.44% dip.\n- ✅✅ **M&M** (listed 22 Oct): bought ₹2,826.63, sold ₹2,996.23 after 13 days, **+6.00%**.\n- ✅✅ **SBILIFE** (listed 22 Oct): bought ₹1,631.52, sold ₹1,729.41 after 13 days, **+6.00%**.\n- ✅✅ **PREMIERENE** (listed 29 Oct): bought ₹858.87, sold ₹910.40 after 6 days, **+6.00%**, no dip.\n- ✅✅ **HINDALCO** (listed 13 Oct): bought ₹889.92, sold ₹943.32 after 22 days, **+6.00%**.\n- ✅✅ **MARUTI** (listed 15 Oct): bought ₹11,391.23, sold ₹12,074.71 after 20 days, **+6.00%**.\n- ✅ **9 hit T1, still open:** SUNDARMFIN, IDFCFIRSTB, WAAREEENER, BANKINDIA, HDFCLIFE, KOTAKBANK, TMPV, TATAPOWER, ENGINERSIN.\n- 🟢 **LUPIN**: dipped in and filled at ₹1,958.03; now +1.53%.\n- ➖ **COROMANDEL**: not bought, missed winner (came within 2.7% of the zone).\n- ❌ **SMLMAH** (Retest): failed at 30 days, **−18.63%**. Same spike-then-slide shape as YATHARTH and ACMESOLAR; the retest change now keeps these off the list.\n- ❌ **LIQUIDPLUS / LIQUIDCASE**: liquid-fund ETFs that can't move +3% in a month; the ETF filter should keep them out.\n\n**Lessons**\n- Retests fill almost always, but they lose money (now off the list): 31 trades average −4.0% vs +2.6% for the other 69. (holding)\n- Pullbacks reach T1 most often and make the most money: 21 of 25 reached T1; none of 15 closed lost money, +87.6%. (holding)\n- Support picks that never dip into the zone are often winners: 14 of 20 would have reached T1 at the next open. (holding)\n- Very high trigger volume (over 2.5×) often means no fill, and a bad fill: 7 of 12 filled; fills dip −10.2%. (holding)\n- The top-10 cut leaves winners behind: near misses reached T1 72% (81 of 113) vs 66% for real picks, fourth review in a row. (new)\n\nEarly signs: candle-at-support picks are now the best group (20 of 39 at T2, 51%, shallowest dip −4.2%). F&O stocks reach T2 nearly twice as often as cash stocks (47% vs 25%) and dip far less (−3.3% vs −11.4%).\n\n**Proposed change:** none tonight. The retest change has been live for only 2 days; the near-miss lesson needs a proposal with numbers first.\n\n| Setup | Trades | T1 hit | T2 hit | Success | Worst dip |\n|---|---|---|---|---|---|\n| All picks | 100 | 66 | 38 | 38% | −7.62% |\n| Pullback | 25 | 21 | 12 | 48% | −9.30% |\n| Retest (off the list) | 31 | 10 | 4 | 13% | −10.63% |\n| Candle at support | 39 | 31 | 20 | 51% | −4.23% |\n| F&O stocks | 36 | 26 | 17 | 47% | −3.28% |\n| Cash (non-F&O) | 55 | 31 | 14 | 25% | −11.36% |\n\n_Simulated from daily prices. Analysis only, not investment advice._\n",
+ "symbols": [
+  "GMRAIRPORT",
+  "M&M",
+  "SBILIFE",
+  "PREMIERENE",
+  "HINDALCO",
+  "MARUTI",
+  "SMLMAH",
+  "LUPIN"
+ ],
+ "created_at": "2026-11-05T19:34:39+05:30",
+ "notify": false
+}

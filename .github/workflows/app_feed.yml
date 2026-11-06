@@ -1,0 +1,41 @@
+name: App feed
+
+on:
+  workflow_dispatch:           # started by the Claude routines after each email, to post it to the phone app
+    inputs:
+      item:
+        description: "base64 of one JSON feed item, or a JSON list of items (see feed.py)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: app-feed
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write and push the feed item
+        env:
+          ITEM_B64: ${{ inputs.item }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME" && git reset -q --hard "origin/$GITHUB_REF_NAME" || { sleep $((i * 5)); continue; }
+            python feed.py import --b64 "$ITEM_B64"
+            git add data/feed
+            git diff --cached --quiet && exit 0
+            git commit -q -m "App feed $(TZ=Asia/Kolkata date +%F-%H%M)"
+            git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

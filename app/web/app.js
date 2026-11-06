@@ -278,7 +278,7 @@ async function ideas() {
         <div class="num">${rs(x.close)} <span class="small ${cls(x.chg_pct)}">${pct(x.chg_pct)}</span></div>
       </div>
       <div class="chips" style="margin-top:6px">
-        ${x.eligible ? '<span class="chip up">On the list</span>' : '<span class="chip">Watch only</span>'}
+        ${x.eligible ? '<span class="chip up">Buy list</span>' : '<span class="chip">Watch, not a buy yet</span>'}
         ${x.entry_style ? `<span class="chip accent">${esc(x.entry_style)}</span>` : ""}
         ${x.warning ? `<span class="chip warn">${esc(x.warning)}</span>` : ""}
       </div>
@@ -288,7 +288,7 @@ async function ideas() {
         <div class="stat"><div class="k">T2 (+6%)</div><div class="v small up">${fmt(x.t2)}</div></div>
       </div>
       ${x.zone_status ? `<div class="small ${/above|below/i.test(x.zone_status) ? "warn" : "up"}">${esc(x.zone_status)}</div>` : ""}
-      ${!x.eligible && x.not_eligible_because ? `<div class="small muted" style="margin-top:4px">Why not listed: ${esc(x.not_eligible_because)}</div>` : ""}
+      ${!x.eligible && x.not_eligible_because ? `<div class="small muted" style="margin-top:4px">Why not a buy yet: ${esc(x.not_eligible_because)}</div>` : ""}
       <details><summary>Why this setup${x.chart ? " · chart" : ""}</summary>
         <div class="small" style="margin-top:6px">${esc(x.reason)}</div>
         <div class="tiny muted" style="margin-top:6px">Support ${rs(x.support)} (${esc(x.support_kind)}) · resistance ${rs(x.resistance)} · room ${pct(x.room_pct, 1)} · 1M ${pct(x.ret_1m, 1)} · 3M ${pct(x.ret_3m, 1)}</div>
@@ -297,10 +297,12 @@ async function ideas() {
     </div>`;
   const listed = d.ideas.filter((x) => x.eligible), watch = d.ideas.filter((x) => !x.eligible);
   view.innerHTML = `
-    <div class="small muted">Scan of ${esc(d.data_date)} · ${esc(d.stocks_analysed)} stocks · ${esc(d.eligible_count)} on the list</div>
-    <h2>On the list</h2>
+    <div class="small muted">Scan of ${esc(d.data_date)} · ${esc(d.stocks_analysed)} stocks · ${esc(d.eligible_count)} on the buy list</div>
+    <h2>Buy list</h2>
+    <div class="small muted">Passed every rule in the scan. These are the stocks you can buy in the buy zone.</div>
     ${listed.length ? listed.map(card).join("") : '<div class="card muted small">No stock passed every rule in the last scan.</div>'}
-    <h2>Watch list (top ranked, not listed)</h2>
+    <h2>Watch list</h2>
+    <div class="small muted">Strong setups that failed at least one rule, so don't buy them yet. Each card says which rule. Keep an eye on them in case they qualify in a later scan.</div>
     ${watch.slice(0, 8).map(card).join("")}
     <h2>Value shortlist ${d.value.data_date ? "· " + esc(d.value.data_date) : ""}</h2>
     <div class="card"><div class="table-wrap"><table class="simple">

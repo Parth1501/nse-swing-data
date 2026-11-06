@@ -1,0 +1,17 @@
+[Unit]
+Description=Swing Desk app (NSE swing alerts)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=__USER__
+WorkingDirectory=__APP__/backend
+EnvironmentFile=/etc/swingdesk.env
+ExecStart=__VENV__/bin/uvicorn main:app --host 127.0.0.1 --port __PORT__ --proxy-headers --workers 1
+Restart=always
+RestartSec=5
+MemoryMax=250M
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

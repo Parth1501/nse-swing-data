@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NSE Swing Desk</title>
+<meta name="theme-color" content="#0e1116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Swing Desk">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo"></span><span id="title">Swing Desk</span></div>
+  <div class="top-actions">
+    <button class="icon-btn" id="refresh" aria-label="Refresh">⟳</button>
+    <a class="icon-btn" href="#/settings" aria-label="Settings">⚙</a>
+  </div>
+</header>
+<main id="view" aria-live="polite"></main>
+<nav class="tabs" id="tabs">
+  <a href="#/" data-tab="home"><span>◉</span>Home</a>
+  <a href="#/options" data-tab="options"><span>⛁</span>Options</a>
+  <a href="#/ideas" data-tab="ideas"><span>✦</span>Ideas</a>
+  <a href="#/trades" data-tab="trades"><span>⇅</span>Trades</a>
+  <a href="#/feed" data-tab="feed"><span>☰</span>Feed</a>
+</nav>
+<script src="/app.js"></script>
+</body>
+</html>

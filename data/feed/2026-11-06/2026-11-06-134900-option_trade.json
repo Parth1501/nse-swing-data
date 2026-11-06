@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "13:45: spread 79, holding",
+ "summary": "Nifty 24,800. Spread 79 vs entry 61 (+Rs 1,170/lot). Calls unwinding 24,600-24,700, fresh puts at 24,700-24,800.",
+ "trade": {
+  "trade_id": "2026-11-06-bcs-24700-24850",
+  "event": "update",
+  "now": 79,
+  "spot": 24800
+ },
+ "created_at": "2026-11-06T13:49:00+05:30",
+ "id": "2026-11-06-134900-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

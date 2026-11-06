@@ -56,7 +56,7 @@ nginx forwards the domain to it and certbot adds the certificate. Your other ngi
    install it (Android: Chrome menu → Install app; iPhone: Safari → Share → Add to Home Screen),
    then Settings → Turn on notifications → Send me a test notification.
 
-Update later: `cd ~/nse-swing-data && git pull && ./app/deploy/install.sh`.
+Update later: `cd ~/nse-swing-data && git pull && ./app/deploy/install.sh`. Every step checks first and skips what is already done (packages, Python, settings, unchanged service, nginx site, certificate), so re-running is quick. `FORCE=1` redoes everything except the nginx site and certificate.
 Logs: `journalctl -u swingdesk -f`.
 
 Keep `/etc/swingdesk.env` safe: if the VAPID keys change, every phone has to turn notifications on again.

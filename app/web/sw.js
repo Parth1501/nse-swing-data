@@ -1,5 +1,5 @@
 // Swing Desk service worker: offline shell, last-seen data, push notifications.
-const SHELL = "shell-v1";
+const SHELL = "shell-v2";
 const DATA = "data-v1";
 const SHELL_FILES = ["/", "/index.html", "/style.css", "/app.js", "/manifest.webmanifest", "/icons/icon-192.png"];
 

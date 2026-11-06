@@ -13,6 +13,18 @@
 <link rel="icon" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/style.css">
+<script>
+// Phones in "Desktop site" mode lay the page out ~980px wide and shrink it. Zoom back to phone width.
+(function () {
+  try {
+    var sw = Math.min(screen.width, screen.height);
+    var touch = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
+    if (touch && sw < 700 && window.innerWidth > sw * 1.25) {
+      document.documentElement.style.zoom = (window.innerWidth / Math.min(screen.width, window.innerWidth)).toFixed(3);
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <header class="top">

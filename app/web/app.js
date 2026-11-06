@@ -155,38 +155,39 @@ async function home() {
   view.innerHTML = `
     ${b}
     <div class="card">
-      <div class="row">
+      <div class="hero">
         <div>
           <div class="small muted">Nifty 50 ${oc.as_of ? "· " + esc(oc.as_of.slice(11, 16)) + " IST" : ""}</div>
           <div class="big num">${fmt(spot)}</div>
         </div>
-        <div class="chips" style="justify-content:flex-end">
+        <div class="chips">
           ${trendChip("Weekly", oc.trend_weekly)}${trendChip("125m", oc.trend_125m)}${trendChip("25m", oc.trend_25m)}
         </div>
       </div>
-      <div class="grid" style="margin-top:12px">
-        <div class="stat"><div class="k">PCR (near)</div><div class="v">${fmt(oc.pcr_near)}</div></div>
+      <div class="grid" style="margin-top:14px">
         <div class="stat"><div class="k">Put wall</div><div class="v up">${fmt(oc.put_wall, 0)}</div></div>
         <div class="stat"><div class="k">Call wall</div><div class="v down">${fmt(oc.call_wall, 0)}</div></div>
+        <div class="stat"><div class="k">PCR (near)</div><div class="v">${fmt(oc.pcr_near)}</div></div>
         <div class="stat"><div class="k">Max pain</div><div class="v">${fmt(oc.max_pain, 0)}</div></div>
-        <div class="stat" style="grid-column: span 2"><div class="k">Implied range to ${esc(oc.expiry || "expiry")}</div><div class="v">${oc.implied_range ? fmt(oc.implied_range[0], 0) + " – " + fmt(oc.implied_range[1], 0) : "–"}</div></div>
+        <div class="stat wide"><div class="k">Implied range to ${esc(oc.expiry || "expiry")}</div><div class="v">${oc.implied_range ? fmt(oc.implied_range[0], 0) + " – " + fmt(oc.implied_range[1], 0) : "–"}</div></div>
       </div>
     </div>
 
+    <h2>Latest</h2>
+    ${d.latest.length ? d.latest.map(itemCard).join("") : `<div class="card muted small">Nothing posted yet. Morning lists, reviews and option chain reads will show up here.</div>`}
+
     <h2>Track record</h2>
-    <div class="grid">
+    <div class="grid three">
       <div class="stat"><div class="k">Win rate (T1+)</div><div class="v up">${fmt(tr.win_rate_t1_or_better_pct, 1)}%</div></div>
       <div class="stat"><div class="k">Avg closed</div><div class="v ${cls(tr.avg_return_closed_pct)}">${pct(tr.avg_return_closed_pct)}</div></div>
       <div class="stat"><div class="k">Open trades</div><div class="v">${d.open_trades}</div></div>
     </div>
 
     <h2>Global markets</h2>
-    <div class="scroll-x">
-      ${(d.global?.items || []).map((g) => `<div class="stat"><div class="k">${esc(g.name)}</div><div class="v">${fmt(g.value)}</div><div class="tiny ${cls(g.change_pct)}">${pct(g.change_pct)}</div></div>`).join("")}
+    <div class="card">
+      ${(d.global?.items || []).map((g) => `<div class="mkt"><div class="name">${esc(String(g.name || "").replace(/\s*\(.*\)$/, ""))}<div class="tiny muted">${esc(g.for_date || "")}</div></div><div class="val">${fmt(g.value)}<span class="tiny ${cls(g.change_pct)}">${pct(g.change_pct)}</span></div></div>`).join("") || '<span class="muted small">No data yet.</span>'}
     </div>
 
-    <h2>Latest</h2>
-    ${d.latest.length ? d.latest.map(itemCard).join("") : `<div class="card muted small">Nothing posted yet. Morning lists, reviews and option chain reads will show up here.</div>`}
     <p class="tiny muted" style="text-align:center">Data ${esc(d.data_date || "")} · ${esc((d.repo_head || "").split(" ").slice(2).join(" "))}<br>Analysis only, not investment advice.</p>
   `;
   wireBanners();
@@ -223,16 +224,16 @@ async function options() {
       <span class="tiny muted">${esc((d.snapshot_ist || L.as_of || "").slice(11, 16))} IST</span>
     </div>
     <div class="card">
-      <div class="row"><div><div class="small muted">Spot</div><div class="big num">${fmt(e.spot ?? ch.spot)}</div></div>
-        <div class="chips" style="justify-content:flex-end">${trendChip("Weekly", L.trend_weekly)}${trendChip("125m", L.trend_125m)}${trendChip("25m", L.trend_25m)}</div></div>
-      <div class="grid" style="margin-top:12px">
+      <div class="hero"><div><div class="small muted">Spot</div><div class="big num">${fmt(e.spot ?? ch.spot)}</div></div>
+        <div class="chips">${trendChip("Weekly", L.trend_weekly)}${trendChip("125m", L.trend_125m)}${trendChip("25m", L.trend_25m)}</div></div>
+      <div class="grid" style="margin-top:14px">
+        <div class="stat"><div class="k">Put wall</div><div class="v up">${fmt(e.put_wall, 0)}</div></div>
+        <div class="stat"><div class="k">Call wall</div><div class="v down">${fmt(e.call_wall, 0)}</div></div>
         <div class="stat"><div class="k">PCR near</div><div class="v">${fmt(e.pcr_near)}</div></div>
         <div class="stat"><div class="k">Max pain</div><div class="v">${fmt(e.max_pain, 0)}</div></div>
         <div class="stat"><div class="k">Days left</div><div class="v">${fmt(e.dte, 1)}</div></div>
-        <div class="stat"><div class="k">Put wall</div><div class="v up">${fmt(e.put_wall, 0)}</div></div>
-        <div class="stat"><div class="k">Call wall</div><div class="v down">${fmt(e.call_wall, 0)}</div></div>
         <div class="stat"><div class="k">ATM IV</div><div class="v">${fmt(e.atm_iv, 1)}</div></div>
-        <div class="stat" style="grid-column: span 3"><div class="k">Implied move ${pct(e.implied_move_pct)}</div><div class="v">${e.implied_range ? fmt(e.implied_range[0], 0) + " – " + fmt(e.implied_range[1], 0) : "–"}</div></div>
+        <div class="stat wide"><div class="k">Implied move ${pct(e.implied_move_pct)}</div><div class="v">${e.implied_range ? fmt(e.implied_range[0], 0) + " – " + fmt(e.implied_range[1], 0) : "–"}</div></div>
       </div>
     </div>
 

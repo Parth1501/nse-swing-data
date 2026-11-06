@@ -75,7 +75,7 @@ samvat_start,rule,top,ret_pct,nifty_pct,universe_avg_pct,excess_vs_nifty,picks
 2018-11-07,"R1 momentum leader (trend, <=10% off high, 12-1 mom / vol)",5,9.9,9.3,-2.56,0.6,INFY LTTS ADANIENT HINDUNILVR DIVISLAB
 2018-11-07,"R1 momentum leader (trend, <=10% off high, 12-1 mom / vol)",10,9.42,9.3,-2.56,0.12,INFY LTTS ADANIENT HINDUNILVR DIVISLAB HCLTECH AARTIIND ATUL TORNTPHARM INTELLECT
 2018-11-07,"R2 leader on a dip (trend, 5-20% off high, RS6>0, 12-1 mom / vol)",1,-1.58,9.3,-2.56,-10.87,LTM
-2018-11-07,"R2 leader on a dip (trend, 5-20% off high, RS6>0, 12-1 mom / vol)",5,19.61,9.3,-2.56,10.32,LTM INFY TCS ABBOTINDIA COFORGE
+2018-11-07,"R2 leader on a dip (trend, 5-20% off high, RS6>0, 12-1 mom / vol)",5,19.61,9.3,-2.56,10.31,LTM INFY TCS ABBOTINDIA COFORGE
 2018-11-07,"R2 leader on a dip (trend, 5-20% off high, RS6>0, 12-1 mom / vol)",10,-1.92,9.3,-2.56,-11.22,LTM INFY TCS ABBOTINDIA COFORGE BIOCON TECHM ADANIENT HEGAM JSWSTEEL
 2018-11-07,R3 pure 12-1 momentum,1,-64.74,9.3,-2.56,-74.04,GPIL
 2018-11-07,R3 pure 12-1 momentum,5,-28.34,9.3,-2.56,-37.63,GPIL LTM HEGAM ADANIENT LTTS

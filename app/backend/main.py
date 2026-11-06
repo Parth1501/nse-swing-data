@@ -365,6 +365,8 @@ def sync_once() -> int:
     new = []
     for item in repo.feed_files():
         if store.item_exists(item["id"]):
+            # keep the stored copy in step with the file (e.g. trade details saved by older code)
+            store.refresh_item(item)
             continue
         store.insert_item(item, source="repo", notified=first_run)
         if not first_run and item.get("notify", True):

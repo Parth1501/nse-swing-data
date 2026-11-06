@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "14:15: spread 83, holding",
+ "summary": "Nifty 24,802 flat. Spread 83 vs entry 61 (+Rs 1,430/lot). Fresh call writing at 24,800-25,000 caps it; puts strong at 24,800.",
+ "trade": {
+  "trade_id": "2026-11-06-bcs-24700-24850",
+  "event": "update",
+  "now": 83,
+  "spot": 24802
+ },
+ "created_at": "2026-11-06T14:19:19+05:30",
+ "id": "2026-11-06-141919-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

@@ -157,6 +157,17 @@ def insert_item(item: dict, source: str, notified: bool) -> None:
              json.dumps(item.get("symbols", [])), item["created_at"], source, int(notified), json.dumps(extra)))
 
 
+def refresh_item(item: dict) -> None:
+    """Updates the text and trade details of an item already stored, without notifying."""
+    extra = json.dumps({"trade": item["trade"]} if isinstance(item.get("trade"), dict) else {})
+    execute("UPDATE items SET kind=?, title=?, summary=?, body_md=?, symbols=?, extra=? WHERE id=? AND "
+            "(kind!=? OR title!=? OR summary!=? OR body_md!=? OR symbols!=? OR extra!=?)",
+            (item["kind"], item["title"], item.get("summary", ""), item.get("body_md", ""),
+             json.dumps(item.get("symbols", [])), extra, item["id"],
+             item["kind"], item["title"], item.get("summary", ""), item.get("body_md", ""),
+             json.dumps(item.get("symbols", [])), extra))
+
+
 def mark_notified(item_id: str) -> None:
     execute("UPDATE items SET notified=1 WHERE id=?", (item_id,))
 

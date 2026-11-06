@@ -46,7 +46,7 @@ async function api(path, opts = {}) {
   });
   if (r.status === 401) { state.me = null; go("#/login"); throw new Error("signed out"); }
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || r.statusText);
+  if (!r.ok) throw new Error((data.error || data.detail || r.statusText || "Error") + " (HTTP " + r.status + (r.status === 404 && path.startsWith("/api/") ? ", server needs a restart: run install.sh" : "") + ")");
   return data;
 }
 

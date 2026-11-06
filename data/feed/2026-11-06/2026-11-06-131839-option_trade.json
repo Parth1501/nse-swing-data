@@ -1,0 +1,18 @@
+{
+ "id": "2026-11-06-131839-option_trade",
+ "kind": "option_trade",
+ "title": "13:15: spread 68, holding",
+ "summary": "Nifty 24,728. Spread ~68 vs 61 entry (+₹430/lot). Chain still supports it; hold for 95–100.",
+ "body_md": "**13:15 check:** Nifty is at 24,728, up 44 points. The spread is worth about 68 against an entry of 61, so it's up about ₹430 per lot.\n\n- Calls are still being covered from 24,500 to 24,700.\n- Fresh puts are going in at 24,700 to 24,750, so support is moving up.\n- Some puts at 24,500 to 24,600 are being covered too, which looks like profit-taking.\n\nThe chain hasn't turned against the trade. **Hold** with the target at 95 to 100 and the stop at 40 or a close below 24,600.\n",
+ "symbols": [
+  "NIFTY"
+ ],
+ "created_at": "2026-11-06T13:18:39+05:30",
+ "notify": false,
+ "trade": {
+  "trade_id": "2026-11-06-bcs-24700-24850",
+  "event": "update",
+  "now": 68,
+  "spot": 24728
+ }
+}

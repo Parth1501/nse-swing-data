@@ -56,7 +56,7 @@ const isStandalone = () => matchMedia("(display-mode: standalone)").matches || n
 
 // ---------- router ----------
 const routes = {
-  "": home, "options": options, "ideas": ideas, "trades": trades, "feed": feed,
+  "": home, "optrades": optrades, "options": options, "ideas": ideas, "trades": trades, "feed": feed,
   "item": item, "settings": settings, "login": loginView,
 };
 function go(hash) { if (location.hash !== hash) location.hash = hash; else render(); }
@@ -149,11 +149,13 @@ function wireBanners() {
 
 async function home() {
   view.innerHTML = skeleton(4);
-  const [d, b] = await Promise.all([api("/api/overview"), banners()]);
+  const [d, b, ot] = await Promise.all([api("/api/overview"), banners(), api("/api/option-trades").catch(() => ({ trades: [] }))]);
+  const openOT = ot.trades.filter((t) => t.status === "open");
   const oc = d.oc || {}, tr = d.track_record || {}, nf = d.nifty || {};
   const spot = oc.spot ?? nf.close;
   view.innerHTML = `
     ${b}
+    ${openOT.length ? `<h2>Open F&amp;O trade${openOT.length > 1 ? "s" : ""}</h2>${openOT.map((t) => otradeCard(t, true)).join("")}<h2>Market</h2>` : ""}
     <div class="card">
       <div class="hero">
         <div>
@@ -210,8 +212,11 @@ async function options() {
   const exps = L.expiries || [];
   if (!exps.length && !d.chains.length) { view.innerHTML = `<div class="empty">No option chain data yet.</div>`; return; }
   const i = Math.min(state.ocExpiry, Math.max(exps.length, d.chains.length) - 1);
-  const e = exps[i] || {};
-  const ch = d.chains.find((c) => c.expiry === e.expiry) || d.chains[i] || { strikes: [] };
+  const learned = exps[i] || {};
+  const ch = d.chains.find((c) => c.expiry === learned.expiry) || d.chains[i] || { strikes: [] };
+  // levels come from the newest 30-min snapshot; pattern verdicts from the hourly learning run
+  const fresh = ch.live && (!L.as_of || (d.snapshot_ist || "") > L.as_of);
+  const e = fresh ? { ...learned, ...ch.live } : learned;
   const maxOI = Math.max(1, ...ch.strikes.flatMap((s) => [s.ce_oi || 0, s.pe_oi || 0]));
   const atm = ch.strikes.reduce((b, s) => (Math.abs(s.strike - ch.spot) < Math.abs(b - ch.spot) ? s.strike : b), ch.strikes[0]?.strike);
   const verdict = (title, p) => p ? `<div class="verdict"><div class="p">${esc(title)}: ${esc(p.pattern)}</div><div class="t">${esc(p.verdict)}</div>
@@ -239,7 +244,7 @@ async function options() {
 
     ${d.spot_path.length > 1 ? `<h2>Today (${d.snapshots_today} snapshots)</h2><div class="card">${spark(d.spot_path)}</div>` : ""}
 
-    <h2>Pattern read</h2>
+    <h2>Pattern read ${L.as_of ? "· " + esc(L.as_of.slice(11, 16)) : ""}</h2>
     <div class="card">${verdict("Since last snapshot", e.intraday)}${verdict("Since open", e.day)}${!e.intraday && !e.day ? '<span class="muted small">No read yet.</span>' : ""}
       <div class="tiny muted" style="margin-top:8px">Learned from live snapshots since 14 Oct 2026. Analysis only, not advice.</div></div>
 
@@ -329,6 +334,50 @@ async function trades() {
     ${d.open.map((p) => row(p, true)).join("") || '<div class="card muted small">No open trades.</div>'}
     <h2>Recently closed</h2>
     ${d.closed.map((p) => row(p, false)).join("")}`;
+}
+
+// ---------- option trades ----------
+const timeOf = (iso) => { try { return new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
+function otradeCard(t, compact = false) {
+  const open = t.status === "open";
+  const statusChip = open ? '<span class="chip accent">Open</span>'
+    : `<span class="chip ${/target/i.test(t.result || "") || (t.pnl_pts || 0) > 0 ? "up" : "down"}">${esc(t.result || "Closed")}</span>`;
+  const mark = open ? t.now : t.exit;
+  const legs = (t.legs || []).map((l) => `<li class="${/^\s*buy/i.test(l) ? "buy" : /^\s*sell/i.test(l) ? "sell" : ""}">${esc(l)}</li>`).join("");
+  return `<div class="card otrade">
+    <div class="head">
+      <div>
+        <div class="chips" style="margin-bottom:6px">${statusChip}${t.conviction ? `<span class="chip">${esc(t.conviction)}/10</span>` : ""}${t.expiry ? `<span class="chip">Exp ${esc(t.expiry)}</span>` : ""}</div>
+        <div class="title">${esc(t.strategy || "Option trade")}${t.underlying ? " · " + esc(t.underlying) : ""}</div>
+      </div>
+      ${t.pnl_pts !== undefined ? `<div class="pnl"><div class="pts ${cls(t.pnl_pts)}">${t.pnl_pts > 0 ? "+" : ""}${fmt(t.pnl_pts, 1)}</div><div class="tiny ${cls(t.pnl_rs)}">pts · ₹${fmt(t.pnl_rs, 0)}/lot</div></div>` : ""}
+    </div>
+    ${legs && !compact ? `<ul class="legs">${legs}</ul>` : ""}
+    <div class="grid" style="margin-top:8px">
+      <div class="stat"><div class="k">Entry</div><div class="v">${fmt(t.entry)}</div></div>
+      <div class="stat"><div class="k">${open ? "Now" : "Exit"}</div><div class="v ${cls(t.pnl_pts)}">${fmt(mark)}</div></div>
+      <div class="stat"><div class="k">Target</div><div class="v up">${esc(t.target || "–")}</div></div>
+      <div class="stat"><div class="k">Stop</div><div class="v down" style="font-size:16px">${esc(t.stop || "–")}</div></div>
+    </div>
+    ${t.spot ? `<div class="tiny muted" style="margin-top:8px">Nifty ${fmt(t.spot)} at last update · ${esc(ago(t.updated_at))}</div>` : ""}
+    ${compact ? `<a class="small" href="#/optrades" style="display:inline-block;margin-top:8px">Open F&amp;O trades ›</a>` : `
+    <div class="timeline">${t.events.map((e) => `<a class="ev-${esc(e.event)}" href="#/item/${encodeURIComponent(e.id)}">
+        <div class="t">${esc(timeOf(e.at))} · ${esc(e.event === "open" ? "Entry" : e.event === "exit" ? "Exit" : "Update")}${e.now != null ? " · value " + fmt(e.now) : ""}${e.exit != null ? " · exit " + fmt(e.exit) : ""}${e.spot != null ? " · Nifty " + fmt(e.spot) : ""}</div>
+        <div class="s">${esc(e.summary || e.title)}</div></a>`).join("")}</div>`}
+  </div>`;
+}
+
+async function optrades() {
+  view.innerHTML = skeleton(2);
+  const d = await api("/api/option-trades");
+  const open = d.trades.filter((t) => t.status === "open"), closed = d.trades.filter((t) => t.status !== "open");
+  const total = closed.reduce((a, t) => a + (t.pnl_rs || 0), 0);
+  view.innerHTML = `
+    <h2>Open (${open.length})</h2>
+    ${open.map((t) => otradeCard(t)).join("") || '<div class="card muted small">No open option trade. High-conviction (8/10+) Nifty trades show up here with live updates and the exit call.</div>'}
+    <h2>Closed (${closed.length})${closed.length ? ` · <span class="${cls(total)}">₹${fmt(total, 0)}/lot</span>` : ""}</h2>
+    ${closed.map((t) => otradeCard(t)).join("") || '<div class="card muted small">None yet.</div>'}
+    <p class="tiny muted" style="text-align:center">P&amp;L is per lot (65), from the levels in the trade messages. Analysis only, not advice.</p>`;
 }
 
 async function feed() {

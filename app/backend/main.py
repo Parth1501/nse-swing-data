@@ -114,6 +114,52 @@ def trades(u: dict = Depends(user)):
     return repo.trades()
 
 
+def _num(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def build_option_trades() -> list[dict]:
+    """Folds every option_trade feed item into one record per trade_id."""
+    trades: dict[str, dict] = {}
+    for it in store.option_trade_items():
+        t = it.get("trade") or {}
+        tid = t.get("trade_id") or it["id"]
+        rec = trades.setdefault(tid, {"trade_id": tid, "events": [], "opened_at": it["created_at"]})
+        for k, v in t.items():
+            if v not in (None, "", []):
+                rec[k] = v
+        rec["events"].append({"id": it["id"], "at": it["created_at"], "event": t.get("event", "update"),
+                              "title": it["title"], "summary": it["summary"], "now": t.get("now"),
+                              "spot": t.get("spot"), "exit": t.get("exit"), "result": t.get("result")})
+        rec["updated_at"] = it["created_at"]
+    out = []
+    for rec in trades.values():
+        last = rec["events"][-1]["event"]
+        rec["status"] = "closed" if last in ("exit", "closed", "cancel") else "open"
+        entry, mark = _num(rec.get("entry")), _num(rec.get("exit") if rec["status"] == "closed" else rec.get("now"))
+        if entry is not None and mark is not None:
+            sign = -1 if str(rec.get("side", "debit")).lower() == "credit" else 1
+            pts = round((mark - entry) * sign, 2)
+            lot = _num(rec.get("lot_size")) or 65
+            rec["pnl_pts"], rec["pnl_rs"] = pts, round(pts * lot)
+        rec.pop("event", None)
+        rec.pop("now" if rec["status"] == "closed" else "exit", None)
+        rec["events"].reverse()
+        out.append(rec)
+    out.sort(key=lambda r: (r["status"] != "open", r["updated_at"]), reverse=False)
+    open_ = sorted([r for r in out if r["status"] == "open"], key=lambda r: r["updated_at"], reverse=True)
+    closed = sorted([r for r in out if r["status"] != "open"], key=lambda r: r["updated_at"], reverse=True)
+    return open_ + closed
+
+
+@app.get("/api/option-trades")
+def option_trades(u: dict = Depends(user)):
+    return {"trades": build_option_trades()}
+
+
 @app.get("/api/feed")
 def feed(kind: str | None = None, before: str | None = None, limit: int = 30, u: dict = Depends(user)):
     return {"items": store.list_items(kind=kind, before=before, limit=min(limit, 100))}
@@ -228,6 +274,7 @@ class NewItem(BaseModel):
     body_md: str = ""
     symbols: list[str] = []
     notify: bool = True
+    trade: dict | None = None
 
 
 @app.post("/api/admin/items")

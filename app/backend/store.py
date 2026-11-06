@@ -67,6 +67,10 @@ def db() -> sqlite3.Connection:
     if _conn is None:
         _conn = connect()
         _conn.executescript(SCHEMA)
+        cols = {r[1] for r in _conn.execute("PRAGMA table_info(items)")}
+        if "extra" not in cols:  # added for option trades
+            _conn.execute("ALTER TABLE items ADD COLUMN extra TEXT NOT NULL DEFAULT '{}'")
+            _conn.commit()
     return _conn
 
 
@@ -146,10 +150,11 @@ def item_exists(item_id: str) -> bool:
 
 
 def insert_item(item: dict, source: str, notified: bool) -> None:
-    execute("INSERT OR IGNORE INTO items(id,kind,title,summary,body_md,symbols,created_at,source,notified) "
-            "VALUES(?,?,?,?,?,?,?,?,?)",
+    extra = {"trade": item["trade"]} if isinstance(item.get("trade"), dict) else {}
+    execute("INSERT OR IGNORE INTO items(id,kind,title,summary,body_md,symbols,created_at,source,notified,extra) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?)",
             (item["id"], item["kind"], item["title"], item.get("summary", ""), item.get("body_md", ""),
-             json.dumps(item.get("symbols", [])), item["created_at"], source, int(notified)))
+             json.dumps(item.get("symbols", [])), item["created_at"], source, int(notified), json.dumps(extra)))
 
 
 def mark_notified(item_id: str) -> None:
@@ -157,7 +162,7 @@ def mark_notified(item_id: str) -> None:
 
 
 def list_items(kind: str | None = None, limit: int = 50, before: str | None = None) -> list[dict]:
-    sql = "SELECT id,kind,title,summary,symbols,created_at FROM items"
+    sql = "SELECT id,kind,title,summary,symbols,created_at,extra FROM items"
     where, args = [], []
     if kind:
         where.append("kind=?"); args.append(kind)
@@ -170,6 +175,14 @@ def list_items(kind: str | None = None, limit: int = 50, before: str | None = No
     rows = query(sql, args)
     for r in rows:
         r["symbols"] = json.loads(r["symbols"])
+        r.update(json.loads(r.pop("extra") or "{}"))
+    return rows
+
+
+def option_trade_items() -> list[dict]:
+    rows = query("SELECT id,title,summary,created_at,extra FROM items WHERE kind='option_trade' ORDER BY created_at")
+    for r in rows:
+        r.update(json.loads(r.pop("extra") or "{}"))
     return rows
 
 
@@ -179,6 +192,7 @@ def get_item(item_id: str) -> dict | None:
         return None
     r = rows[0]
     r["symbols"] = json.loads(r["symbols"])
+    r.update(json.loads(r.pop("extra", None) or "{}"))
     return r
 
 

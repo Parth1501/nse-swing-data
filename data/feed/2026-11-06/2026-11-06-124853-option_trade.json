@@ -1,0 +1,29 @@
+{
+ "id": "2026-11-06-124853-option_trade",
+ "kind": "option_trade",
+ "title": "Nifty 8/10: bull call spread 24700/24850 (9 Nov)",
+ "summary": "Buy 24700 CE (~146), sell 24850 CE (~85) for ~61. Target 95–100, stop 40 or a 30-min close below 24600.",
+ "body_md": "Nifty at 24,684 (12:45 snapshot). **Score: 8/10.**\n\n**Why**\n- Call writers ran away from 24,600 and 24,650 (about 97,000 contracts closed in 30 minutes). That is the biggest unwinding today.\n- Fresh put writing at 24,500, 24,650 and 24,700 (about 108,000 new contracts). 24,700 is turning from resistance into support.\n- The learner's pattern \"put writers stronger\" has been followed by Nifty going up 91% of the time (26 cases).\n- The 125-minute and 25-minute trends are both up. The weekly trend is still bearish, so not a 10.\n- Nifty is up about 70 points from 24,615. The next call wall is at 24,850 to 24,900, so there is room left.\n\n**Trade (hedged, recommended)**\nBuy the 24,700 CE (about 146) and sell the 24,850 CE (about 85). Expiry 9 Nov.\n- Net cost: about 61 points (enter if it is between 58 and 68). About ₹3,965 per lot (lot 65).\n- Max profit: about 89 points (₹5,785 per lot) if Nifty is at 24,850 or above at expiry.\n- Practical target today or Monday: exit when the spread is worth about 95 to 100 (Nifty near 24,800). About +35 points, or ₹2,300 to 2,500 per lot.\n- Stop-loss: exit if the spread falls to 40, or if a 30-minute snapshot closes below 24,600. Loss about 21 points, or ₹1,365 per lot.\n- Reward to risk is about 1.7 to 1.\n\n**Alternative (naked buy):** buy the 24,700 CE at 140 to 150. Stop-loss 118 (about ₹1,800 loss per lot). Target 185 to 190 (about ₹2,600 to 2,800 profit per lot).\n\nSkip it if Nifty is already above 24,760, because most of the move will be gone.\n\nIf you hold the neutral iron condor (24,500/24,800), its short 24,800 CE is now closer. Exit it if a snapshot closes above 24,800.\n\n_Analysis only, not trading advice._\n",
+ "symbols": [
+  "NIFTY"
+ ],
+ "created_at": "2026-11-06T12:48:53+05:30",
+ "notify": false,
+ "trade": {
+  "trade_id": "2026-11-06-bcs-24700-24850",
+  "event": "open",
+  "underlying": "NIFTY",
+  "strategy": "Bull call spread",
+  "expiry": "2026-11-09",
+  "legs": [
+   "BUY 24700 CE @ 146",
+   "SELL 24850 CE @ 85"
+  ],
+  "entry": 61,
+  "target": "95–100",
+  "stop": "40 or close < 24600",
+  "conviction": 8,
+  "spot": 24684,
+  "now": 61
+ }
+}

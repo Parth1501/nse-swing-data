@@ -18,6 +18,7 @@ FEED_KINDS = {
     "morning_list": "Morning list",
     "trade_review": "Trade review",
     "value_pick": "Value pick",
+    "option_trade": "Option trade",
     "oc_read": "Option chain",
     "trade_event": "Trade update",
     "alert": "Alert",
@@ -181,24 +182,66 @@ def latest_oc_file() -> str | None:
     return files[-1] if files else None
 
 
-def option_chain(strikes_each_side: int = 10) -> dict:
-    learn = read_json(DATA("oc_learning", "latest.json")) or {}
+def live_features(rs: list[dict], snapshot_ist: str) -> dict:
+    """Same numbers oc_learn.py computes, but straight from the newest snapshot, so the app
+    updates every 30 minutes instead of waiting for the hourly pattern run."""
+    from datetime import datetime
+    rs = sorted(rs, key=lambda r: num(r["strike"], 0))
+    spot = num(rs[0]["spot"], 0)
+    k = [num(r["strike"], 0) for r in rs]
+    ce = [num(r["ce_oi"], 0) for r in rs]
+    pe = [num(r["pe_oi"], 0) for r in rs]
+    near = [abs(x / spot - 1) <= 0.03 if spot else False for x in k]
+    ce_near = sum(c for c, n in zip(ce, near) if n)
+    pe_near = sum(p for p, n in zip(pe, near) if n)
+    pain = [sum(c * max(0, kk - s) + p * max(0, s - kk) for s, c, p in zip(k, ce, pe)) for kk in k]
+    above = [i for i, x in enumerate(k) if x >= spot]
+    below = [i for i, x in enumerate(k) if x <= spot]
+    atm = rs[min(range(len(rs)), key=lambda i: abs(k[i] - spot))]
+    ivs = [v for v in (num(atm["ce_iv"], 0), num(atm["pe_iv"], 0)) if v > 0]
+    ce_l, pe_l = num(atm["ce_ltp"], 0), num(atm["pe_ltp"], 0)
+    straddle = ce_l + pe_l if ce_l > 0 and pe_l > 0 else None
+    try:
+        exp_t = datetime.fromisoformat(rs[0]["expiry"] + " 15:30:00")
+        dte = round(max((exp_t - datetime.fromisoformat(snapshot_ist)).total_seconds() / 86400, 0), 2)
+    except ValueError:
+        dte = None
+    return {
+        "expiry": rs[0]["expiry"], "type": rs[0]["expiry_type"], "dte": dte, "spot": spot,
+        "pcr_near": round(pe_near / ce_near, 3) if ce_near else None,
+        "max_pain": k[pain.index(min(pain))] if pain else None,
+        "call_wall": k[max(above, key=lambda i: ce[i])] if above else None,
+        "put_wall": k[max(below, key=lambda i: pe[i])] if below else None,
+        "implied_move_pct": round(100 * straddle / spot, 2) if straddle and spot else None,
+        "implied_range": [round(spot - straddle), round(spot + straddle)] if straddle else None,
+        "atm_iv": round(sum(ivs) / len(ivs), 2) if ivs else None,
+    }
+
+
+def latest_snapshot() -> tuple[str | None, dict[str, list[dict]], list[dict]]:
     path = latest_oc_file()
     rows = read_csv(path) if path else []
+    last = max((r["snapshot_ist"] for r in rows), default=None)
+    by_exp: dict[str, list[dict]] = {}
+    for r in rows:
+        if r["snapshot_ist"] == last:
+            by_exp.setdefault(r["expiry"], []).append(r)
+    return last, by_exp, rows
+
+
+def option_chain(strikes_each_side: int = 10) -> dict:
+    learn = read_json(DATA("oc_learning", "latest.json")) or {}
+    last, by_exp, rows = latest_snapshot()
     snapshots = sorted({r["snapshot_ist"] for r in rows})
-    last = snapshots[-1] if snapshots else None
     chains = []
     if last:
-        by_exp: dict[str, list[dict]] = {}
-        for r in rows:
-            if r["snapshot_ist"] == last:
-                by_exp.setdefault(r["expiry"], []).append(r)
         for exp, rs in sorted(by_exp.items()):
             spot = num(rs[0]["spot"], 0)
             rs.sort(key=lambda r: num(r["strike"], 0))
             atm_i = min(range(len(rs)), key=lambda i: abs(num(rs[i]["strike"], 0) - spot))
             window = rs[max(0, atm_i - strikes_each_side): atm_i + strikes_each_side + 1]
             chains.append({
+                "live": live_features(rs, last),
                 "expiry": exp,
                 "type": rs[0]["expiry_type"],
                 "spot": spot,
@@ -230,6 +273,12 @@ def overview() -> dict:
     glob_ = read_json(DATA("global.json")) or {}
     learn = read_json(DATA("oc_learning", "latest.json")) or {}
     weekly = (learn.get("expiries") or [{}])[0]
+    last, by_exp, _ = latest_snapshot()
+    as_of = learn.get("as_of")
+    if last and by_exp and (not as_of or last > as_of):  # newer raw snapshot than the pattern run
+        exp = weekly.get("expiry") if weekly.get("expiry") in by_exp else sorted(by_exp)[0]
+        weekly = live_features(by_exp[exp], last)
+        as_of = last
     open_trades = [p for p in picks() if p.get("status") in OPEN_STATUSES]
     return {
         "data_date": meta.get("data_date"),
@@ -242,7 +291,7 @@ def overview() -> dict:
                       for i in glob_.get("items", [])],
         },
         "oc": {
-            "as_of": learn.get("as_of"),
+            "as_of": as_of,
             "trend_weekly": learn.get("trend_weekly"),
             "trend_125m": learn.get("trend_125m"),
             "trend_25m": learn.get("trend_25m"),

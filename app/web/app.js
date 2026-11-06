@@ -340,11 +340,13 @@ async function trades() {
 const timeOf = (iso) => { try { return new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
 function otradeCard(t, compact = false) {
   const open = t.status === "open";
-  const statusChip = open ? '<span class="chip accent">Open</span>'
-    : `<span class="chip ${/target/i.test(t.result || "") || (t.pnl_pts || 0) > 0 ? "up" : "down"}">${esc(t.result || "Closed")}</span>`;
+  const win = otOutcome(t) === "success";
+  const statusChip = open ? '<span class="chip accent">Running</span>'
+    : `<span class="chip ${win ? "up" : "down"}">${esc(t.result || "Closed")}</span>`;
   const mark = open ? t.now : t.exit;
   const legs = (t.legs || []).map((l) => `<li class="${/^\s*buy/i.test(l) ? "buy" : /^\s*sell/i.test(l) ? "sell" : ""}">${esc(l)}</li>`).join("");
   return `<div class="card otrade">
+    ${open ? "" : `<div class="outcome ${win ? "ok" : "bad"}">${win ? "✅ SUCCESS" : "❌ FAILED"}<span>${t.pnl_pts !== undefined ? `${t.pnl_pts > 0 ? "+" : ""}${fmt(t.pnl_pts, 1)} pts · ₹${fmt(t.pnl_rs, 0)}/lot` : ""}</span></div>`}
     <div class="head">
       <div>
         <div class="chips" style="margin-bottom:6px">${statusChip}${t.conviction ? `<span class="chip">${esc(t.conviction)}/10</span>` : ""}${t.expiry ? `<span class="chip">Exp ${esc(t.expiry)}</span>` : ""}</div>
@@ -361,23 +363,42 @@ function otradeCard(t, compact = false) {
     </div>
     ${t.spot ? `<div class="tiny muted" style="margin-top:8px">Nifty ${fmt(t.spot)} at last update · ${esc(ago(t.updated_at))}</div>` : ""}
     ${compact ? `<a class="small" href="#/optrades" style="display:inline-block;margin-top:8px">Open F&amp;O trades ›</a>` : `
-    <div class="timeline">${t.events.map((e) => `<a class="ev-${esc(e.event)}" href="#/item/${encodeURIComponent(e.id)}">
+    <${open ? "div" : "details"} class="timeline">${open ? "" : `<summary>History (${t.events.length})</summary>`}${t.events.map((e) => `<a class="ev-${esc(e.event)}" href="#/item/${encodeURIComponent(e.id)}">
         <div class="t">${esc(timeOf(e.at))} · ${esc(e.event === "open" ? "Entry" : e.event === "exit" ? "Exit" : "Update")}${e.now != null ? " · value " + fmt(e.now) : ""}${e.exit != null ? " · exit " + fmt(e.exit) : ""}${e.spot != null ? " · Nifty " + fmt(e.spot) : ""}</div>
-        <div class="s">${esc(e.summary || e.title)}</div></a>`).join("")}</div>`}
+        <div class="s">${esc(e.summary || e.title)}</div></a>`).join("")}</${open ? "div" : "details"}>`}
   </div>`;
+}
+
+function otOutcome(t) {
+  if (t.status === "open") return "running";
+  if (/stop|fail|loss|sl hit/i.test(t.result || "")) return "failed";
+  if (/target|success|profit/i.test(t.result || "")) return "success";
+  return (t.pnl_pts || 0) > 0 ? "success" : "failed";
 }
 
 async function optrades() {
   view.innerHTML = skeleton(2);
   const d = await api("/api/option-trades");
-  const open = d.trades.filter((t) => t.status === "open"), closed = d.trades.filter((t) => t.status !== "open");
-  const total = closed.reduce((a, t) => a + (t.pnl_rs || 0), 0);
+  const running = d.trades.filter((t) => t.status === "open"), archive = d.trades.filter((t) => t.status !== "open");
+  const tab = state.otTab || "running";
+  const wins = archive.filter((t) => otOutcome(t) === "success").length, losses = archive.length - wins;
+  const total = archive.reduce((a, t) => a + (t.pnl_rs || 0), 0);
   view.innerHTML = `
-    <h2>Open (${open.length})</h2>
-    ${open.map((t) => otradeCard(t)).join("") || '<div class="card muted small">No open option trade. High-conviction (8/10+) Nifty trades show up here with live updates and the exit call.</div>'}
-    <h2>Closed (${closed.length})${closed.length ? ` · <span class="${cls(total)}">₹${fmt(total, 0)}/lot</span>` : ""}</h2>
-    ${closed.map((t) => otradeCard(t)).join("") || '<div class="card muted small">None yet.</div>'}
+    <div class="seg" style="display:flex;margin-bottom:14px">
+      <button data-t="running" class="${tab === "running" ? "on" : ""}" style="flex:1">Running (${running.length})</button>
+      <button data-t="archive" class="${tab === "archive" ? "on" : ""}" style="flex:1">Archive (${archive.length})</button>
+    </div>
+    ${tab === "running"
+      ? running.map((t) => otradeCard(t)).join("") || '<div class="card muted small">No running trade. High-conviction (8/10+) Nifty trades show up here with live updates and the exit call.</div>'
+      : `${archive.length ? `<div class="grid" style="margin-bottom:12px">
+          <div class="stat"><div class="k">Success</div><div class="v up">${wins}</div></div>
+          <div class="stat"><div class="k">Failed</div><div class="v down">${losses}</div></div>
+          <div class="stat"><div class="k">Win rate</div><div class="v">${fmt((100 * wins) / archive.length, 0)}%</div></div>
+          <div class="stat"><div class="k">Total P&amp;L</div><div class="v ${cls(total)}">₹${fmt(total, 0)}</div></div>
+        </div>` : ""}
+        ${archive.map((t) => otradeCard(t)).join("") || '<div class="card muted small">No completed trades yet. Each one lands here with its result once it exits.</div>'}`}
     <p class="tiny muted" style="text-align:center">P&amp;L is per lot (65), from the levels in the trade messages. Analysis only, not advice.</p>`;
+  view.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => { state.otTab = b.dataset.t; optrades(); }));
 }
 
 async function feed() {

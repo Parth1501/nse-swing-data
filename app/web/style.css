@@ -206,3 +206,9 @@ svg.spark { width: 100%; height: 64px; display: block; }
 .timeline a.ev-exit::before { background: var(--warn); }
 .timeline .t { font-size: 13.5px; color: var(--muted); }
 .timeline .s { font-size: 15px; }
+
+.outcome { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: -16px -16px 12px; padding: 10px 16px; border-radius: var(--radius) var(--radius) 0 0; font-weight: 800; letter-spacing: .04em; }
+.outcome span { font-weight: 700; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.outcome.ok { background: color-mix(in srgb, var(--up) 18%, var(--surface)); color: var(--up); }
+.outcome.bad { background: color-mix(in srgb, var(--down) 18%, var(--surface)); color: var(--down); }
+details.timeline summary { margin-top: 0; }

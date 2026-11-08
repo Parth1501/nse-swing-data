@@ -119,6 +119,7 @@ button.chip.on { background: var(--accent); color: #fff; border-color: var(--acc
 .prose table { border-collapse: collapse; width: 100%; font-size: 14.5px; display: block; overflow-x: auto; }
 .prose th, .prose td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; white-space: nowrap; }
 .prose h1, .prose h2, .prose h3 { text-transform: none; letter-spacing: 0; color: var(--text); font-size: 17px; margin: 18px 0 6px; }
+.prose img { max-width: 100%; height: auto; border-radius: 10px; background: #fff; display: block; margin: 10px 0; }
 .prose code { background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
 .prose ul { padding-left: 20px; }
 

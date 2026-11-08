@@ -101,6 +101,14 @@ curl -sS -X POST -H "Accept: application/vnd.github+json" -H "Content-Type: appl
 `/tmp/item.json` is one item (or a list):
 `{"kind":"morning_list","title":"…","summary":"one or two lines (the notification)","body_md":"full Markdown","symbols":["…"]}`.
 
+### Long-term notes with a chart
+
+For an investment note (not a swing pick), start the **Long-term chart** workflow first
+(inputs `symbol` and optional `zones`, e.g. `3000-3150:Add zone 1`). It runs `long_chart.py`, which draws
+3 years of weekly candles plus 6 months of daily candles with swing points, supports and the zones,
+and commits `data/charts/<date>/<SYM>_long.png` and a `<SYM>_long.json` with the levels.
+Put it in the note's Markdown as `![SYM chart](/files/charts/<date>/<SYM>_long.png)`; the app shows it full width.
+
 ### Option trades (F&O trades tab)
 
 Every emailed Nifty option trade is posted as `kind: "option_trade"` with a `trade` object. Use the

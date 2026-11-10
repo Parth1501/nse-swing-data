@@ -1,14 +1,14 @@
 {
-  "generated_at_ist": "2026-11-09 18:58",
+  "generated_at_ist": "2026-11-10 18:56",
   "data_date": "2026-11-09",
   "method": "price action + volume only; no indicators; no stop-loss; support trades only (no breakouts), support read from weekly candles",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
   "fno_count": 218,
   "midcap150_count": 150,
   "midcap150_non_fno_count": 57,
-  "liquid_non_fno_count": 200,
-  "universe_count": 460,
-  "stocks_analysed": 455,
+  "liquid_non_fno_count": 201,
+  "universe_count": 461,
+  "stocks_analysed": 456,
   "etfs_left_out": 15,
   "stocks_failed_download": [
     "HEROMOTORS",
@@ -73,7 +73,7 @@
   "asm_gsm": {
     "asm": {
       "status": "ok",
-      "count": 177
+      "count": 171
     },
     "gsm": {
       "status": "ok",
@@ -164,11 +164,11 @@
     },
     {
       "sector": "Healthcare",
-      "stocks": 36,
-      "median_1m": 7.82,
-      "median_3m": 3.45,
-      "vs_nifty_1m": -4.83,
-      "vs_nifty_3m": 1.52,
+      "stocks": 37,
+      "median_1m": 7.42,
+      "median_3m": 2.66,
+      "vs_nifty_1m": -5.23,
+      "vs_nifty_3m": 0.73,
       "tag": "Weakening"
     },
     {

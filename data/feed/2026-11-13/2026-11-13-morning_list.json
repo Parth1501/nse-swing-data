@@ -1,0 +1,23 @@
+{
+ "kind": "morning_list",
+ "id": "2026-11-13-morning_list",
+ "title": "NSE price-action list for Fri 13 Nov: no setups, win rate 81.71%",
+ "summary": "No setups today: 0 of 461 stocks passed. Nifty weak at 25,299; LANDMARK hit T2, GRANULES and SBICARD hit T1. Win rate 81.71%.",
+ "body_md": "**Fri 13 Nov: No setups today** (from 12 Nov close). 0 of 461 stocks passed. Valid 13 Nov, 16 Nov, 17 Nov.\n\n**Today's learning: \"Going out with wet hair gives you a cold\"**\n- **What people believe:** Stepping out with wet hair, or getting chilly, makes you catch a cold.\n- **The fact:** A cold needs a virus, most often a rhinovirus. Cleveland Clinic says you cannot get sick from simply going outside with wet hair; colds rise in winter because viruses spread better in cold air and people crowd indoors.\n- **How they fool you:** Nobody sells this one; it is a family warning. You feel cold first and the sniffles show up later, so the chill gets the blame instead of the germ you picked up from someone nearby.\n- Source: https://health.clevelandclinic.org/can-wet-hair-make-you-sick\n\n**Market**\n- **Nifty is weak:** 25,299.35, 1M +13.13%, 3M +3.38%, 4.24% below its 52-week high.\n- **Global:** Brent $93.61 (+0.92%, 12 Nov; −11.43% in 1M) · USD/INR 94.04 (+0.12%) · FII +₹7,830.60 cr, DII −₹6,331.17 cr (12 Nov, NSE provisional, all exchanges) · S&P 500 +1.31%, Nasdaq +1.60% (11 Nov; 12 Nov close not verified) · GIFT Nifty and US 10-yr not verified today\n- **Sectors:** Leading: none today (Improving: Realty +1.48% 1M vs Nifty). Lagging: Power (−8.71%), Metals & Mining (−9.21%), Capital Goods (−15.59%).\n\n**Picks:** 0 ready now · 0 wait for a dip\n- **Ready now:** No trade today\n- **Wait for a dip:** No trade today\n\nSame exit rule for every pick: T1 +3%, T2 +6%, else exit on day 30. Orders valid for 3 sessions.\n\n**Almost made it**\n- KROSS: score 6, already bounced to ₹303.85, above T1 ₹300.23\n- AARTIDRUGS: score 5, already ran to ₹508.75, well above T1 ₹391.31, room 5.9%\n- WELSPUNLIV: score 4, room only 5.8% (need 6%)\n- TFCILTD ⚠️ASM: score 4, room only 3.1%\n- SOUTHBANK: score 4, not at a weekly support, room 0.9%\n- PCJEWELLER: uptrend, but fell 26.18% from its 20-day high (a fall, not a dip)\n- CYIENTDLM ⚠️ASM: uptrend, but fell 27.07% from its 20-day high\n\n**Lessons (last evening's review)**\n- Retests fill almost always but lose money: 31 trades average −2.8%, 10 of the 15 failures; off the list since 4 Nov. (holding)\n- Stocks that ran up 5%+ in the month before listing fail most: 12 of the 15 failures, average −3.0%. (holding)\n- Candle-at-support picks are the best group: 37 of 41 reached T1 (90%), 30 reached T2, dip only −4.3%. (holding)\n- Support picks that never dip into the zone are often winners: 19 of 31 never bought would have hit T1 at the next open. (holding)\n- The room-under-6% filter leaves winners out: near misses trail real picks on T1 (71% vs 75%) and T2 (51% vs 54%). (weakening)\n- No change proposed last night.\n\n**New results**\n\n| Result | Stock | Listed | Bought | Now / closed | Worst dip |\n|---|---|---|---|---|---|\n| ✅ T1 hit | GRANULES | 6 Nov | ₹800.80 | +4.96% | −4.07% |\n| ➖ Not bought | CGPOWER | 6 Nov | never dipped into the zone | | |\n| ✅ T1 hit | SBICARD | 15 Oct | ₹573.20 | +2.93% | −9.45% |\n| ✅✅ Full win | LANDMARK | 14 Oct | ₹467.67 | +6.00% | −12.33% |\n| ✅ Partial win (closed) | URBANCO | 12 Oct | ₹160.88 | +3.68% | −21.36% |\n\n**Running trades:** 20 open (9 already hit T1).\n\n**Scoreboard since 29 Sep:** 133 picks, 102 bought, 20 running, 55 full wins, 12 partial wins, 15 failed. Win rate 81.71% (T1 or better) · Full wins 67.07% of 82 · Avg return 2.09% · Avg worst dip -7.38%. Simulated from daily prices.\n\n**Notes:** the morning global refresh could not be started (GitHub access refused), so market numbers are from the 12 Nov 6:50 PM run. No evening teardown email was found for 12 Nov.\n\n_Research ideas for your own analysis, not investment advice. Confirm levels on your broker's live chart before trading._",
+ "symbols": [
+  "KROSS",
+  "AARTIDRUGS",
+  "WELSPUNLIV",
+  "TFCILTD",
+  "SOUTHBANK",
+  "PCJEWELLER",
+  "CYIENTDLM",
+  "GRANULES",
+  "CGPOWER",
+  "SBICARD",
+  "LANDMARK",
+  "URBANCO"
+ ],
+ "created_at": "2026-11-13T07:52:34+05:30",
+ "notify": true
+}

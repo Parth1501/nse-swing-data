@@ -112,6 +112,7 @@ PICKS_LOG = os.path.join(OUT_DIR, "picks_log.csv")        # permanent diary of e
 PICKS_STATUS = os.path.join(OUT_DIR, "picks_status.csv")  # re-evaluated every run from real prices
 CHART_DIR = os.path.join(OUT_DIR, "charts")  # one folder per data date: charts/<YYYY-MM-DD>/<SYMBOL>.png
 CHART_N = 12                         # top 12 eligible: the list's 10 plus spares for the teardown's ETF skips
+WATCH_CHART_N = 8                    # top 8 not eligible: the app's Watch list cards
 CHART_KEEP_DAYS = 45
 
 FALLBACK_FNO = """ABB ABCAPITAL ADANIENSOL ADANIENT ADANIGREEN ADANIPORTS ALKEM AMBER AMBUJACEM ANGELONE
@@ -1390,10 +1391,11 @@ def update_track_record(table, frames, data_date):
 
 
 def draw_charts(table, frames, data_date):
-    """Annotated candlestick PNG for the top eligible stocks; the path goes in the "chart" column.
-    A chart that fails is skipped: charts never block the daily list."""
+    """Annotated candlestick PNG for the top eligible stocks and the top watch-list (not eligible) stocks;
+    the path goes in the "chart" column. A chart that fails is skipped: charts never block the daily list."""
     table["chart"] = ""
-    for idx, r in table[table["eligible"]].head(CHART_N).iterrows():
+    pick = pd.concat([table[table["eligible"]].head(CHART_N), table[~table["eligible"]].head(WATCH_CHART_N)])
+    for idx, r in pick.iterrows():
         df = frames.get(r["symbol"] + ".NS")
         if df is None:
             continue

@@ -1,0 +1,47 @@
+name: Long-term chart
+
+on:
+  workflow_dispatch:           # started by a Claude thread when it writes a long-term note for the app feed
+    inputs:
+      symbol:
+        description: "NSE symbol, e.g. ACUTAAS"
+        required: true
+      zones:
+        description: 'Optional buy zones, "3000-3150:Add zone 1,2650-2750:Add zone 2"'
+        required: false
+        default: ""
+  push:                        # first run, from the branch that adds this workflow
+    branches: ["claude/**"]
+    paths: [".github/workflows/long_chart.yml", "long_chart.py"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: long-chart
+  cancel-in-progress: false
+
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas numpy matplotlib
+      - name: Draw the chart
+        env:
+          SYMBOL: ${{ inputs.symbol || 'ACUTAAS' }}
+          ZONES: ${{ github.event_name == 'push' && '3000-3150:Add zone 1,2650-2750:Add zone 2' || inputs.zones }}
+        run: python long_chart.py "$SYMBOL" --zones "$ZONES"
+      - name: Save the chart
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/charts
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Long-term chart $(TZ=Asia/Kolkata date +%F-%H%M)"
+          for i in 1 2 3; do git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep $((i * 5)); done
+          exit 1

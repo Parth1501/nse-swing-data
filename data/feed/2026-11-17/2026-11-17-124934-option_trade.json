@@ -1,0 +1,17 @@
+{
+ "kind": "option_trade",
+ "title": "Exit: Bull call 25400/25550 at 70 (stop hit)",
+ "summary": "Stop hit at 12:48. Spread about 70 vs entry 93, about -1,500 per lot. Fresh call writing at 25,450/25,500.",
+ "body_md": "Exit bull call 25400/25550 (17 Nov). Entry 93 at 12:18, now about 70 (Nifty 25,462). About -23/unit, -1,500 per lot. Stop hit: spread below 75 and Nifty below 25,470. Call writers re-added about 1 lakh at 25,500 and 49k at 25,450. Analysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-17-bullcall-25400-25550",
+  "event": "exit",
+  "exit": 69.9,
+  "result": "stop hit, -1,500 per lot",
+  "spot": 25461.8
+ },
+ "created_at": "2026-11-17T12:49:34+05:30",
+ "id": "2026-11-17-124934-option_trade",
+ "symbols": [],
+ "notify": true
+}

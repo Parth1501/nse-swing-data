@@ -145,8 +145,12 @@ def bse_time(j, now):
 
 def probe():
     s = session()
+    raw = get_json(s, EXPIRY_API.format(scrip=SCRIP))
+    print("expiry answer:", json.dumps(raw)[:1500])
     exps = expiry_list(s)
     print("expiries:", [t for _, t in exps][:8])
+    if not exps:
+        return
     picks = pick_expiries(exps)
     j = get_json(s, CHAIN_API.format(exp=picks[0][1].replace(" ", "+"), scrip=SCRIP))
     print("top-level keys:", list(j.keys()) if isinstance(j, dict) else type(j))

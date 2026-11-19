@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "13:48: 85, holding",
+ "summary": "Nifty 25,390, testing the 25,400 call wall (1.42 lakh, +9.6k). Up 13 per unit. Stop raised to 78.",
+ "trade": {
+  "trade_id": "2026-11-19-bullcall-25300-25450",
+  "event": "update",
+  "now": 85,
+  "spot": 25390.05
+ },
+ "created_at": "2026-11-19T13:48:57+05:30",
+ "id": "2026-11-19-134857-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "13:18: 78, holding (stalling)",
+ "summary": "Nifty 25,357, flat. Call writers re-adding at 25,400/25,500 (second check), puts still writing below. Stop raised to 70 to protect the gain. Up 6 per unit.",
+ "trade": {
+  "trade_id": "2026-11-19-bullcall-25300-25450",
+  "event": "update",
+  "now": 78,
+  "spot": 25356.5
+ },
+ "created_at": "2026-11-19T13:19:28+05:30",
+ "id": "2026-11-19-131928-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "12:48: 79, holding",
+ "summary": "Nifty 25,361. Put writing building 25,300-25,400; small fresh call writing at 25,400 to watch. Up 7 per unit.",
+ "trade": {
+  "trade_id": "2026-11-19-bullcall-25300-25450",
+  "event": "update",
+  "now": 79,
+  "spot": 25360.55
+ },
+ "created_at": "2026-11-19T12:48:50+05:30",
+ "id": "2026-11-19-124850-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

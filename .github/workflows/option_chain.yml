@@ -7,12 +7,16 @@ on:
         description: "Also take a second snapshot 30 minutes later (the routine's runs do)"
         required: false
         default: "yes"
+      sensex_probe:
+        description: "Only print Upstox's raw Sensex answer (for checking the field mapping); saves nothing"
+        required: false
+        default: "no"
 
 permissions:
   contents: write
 
 concurrency:
-  group: nifty-option-chain
+  group: ${{ inputs.sensex_probe == 'yes' && 'sensex-probe' || 'nifty-option-chain' }}   # a probe never waits behind a snapshot run
   cancel-in-progress: false
 
 jobs:
@@ -25,8 +29,26 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests
+      - name: Sensex probe
+        if: inputs.sensex_probe == 'yes'
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: python sensex_chain.py --probe
       - name: Snapshot now
+        if: inputs.sensex_probe != 'yes'
         run: python option_chain.py && bash .github/save_option_chain.sh
+      - name: Sensex snapshot now
+        if: inputs.sensex_probe != 'yes'
+        continue-on-error: true      # a Sensex problem never blocks the Nifty snapshots
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: python sensex_chain.py && bash .github/save_sensex_chain.sh
       - name: Snapshot 30 minutes later
-        if: inputs.second_snapshot != 'no'
+        if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
         run: sleep 1800 && python option_chain.py && bash .github/save_option_chain.sh
+      - name: Sensex snapshot 30 minutes later
+        if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
+        continue-on-error: true
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: python sensex_chain.py && bash .github/save_sensex_chain.sh

@@ -1,0 +1,26 @@
+{
+ "kind": "option_trade",
+ "title": "Nifty 8/10 trade: Bull call spread 25300/25450 (23 Nov) 11:48",
+ "summary": "Nifty held above the 25,300 wall for two snapshots with call writers covering and fresh put writing behind. Debit about 72.",
+ "body_md": "BUY 25300 CE @ ~166, SELL 25450 CE @ ~94 (23 Nov). Net cost ~72 (Rs 4,680/lot, max loss). Target value 110 (Nifty ~25,430), stop value 45 or Nifty below 25,280. Max profit 78. Breakeven 25,372. Score 8/10: OI 3, learner 1, trend 1, reward/risk 1, room 1, wall 1. Time exit at the 14:48 check. Analysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-19-bullcall-25300-25450",
+  "event": "open",
+  "strategy": "Bull call spread (intraday)",
+  "expiry": "2026-11-23",
+  "legs": [
+   "BUY 25300 CE @ 166",
+   "SELL 25450 CE @ 94"
+  ],
+  "entry": 72,
+  "target": "110 (Nifty ~25,430)",
+  "stop": "45 or Nifty < 25,280",
+  "conviction": 8,
+  "spot": 25336.25,
+  "now": 72
+ },
+ "created_at": "2026-11-19T11:49:23+05:30",
+ "id": "2026-11-19-114923-option_trade",
+ "symbols": [],
+ "notify": true
+}

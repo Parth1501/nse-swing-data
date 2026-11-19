@@ -30,7 +30,7 @@ jobs:
             python oc_learn.py
             OC_INDEX=sensex python oc_learn.py || echo "Sensex patterns failed; Nifty saved anyway"
             git add data/oc_learning data/nifty_trend
-            for d in data/oc_learning_sensex data/sensex_trend; do [ -d "$d" ] && git add "$d"; done
+            for d in data/oc_learning_sensex data/sensex_trend; do if [ -d "$d" ]; then git add "$d"; fi; done
             git diff --cached --quiet && exit 0
             git commit -q -m "Option chain patterns $(TZ=Asia/Kolkata date +%F-%H%M)"
             git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0

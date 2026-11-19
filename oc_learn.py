@@ -31,8 +31,11 @@ import pandas as pd
 import nifty_trend
 
 IST = timezone(timedelta(hours=5, minutes=30))
-SNAP_DIR = os.path.join("data", "option_chain")
-OUT = os.path.join("data", "oc_learning")
+# OC_INDEX=sensex learns the Sensex chain the same way, into its own folder.
+SENSEX = os.environ.get("OC_INDEX", "nifty").lower() == "sensex"
+NAME = "Sensex" if SENSEX else "Nifty"
+SNAP_DIR = os.path.join("data", "sensex_chain" if SENSEX else "option_chain")
+OUT = os.path.join("data", "oc_learning_sensex" if SENSEX else "oc_learning")
 NEAR = 0.03                   # "near the money": strikes within 3% of spot
 MIN_GAP_MIN = 10              # snapshots closer than this to the previous one are dropped
 PCR_STEP = {"intraday": 0.02, "day": 0.05}     # smaller PCR changes count as "flat"
@@ -349,7 +352,7 @@ def structure_for(row, lib, key="pattern"):
     m = m.iloc[0]
     n = int(m["with_outcome"])
     seen = (f"Seen {int(m['seen'])} times before"
-            + (f"; Nifty was up after it {m['up_share']:.0%} of the time, average {m['avg_move']:+.2f}%." if n else "."))
+            + (f"; {NAME} was up after it {m['up_share']:.0%} of the time, average {m['avg_move']:+.2f}%." if n else "."))
     if n < TRADE_MIN:
         return f"{seen} Too few outcomes ({n}/{TRADE_MIN}) to trade on."
     premium_rich = m["expiries_seen"] >= 8 and m["median_move_vs_implied"] < 1
@@ -377,7 +380,7 @@ def pct(x):
 def write_report(log, lib, read):
     now = datetime.now(IST)
     intra = log[log["layer"] == "intraday"]
-    L = ["# Nifty option chain pattern log",
+    L = [f"# {NAME} option chain pattern log",
          f"Updated {now:%Y-%m-%d %H:%M} IST. Learns only from live snapshots since 14 Oct 2026. "
          "Analysis only, not trading advice.", "",
          "## Data",
@@ -385,7 +388,7 @@ def write_report(log, lib, read):
          f"- {int((log['pattern'] != '').sum())} patterns logged; "
          f"{int((lib['group'] == 'pattern').sum()) if not lib.empty else 0} different patterns so far", ""]
     L += [f"## Latest read ({read['as_of']})", "",
-          f"Nifty trend: weekly **{read['trend_weekly']}**, 125-min **{read['trend_125m']}**, "
+          f"{NAME} trend: weekly **{read['trend_weekly']}**, 125-min **{read['trend_125m']}**, "
           f"25-min (timing) **{read['trend_25m']}**. Each is up when the close is above its fast average "
           "and the fast average above the slow one, down when both are the other way, sideways otherwise "
           "(weekly 20/50 weeks; 125-min and 25-min 6/15 candles).", "",

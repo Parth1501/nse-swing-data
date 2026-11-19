@@ -1,0 +1,17 @@
+{
+ "kind": "option_trade",
+ "title": "Exit: Bull call 25300/25450 at 97 (+25)",
+ "summary": "14:48 time exit. Spread 97 vs 72 entry, about +Rs 1,625 per lot. Target 110 not reached.",
+ "body_md": "Exit before 15:00. BUY 25300 CE @ ~166 / SELL 25450 CE @ ~94 entered 11:48 at ~72. Now 25300 CE ~252, 25450 CE ~156, spread ~97. Profit ~25 per unit = ~Rs 1,625 per lot before charges. End-of-day time exit; chain still supportive but no overnight hold. Analysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-19-bullcall-25300-25450",
+  "event": "exit",
+  "exit": 97,
+  "result": "+25 per unit (~Rs 1,625 per lot)",
+  "spot": 25457.5
+ },
+ "created_at": "2026-11-19T14:49:33+05:30",
+ "id": "2026-11-19-144933-option_trade",
+ "symbols": [],
+ "notify": true
+}

@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: nifty-option-chain
+  group: ${{ inputs.sensex_probe == 'yes' && 'sensex-probe' || 'nifty-option-chain' }}   # a probe never waits behind a snapshot run
   cancel-in-progress: false
 
 jobs:

@@ -8,7 +8,7 @@ on:
         required: false
         default: "yes"
       sensex_probe:
-        description: "Only print Dhan's raw Sensex answer (for checking the field mapping); saves nothing"
+        description: "Only print Upstox's raw Sensex answer (for checking the field mapping); saves nothing"
         required: false
         default: "no"
 
@@ -32,8 +32,7 @@ jobs:
       - name: Sensex probe
         if: inputs.sensex_probe == 'yes'
         env:
-          DHAN_CLIENT_ID: ${{ secrets.DHAN_CLIENT_ID }}
-          DHAN_ACCESS_TOKEN: ${{ secrets.DHAN_ACCESS_TOKEN }}
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py --probe
       - name: Snapshot now
         if: inputs.sensex_probe != 'yes'
@@ -42,8 +41,7 @@ jobs:
         if: inputs.sensex_probe != 'yes'
         continue-on-error: true      # a Sensex problem never blocks the Nifty snapshots
         env:
-          DHAN_CLIENT_ID: ${{ secrets.DHAN_CLIENT_ID }}
-          DHAN_ACCESS_TOKEN: ${{ secrets.DHAN_ACCESS_TOKEN }}
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py && bash .github/save_sensex_chain.sh
       - name: Snapshot 30 minutes later
         if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
@@ -52,6 +50,5 @@ jobs:
         if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
         continue-on-error: true
         env:
-          DHAN_CLIENT_ID: ${{ secrets.DHAN_CLIENT_ID }}
-          DHAN_ACCESS_TOKEN: ${{ secrets.DHAN_ACCESS_TOKEN }}
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py && bash .github/save_sensex_chain.sh

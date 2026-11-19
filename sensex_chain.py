@@ -1,20 +1,21 @@
 """
-Sensex option chain snapshot, read through Dhan's official Data API (BSE's own site refuses
-GitHub's servers). Runs in the same GitHub Actions job as option_chain.py, right after the Nifty
-snapshot, so both indices are captured at about :16 and :46.
+Sensex option chain snapshot, read through Upstox's API (BSE's own site refuses GitHub's servers).
+Runs in the same GitHub Actions job as option_chain.py, right after the Nifty snapshot, so both
+indices are captured at about :16 and :46.
 
-Needs two repository secrets, passed in by the workflow as environment variables:
-  DHAN_CLIENT_ID     your Dhan client id
-  DHAN_ACCESS_TOKEN  an access token from web.dhan.co > Profile > Access DhanHQ APIs
-Without them this script prints a note and saves nothing (the Nifty snapshot is never affected).
+Needs one repository secret, passed in by the workflow as an environment variable:
+  UPSTOX_ACCESS_TOKEN  an access token for your Upstox API app
+Without it this script prints a note and saves nothing (the Nifty snapshot is never affected).
+An Upstox token stops working at about 3:30 AM the next day, so it must be renewed daily (or use a
+long-lived read-only token if Upstox has given one); a rejected token is printed in the job log.
 
 Saves two Sensex expiries (the nearest weekly one, and the monthly one, the last expiry of its
 calendar month) to data/sensex_chain/<IST date>.csv with the same columns as the Nifty files, so
-the same analysis code works on both. Dhan gives no exchange timestamp, so "nse_time" holds the
-snapshot time rounded to the minute; change in OI is OI minus Dhan's previous_oi (yesterday's).
+the same analysis code works on both. Upstox gives no exchange timestamp, so "nse_time" holds the
+snapshot time rounded to the minute; change in OI is OI minus Upstox's prev_oi (yesterday's).
 
 `python sensex_chain.py --probe` prints the expiry list and one sample strike, for checking the
-mapping. Dhan allows one option chain request every 3 seconds; this script waits 4.
+mapping.
 """
 import csv
 import json
@@ -29,36 +30,43 @@ from option_chain import COLUMNS  # same columns as the Nifty files
 
 IST = timezone(timedelta(hours=5, minutes=30))
 OUT_DIR = os.path.join("data", "sensex_chain")
-API = "https://api.dhan.co/v2"
-UNDERLYING = {"UnderlyingScrip": 51, "UnderlyingSeg": "IDX_I"}   # 51 = SENSEX index on Dhan
+API = "https://api.upstox.com/v2"
+SENSEX = "BSE_INDEX|SENSEX"
 PENDING = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "sensex_chain_pending.json")
-SIDE_FIELDS = (("ltp", "last_price"), ("oi", "oi"), ("iv", "implied_volatility"), ("volume", "volume"))
 
 
 def creds():
-    cid, tok = os.environ.get("DHAN_CLIENT_ID", "").strip(), os.environ.get("DHAN_ACCESS_TOKEN", "").strip()
-    if not cid or not tok:
-        print("DHAN_CLIENT_ID / DHAN_ACCESS_TOKEN secrets are not set; no Sensex snapshot")
+    tok = os.environ.get("UPSTOX_ACCESS_TOKEN", "").strip()
+    if not tok:
+        print("UPSTOX_ACCESS_TOKEN secret is not set; no Sensex snapshot")
         return None
-    return {"access-token": tok, "client-id": cid, "Content-Type": "application/json",
-            "Accept": "application/json"}
+    return {"Authorization": f"Bearer {tok}", "Accept": "application/json"}
 
 
-def post(headers, path, body, tries=3):
+def get(headers, path, params, tries=3):
     for i in range(tries):
         try:
-            r = requests.post(f"{API}{path}", headers=headers, json=body, timeout=30)
+            r = requests.get(f"{API}{path}", headers=headers, params=params, timeout=30)
             if r.status_code != 200:
-                print(f"Dhan {path}: HTTP {r.status_code}: {r.text[:300]}")
+                print(f"Upstox {path}: HTTP {r.status_code}: {r.text[:300]}")
+                if r.status_code == 401:
+                    raise SystemExit("Upstox rejected the token (expired?); renew UPSTOX_ACCESS_TOKEN")
             r.raise_for_status()
             j = r.json()
             if str(j.get("status", "success")).lower() != "success":
-                raise RuntimeError(f"Dhan said: {json.dumps(j)[:300]}")
+                raise RuntimeError(f"Upstox said: {json.dumps(j)[:300]}")
             return j
+        except SystemExit:
+            raise
         except Exception as e:
             print(f"try {i + 1} failed: {path}: {e}")
             time.sleep(4 * (i + 1))
-    raise RuntimeError(f"Dhan did not answer: {path}")
+    raise RuntimeError(f"Upstox did not answer: {path}")
+
+
+def expiries(headers):
+    rows = get(headers, "/option/contract", {"instrument_key": SENSEX}).get("data", [])
+    return sorted({r["expiry"] for r in rows if r.get("expiry")})
 
 
 def pick_expiries(dates):
@@ -73,50 +81,52 @@ def pick_expiries(dates):
 
 
 def chain(headers, expiry):
-    j = post(headers, "/optionchain", {**UNDERLYING, "Expiry": expiry})
-    data = j.get("data", {})
-    return data.get("last_price", ""), data.get("oc", {})
+    """(spot, [strike rows]) for one expiry."""
+    rows = get(headers, "/option/chain", {"instrument_key": SENSEX, "expiry_date": expiry}).get("data", [])
+    spot = next((r.get("underlying_spot_price") for r in rows if r.get("underlying_spot_price")), "")
+    return spot, rows
+
+
+def leg(side):
+    """One side of a strike in our column names."""
+    md, gk = (side or {}).get("market_data") or {}, (side or {}).get("option_greeks") or {}
+    oi, prev = md.get("oi"), md.get("prev_oi")
+    return {"ltp": md.get("ltp", ""), "oi": oi if oi is not None else "", "iv": gk.get("iv", ""),
+            "volume": md.get("volume", ""),
+            "chg_oi": (oi - prev) if isinstance(oi, (int, float)) and isinstance(prev, (int, float)) else ""}
 
 
 def probe():
     h = creds()
     if not h:
         return
-    dates = post(h, "/optionchain/expirylist", UNDERLYING).get("data", [])
+    dates = expiries(h)
     print("expiries:", dates[:8])
     picks = pick_expiries(dates)
-    time.sleep(4)
-    spot, oc = chain(h, picks[0][0])
-    keys = sorted(oc, key=float)
-    print("spot:", spot, "strikes:", len(keys))
-    if keys:
-        k = keys[len(keys) // 2]
-        print("sample strike", k, json.dumps(oc[k])[:1200])
+    spot, rows = chain(h, picks[0][0])
+    print("spot:", spot, "strikes:", len(rows))
+    if rows:
+        print("sample strike", json.dumps(rows[len(rows) // 2])[:1500])
 
 
 def fetch():
-    """Read Dhan and write the new rows to PENDING (nothing in the repo changes yet)."""
+    """Read Upstox and write the new rows to PENDING (nothing in the repo changes yet)."""
     now = datetime.now(IST)
     rows, types = [], {}
     h = creds()
     if h:
-        dates = post(h, "/optionchain/expirylist", UNDERLYING).get("data", [])
         stamp = f"{now:%Y-%m-%d %H:%M}:00"
-        for expiry, kind in pick_expiries(dates):
-            time.sleep(4)
-            spot, oc = chain(h, expiry)
+        for expiry, kind in pick_expiries(expiries(h)):
+            spot, strikes = chain(h, expiry)
             types[expiry] = kind
-            for k in sorted(oc, key=float):
+            for s in sorted(strikes, key=lambda r: float(r["strike_price"])):
                 row = {"snapshot_ist": f"{now:%Y-%m-%d %H:%M:%S}", "nse_time": stamp, "spot": spot,
-                       "expiry": expiry, "expiry_type": kind, "strike": float(k)}
-                for side in ("ce", "pe"):
-                    leg = oc[k].get(side) or {}
-                    for name, key in SIDE_FIELDS:
-                        row[f"{side}_{name}"] = leg.get(key, "")
-                    oi, prev = leg.get("oi"), leg.get("previous_oi")
-                    row[f"{side}_chg_oi"] = (oi - prev) if isinstance(oi, (int, float)) and isinstance(prev, (int, float)) else ""
+                       "expiry": expiry, "expiry_type": kind, "strike": float(s["strike_price"])}
+                for side, key in (("ce", "call_options"), ("pe", "put_options")):
+                    for name, v in leg(s.get(key)).items():
+                        row[f"{side}_{name}"] = v
                 rows.append(row)
-            print(f"{expiry} ({kind}): {len(oc)} strikes, spot {spot}")
+            print(f"{expiry} ({kind}): {len(strikes)} strikes, spot {spot}")
     with open(PENDING, "w") as f:
         json.dump({"date": f"{now:%Y-%m-%d}", "types": types, "rows": rows}, f)
 

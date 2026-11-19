@@ -18,9 +18,10 @@ import os
 import numpy as np
 import pandas as pd
 
-DIR = os.path.join("data", "nifty_trend")
+SENSEX = os.environ.get("OC_INDEX", "nifty").lower() == "sensex"   # OC_INDEX=sensex: same trend, Sensex prices
+DIR = os.path.join("data", "sensex_trend" if SENSEX else "nifty_trend")
 WEEKLY = os.path.join(DIR, "weekly.csv")
-FIVE_MIN = os.path.join(DIR, "nifty_5m.csv")
+FIVE_MIN = os.path.join(DIR, "sensex_5m.csv" if SENSEX else "nifty_5m.csv")
 OPEN = pd.Timedelta(hours=9, minutes=15)
 CLOSE = pd.Timedelta(hours=15, minutes=30)
 # timeframe: (candle minutes, fast average, slow average), in candles
@@ -52,7 +53,7 @@ def fetch():
     w = m = pd.DataFrame()
     try:
         import yfinance as yf
-        t = yf.Ticker("^NSEI")
+        t = yf.Ticker("^BSESN" if SENSEX else "^NSEI")
         w = _clean(t.history(period="10y", interval="1wk", auto_adjust=False))
         m = _clean(t.history(period="60d", interval="5m", auto_adjust=False))
     except Exception as e:          # no network or no yfinance: use what is saved

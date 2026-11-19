@@ -28,7 +28,9 @@ jobs:
           for i in 1 2 3 4; do
             git fetch -q origin "$GITHUB_REF_NAME" && git reset -q --hard "origin/$GITHUB_REF_NAME" || { sleep $((i * 5)); continue; }
             python oc_learn.py
+            OC_INDEX=sensex python oc_learn.py || echo "Sensex patterns failed; Nifty saved anyway"
             git add data/oc_learning data/nifty_trend
+            for d in data/oc_learning_sensex data/sensex_trend; do [ -d "$d" ] && git add "$d"; done
             git diff --cached --quiet && exit 0
             git commit -q -m "Option chain patterns $(TZ=Asia/Kolkata date +%F-%H%M)"
             git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0

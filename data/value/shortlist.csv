@@ -1,16 +1,16 @@
 symbol,company,industry,data_ok,mcap_cr,years_of_data,lender_rules,roce_pct,roe_pct,sales_cagr_pct,profit_cagr_pct,debt_equity,cfo_to_profit_3y,pe,own_median_pe,insider_pct,close,high_52w,pct_below_high52,ret_1y_pct,price_3x,low_insider,industry_median_pe,failed_rules,n_failed,passed,score,near_miss
-FORCEMOT,Force Motors Ltd.,Automobile and Auto Components,True,25825.47,4,False,33.8,28.89,21.71,108.52,0.0,1.61,21.31,17.99,63.24,19600.0,25776.0,23.96,7.73,False,False,41.89,,0,True,87.8,False
-BLS,BLS International Services Ltd.,Consumer Services,True,9444.99,4,False,26.09,27.88,25.52,50.67,0.17,1.38,13.75,33.13,70.61,229.49,336.7,31.84,-26.9,False,False,53.08,,0,True,83.9,False
-EMMVEE,Emmvee Photovoltaic Power Ltd.,Capital Goods,True,19184.19,4,False,34.49,29.27,102.68,394.6,0.1,0.72,17.74,,80.03,,,,,False,False,45.58,,0,True,82.7,False
-HBLENGINE,HBL Engineering Ltd.,Capital Goods,True,22163.12,4,False,46.39,36.8,34.22,102.15,0.03,0.91,27.2,35.78,8.07,799.55,1098.8,27.23,-18.35,False,True,45.58,,0,True,80.6,False
-KPITTECH,KPIT Technologies Ltd.,Information Technology,True,15026.94,4,False,21.27,18.0,24.25,18.71,0.24,1.73,23.58,54.25,44.65,552.0,1269.8,56.53,-52.12,False,False,35.23,,0,True,74.5,False
-RAILTEL,Railtel Corporation Of India Ltd.,Telecommunication,True,8158.25,4,False,18.72,15.31,29.81,22.53,0.03,1.26,23.56,27.6,72.84,254.2,378.25,32.8,-27.71,False,False,50.47,,0,True,73.0,False
-KPIL,Kalpataru Projects International Ltd.,Construction,True,23045.75,4,False,19.94,13.37,18.4,33.13,0.46,1.54,22.16,24.56,34.72,1349.5,1458.4,7.47,3.46,False,True,24.46,,0,True,71.6,False
-INDIAMART,Indiamart Intermesh Ltd.,Consumer Services,True,9672.63,4,False,19.97,19.78,16.77,18.7,0.01,1.38,20.38,36.4,58.07,1608.4,2504.5,35.78,-34.28,False,False,53.08,,0,True,69.2,False
-KARURVYSYA,Karur Vysya Bank Ltd.,Financial Services,True,36883.19,4,True,,17.79,18.73,31.42,0.19,1.14,14.69,8.93,1.0,381.55,384.4,0.74,53.16,False,True,25.18,,0,True,68.3,False
-IKS,Inventurus Knowledge Solutions Ltd.,Information Technology,True,27413.25,4,False,29.56,25.77,45.76,33.21,0.27,0.76,37.99,41.83,70.95,1634.1,1937.8,15.67,-2.0,False,False,35.23,,0,True,67.4,False
-ENDURANCE,Endurance Technologies Ltd.,Automobile and Auto Components,True,35731.18,4,False,16.3,13.91,18.23,25.67,0.19,1.8,37.54,34.76,75.0,2540.2,3029.5,16.15,-11.05,False,False,41.89,,0,True,67.0,False
-OLECTRA,Olectra Greentech Ltd.,Automobile and Auto Components,True,8415.33,4,False,19.36,14.46,28.42,39.35,0.31,0.99,47.41,73.24,50.27,1025.25,1537.8,33.33,-32.35,False,False,41.89,,0,True,64.5,False
-DOMS,DOMS Industries Ltd.,Fast Moving Consumer Goods,True,12223.24,4,False,23.37,18.87,24.16,33.93,0.12,1.06,53.1,62.05,63.39,2014.1,2673.9,24.68,-18.61,False,False,36.09,,0,True,63.5,False
-IGIL,International Gemological Institute Ltd.,Services,True,18967.49,4,False,38.4,30.31,29.58,20.91,0.1,1.01,44.39,44.95,77.59,438.9,438.9,0.0,21.88,False,False,27.12,,0,True,62.7,False
-APTUS,Aptus Value Housing Finance India Ltd.,Financial Services,True,8763.53,4,True,,18.64,23.02,23.3,1.56,-1.41,9.29,21.92,26.6,174.98,306.85,42.98,-40.16,False,True,25.18,,0,True,62.0,False
+FORCEMOT,Force Motors Ltd.,Automobile and Auto Components,True,26728.05,4,False,33.8,28.89,21.71,108.52,0.0,1.61,22.06,17.99,63.24,20285.0,25776.0,21.3,14.93,False,False,46.0,,0,True,88.1,False
+BLS,BLS International Services Ltd.,Consumer Services,True,9168.83,4,False,26.09,27.88,25.52,50.67,0.17,1.38,13.35,33.13,70.63,222.78,332.75,33.05,-32.19,False,False,51.35,,0,True,84.1,False
+EMMVEE,Emmvee Photovoltaic Power Ltd.,Capital Goods,True,17914.43,4,False,34.49,29.27,102.68,394.6,0.1,0.72,16.56,,80.03,,,,,False,False,42.71,,0,True,82.8,False
+HBLENGINE,HBL Engineering Ltd.,Capital Goods,True,21088.99,4,False,46.39,36.8,34.22,102.15,0.03,0.91,25.88,35.78,8.07,760.8,1041.3,26.94,-26.94,False,True,42.71,,0,True,80.5,False
+KPITTECH,KPIT Technologies Ltd.,Information Technology,True,14128.59,4,False,21.27,18.0,24.25,18.71,0.24,1.73,22.17,54.25,44.65,519.0,1269.8,59.13,-57.54,False,False,33.86,,0,True,74.8,False
+RAILTEL,Railtel Corporation Of India Ltd.,Telecommunication,True,8001.64,4,False,18.72,15.31,29.81,22.53,0.03,1.26,23.1,27.6,72.84,249.32,378.25,34.09,-30.38,False,False,49.85,,0,True,73.0,False
+KPIL,Kalpataru Projects International Ltd.,Construction,True,22637.61,4,False,19.94,13.37,18.4,33.13,0.46,1.54,21.77,24.56,34.72,1325.6,1458.4,9.11,6.89,False,True,23.37,,0,True,71.5,False
+INDIAMART,Indiamart Intermesh Ltd.,Consumer Services,True,9249.86,4,False,19.97,19.78,16.77,18.7,0.01,1.38,19.49,36.4,58.07,1538.1,2475.5,37.87,-37.26,False,False,51.35,,0,True,69.4,False
+KARURVYSYA,Karur Vysya Bank Ltd.,Financial Services,True,36443.36,4,True,,17.79,18.73,31.42,0.19,1.14,14.52,8.93,1.08,377.0,393.5,4.19,51.04,False,True,24.05,,0,True,68.1,False
+ENDURANCE,Endurance Technologies Ltd.,Automobile and Auto Components,True,36022.35,4,False,16.3,13.91,18.23,25.67,0.19,1.8,37.85,34.76,75.0,2560.9,3029.5,15.47,-4.66,False,False,46.0,,0,True,67.9,False
+RRKABEL,R R Kabel Ltd.,Capital Goods,True,20474.36,4,False,26.51,19.12,20.08,37.37,0.13,1.02,41.6,34.41,69.99,1810.2,2928.4,38.18,31.82,False,False,42.71,,0,True,67.7,False
+IKS,Inventurus Knowledge Solutions Ltd.,Information Technology,True,27525.64,4,False,29.56,25.77,45.76,33.21,0.27,0.76,38.15,41.83,70.95,1640.8,1937.8,15.33,1.52,False,False,33.86,,0,True,66.7,False
+OLECTRA,Olectra Greentech Ltd.,Automobile and Auto Components,True,8192.48,4,False,19.36,14.46,28.42,39.35,0.31,0.99,46.16,73.24,50.27,998.1,1537.8,35.1,-29.06,False,False,46.0,,0,True,65.9,False
+DOMS,DOMS Industries Ltd.,Fast Moving Consumer Goods,True,13059.52,4,False,23.37,18.87,24.16,33.93,0.12,1.06,56.74,62.05,63.39,2151.9,2673.9,19.52,-17.92,False,False,36.12,,0,True,63.2,False
+IGIL,International Gemological Institute Ltd.,Services,True,18245.78,4,False,38.4,30.31,29.58,20.91,0.1,1.01,42.7,44.95,77.59,422.2,450.6,6.3,22.34,False,False,26.88,,0,True,63.1,False

@@ -1,104 +1,155 @@
 # Sensex option chain pattern log
-Updated 2026-11-19 15:56 IST. Learns only from live snapshots since 14 Oct 2026. Analysis only, not trading advice.
+Updated 2026-11-20 09:56 IST. Learns only from live snapshots since 14 Oct 2026. Analysis only, not trading advice.
 
 ## Data
-- 2 snapshots over 1 trading days
-- 2 patterns logged; 2 different patterns so far
+- 4 snapshots over 2 trading days
+- 5 patterns logged; 5 different patterns so far
 
-## Latest read (2026-11-19 15:46:00)
+## Latest read (2026-11-20 09:46:00)
 
-Sensex trend: weekly **sideways**, 125-min **up**, 25-min (timing) **up**. Each is up when the close is above its fast average and the fast average above the slow one, down when both are the other way, sideways otherwise (weekly 20/50 weeks; 125-min and 25-min 6/15 candles).
+Sensex trend: weekly **sideways**, 125-min **up**, 25-min (timing) **sideways**. Each is up when the close is above its fast average and the fast average above the slow one, down when both are the other way, sideways otherwise (weekly 20/50 weeks; 125-min and 25-min 6/15 candles).
 
 | Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |
 |---|---|---|---|---|---|---|---|---|
-| 2026-11-19 (weekly) | 0.0 | 83022 | 1.196 | 82900 | 82900 | 83100 | ±0.03% (83000-83044) | 62.5 |
-| 2026-11-26 (monthly) | 7.0 | 83022 | 0.92 | 82500 | 80000 | 85000 | ±1.61% (81682-84361) | 14.4 |
+| 2026-11-26 (weekly) | 6.2 | 83023 | 0.874 | 82600 | 82500 | 85000 | ±1.62% (81679-84366) | 15.46 |
+| 2026-12-31 (monthly) | 41.2 | 83023 | 0.839 | 82000 | 82000 | 83500 | ±3.75% (79911-86134) | 13.91 |
 
-- **Weekly, last 30 min**: `PCR down · unwinding · walls same · mid walls`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Writers: `writers even · weak puts`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Same, only when the trend was `weekly sideways · 125m up`: New pattern, never seen before. Logged; nothing to go on yet.
-- **Weekly, today vs previous day**: `-`. No pattern yet (needs an earlier snapshot to compare with).
-  - Writers: `writers even · weak puts`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Same, only when the trend was `weekly sideways · 125m up`: New pattern, never seen before. Logged; nothing to go on yet.
-- **Monthly, last 30 min**: `PCR down · put and call writing · walls same · mid walls`. New pattern, never seen before. Logged; nothing to go on yet.
+- **Weekly, last 30 min**: `PCR down · put and call writing · walls up · near put wall`. New pattern, never seen before. Logged; nothing to go on yet.
   - Writers: `writers even · few weak writers`. New pattern, never seen before. Logged; nothing to go on yet.
   - Same, only when the trend was `weekly sideways · 125m up`: New pattern, never seen before. Logged; nothing to go on yet.
+- **Weekly, today vs previous day**: `PCR flat · put and call writing · walls up · near put wall`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Writers: `writers even · few weak writers`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Same, only when the trend was `weekly sideways · 125m up`: New pattern, never seen before. Logged; nothing to go on yet.
+- **Monthly, last 30 min**: `PCR up · put and call writing · walls up · near call wall`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Writers: `writers even · few weak writers`. Seen 1 times before. Too few outcomes (0/20) to trade on.
+  - Same, only when the trend was `weekly sideways · 125m up`: Seen 1 times before. Too few outcomes (0/20) to trade on.
 - **Monthly, today vs previous day**: `-`. No pattern yet (needs an earlier snapshot to compare with).
-  - Writers: `writers even · few weak writers`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Same, only when the trend was `weekly sideways · 125m up`: New pattern, never seen before. Logged; nothing to go on yet.
+  - Writers: `writers even · few weak writers`. Seen 1 times before; Sensex was up after it 100% of the time, average +0.00%. Too few outcomes (1/20) to trade on.
+  - Same, only when the trend was `weekly sideways · 125m up`: Seen 1 times before; Sensex was up after it 100% of the time, average +0.00%. Too few outcomes (1/20) to trade on.
 
-## Strong vs weak writers, weekly 2026-11-19
+## Strong vs weak writers, weekly 2026-11-26
 
-Strongest call writers at -, strongest put writers at -; weakest call writers at -, weakest put writers at 85000. Covers 0% of near-money call OI and 5% of put OI (the rest was open before it was watched, so its selling price is unknown).
-
-| Side | Strike | OI | Of which tracked | Avg sold at | Spot when sold | Now | Break-even | Cushion (pts) | Writer P&L (pts) | Strength |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Put | 83700 | 16400 | 560 | 676.6 | 83022 | 676.6 | 83023 | -2 | +0.0 | weak |
-| Put | 83800 | 10060 | 380 | 776.5 | 83022 | 776.5 | 83024 | -2 | +0.0 | weak |
-
-## Strong vs weak writers, monthly 2026-11-26
-
-Strongest call writers at 83000, strongest put writers at 81000; weakest call writers at 80800, weakest put writers at 85000. Covers 19% of near-money call OI and 17% of put OI (the rest was open before it was watched, so its selling price is unknown).
+Strongest call writers at 82800, strongest put writers at 82500; weakest call writers at 81800, weakest put writers at 85000. Covers 58% of near-money call OI and 55% of put OI (the rest was open before it was watched, so its selling price is unknown).
 
 | Side | Strike | OI | Of which tracked | Avg sold at | Spot when sold | Now | Break-even | Cushion (pts) | Writer P&L (pts) | Strength |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Call | 82400 | 47520 | 500 | 1145.8 | 83022 | 1145.8 | 83546 | +524 | +0.0 | strong |
-| Call | 82800 | 102720 | 300 | 860.8 | 83022 | 860.8 | 83661 | +639 | +0.0 | strong |
-| Call | 82900 | 79620 | 5400 | 800.0 | 83022 | 800.0 | 83700 | +678 | +0.0 | strong |
-| Call | 83000 | 311320 | 54640 | 764.4 | 83022 | 764.4 | 83764 | +743 | +0.0 | strong |
-| Call | 83100 | 82840 | 46680 | 707.0 | 83022 | 707.0 | 83807 | +785 | +0.0 | strong |
-| Call | 83200 | 48520 | 17760 | 646.0 | 83022 | 646.0 | 83846 | +824 | +0.0 | strong |
-| Call | 83300 | 31580 | 9120 | 595.9 | 83022 | 595.9 | 83896 | +874 | +0.0 | strong |
-| Call | 83400 | 54960 | 27300 | 560.0 | 83022 | 560.0 | 83960 | +938 | +0.0 | strong |
-| Call | 83500 | 133380 | 23560 | 519.6 | 83022 | 519.6 | 84020 | +998 | +0.0 | strong |
-| Call | 83600 | 28620 | 10920 | 466.0 | 83022 | 466.0 | 84066 | +1044 | +0.0 | strong |
-| Call | 83700 | 25640 | 3260 | 432.6 | 83022 | 432.6 | 84133 | +1111 | +0.0 | strong |
-| Call | 83900 | 16660 | 920 | 363.1 | 83022 | 363.1 | 84263 | +1241 | +0.0 | strong |
-| Call | 84000 | 175940 | 32260 | 328.0 | 83022 | 328.0 | 84328 | +1306 | +0.0 | strong |
-| Call | 84100 | 15020 | 1320 | 306.9 | 83022 | 306.9 | 84407 | +1385 | +0.0 | strong |
-| Call | 84200 | 14440 | 320 | 267.1 | 83022 | 267.1 | 84467 | +1445 | +0.0 | strong |
-| Put | 82500 | 326540 | 2480 | 383.2 | 83022 | 383.2 | 82117 | +905 | +0.0 | strong |
-| Put | 82600 | 44000 | 1580 | 404.6 | 83022 | 404.6 | 82195 | +826 | +0.0 | strong |
-| Put | 82700 | 58640 | 4220 | 444.1 | 83022 | 444.1 | 82256 | +766 | +0.0 | strong |
-| Put | 82800 | 129940 | 15500 | 493.2 | 83022 | 493.2 | 82307 | +715 | +0.0 | strong |
-| Put | 82900 | 53960 | 6100 | 522.5 | 83022 | 522.5 | 82378 | +644 | +0.0 | strong |
-| Put | 83000 | 261660 | 56820 | 575.0 | 83022 | 575.0 | 82425 | +597 | +0.0 | strong |
-| Put | 83100 | 49260 | 35140 | 611.0 | 83022 | 611.0 | 82489 | +533 | +0.0 | strong |
-| Put | 83200 | 20360 | 11100 | 671.0 | 83022 | 671.0 | 82529 | +493 | +0.0 | strong |
-| Put | 83300 | 9060 | 2500 | 714.9 | 83022 | 714.9 | 82585 | +437 | +0.0 | strong |
-| Put | 83400 | 5740 | 1140 | 771.8 | 83022 | 771.8 | 82628 | +394 | +0.0 | strong |
-| Put | 83500 | 19160 | 2720 | 814.5 | 83022 | 814.5 | 82685 | +336 | +0.0 | medium |
-| Put | 83600 | 4380 | 1000 | 882.7 | 83022 | 882.7 | 82717 | +304 | +0.0 | medium |
-| Put | 83700 | 4620 | 880 | 953.4 | 83022 | 953.4 | 82747 | +275 | +0.0 | medium |
-| Put | 83800 | 3720 | 160 | 1063.0 | 83022 | 1063.0 | 82737 | +285 | +0.0 | medium |
-| Put | 83900 | 3680 | 320 | 1102.8 | 83022 | 1102.8 | 82797 | +225 | +0.0 | medium |
-| Put | 84000 | 16740 | 3160 | 1140.0 | 83022 | 1140.0 | 82860 | +162 | +0.0 | weak |
-| Put | 84100 | 620 | 100 | 1270.0 | 83022 | 1270.0 | 82830 | +192 | +0.0 | medium |
+| Call | 81800 | 9640 | 900 | 1398.0 | 83023 | 1398.0 | 83198 | +175 | +0.0 | weak |
+| Call | 81900 | 11840 | 620 | 1310.0 | 83023 | 1310.0 | 83210 | +187 | +0.0 | medium |
+| Call | 82000 | 136960 | 27700 | 1250.0 | 83023 | 1250.0 | 83250 | +227 | +0.0 | medium |
+| Call | 82100 | 20600 | 5140 | 1167.0 | 83023 | 1167.0 | 83267 | +244 | +0.0 | medium |
+| Call | 82200 | 30400 | 2220 | 1110.0 | 83023 | 1110.0 | 83310 | +287 | +0.0 | medium |
+| Call | 82300 | 42940 | 3060 | 1038.4 | 83023 | 1038.4 | 83338 | +316 | +0.0 | medium |
+| Call | 82400 | 59120 | 12100 | 976.5 | 83023 | 969.1 | 83376 | +354 | +7.3 | medium |
+| Call | 82500 | 468720 | 178100 | 908.5 | 83022 | 908.7 | 83408 | +386 | -0.2 | strong |
+| Call | 82600 | 112020 | 84340 | 847.5 | 83023 | 847.5 | 83448 | +425 | +0.0 | strong |
+| Call | 82700 | 160680 | 125080 | 791.0 | 83023 | 791.0 | 83491 | +468 | +0.0 | strong |
+| Call | 82800 | 371180 | 269239 | 733.2 | 83023 | 733.1 | 83533 | +511 | +0.1 | strong |
+| Call | 82900 | 241640 | 167457 | 686.8 | 83023 | 683.0 | 83587 | +564 | +3.8 | strong |
+| Call | 83000 | 504680 | 248445 | 663.3 | 83022 | 634.9 | 83663 | +641 | +28.4 | strong |
+| Call | 83100 | 147940 | 111780 | 636.7 | 83020 | 587.5 | 83737 | +714 | +49.3 | strong |
+| Call | 83200 | 113640 | 82893 | 563.7 | 83022 | 541.3 | 83764 | +741 | +22.4 | strong |
+| Call | 83300 | 89780 | 67320 | 513.7 | 83020 | 501.6 | 83814 | +791 | +12.1 | strong |
+| Call | 83400 | 110860 | 83200 | 493.1 | 83020 | 461.5 | 83893 | +871 | +31.6 | strong |
+| Call | 83500 | 210300 | 100480 | 446.2 | 83017 | 425.4 | 83946 | +924 | +20.8 | strong |
+| Call | 83600 | 61920 | 44245 | 409.5 | 83022 | 391.0 | 84009 | +987 | +18.5 | strong |
+| Call | 83700 | 95900 | 74079 | 363.1 | 83023 | 360.0 | 84063 | +1041 | +3.1 | strong |
+| Call | 83800 | 81300 | 55200 | 326.3 | 83022 | 326.5 | 84126 | +1104 | -0.2 | strong |
+| Call | 83900 | 61580 | 45840 | 300.9 | 83021 | 299.9 | 84201 | +1178 | +1.0 | strong |
+| Call | 84000 | 332640 | 188960 | 281.6 | 83017 | 273.2 | 84282 | +1259 | +8.4 | strong |
+| Call | 84100 | 47860 | 34160 | 248.8 | 83016 | 247.6 | 84349 | +1326 | +1.3 | strong |
+| Call | 84200 | 52640 | 38520 | 226.8 | 83015 | 227.4 | 84427 | +1404 | -0.6 | strong |
+| Put | 81800 | 79900 | 46460 | 265.1 | 83023 | 265.1 | 81535 | +1488 | +0.0 | strong |
+| Put | 81900 | 59740 | 26660 | 289.9 | 83023 | 289.9 | 81610 | +1412 | +0.0 | strong |
+| Put | 82000 | 430660 | 182120 | 317.0 | 83023 | 317.0 | 81683 | +1340 | +0.0 | strong |
+| Put | 82100 | 84060 | 33320 | 344.5 | 83023 | 344.5 | 81756 | +1267 | +0.0 | strong |
+| Put | 82200 | 124020 | 30760 | 374.4 | 83023 | 374.4 | 81826 | +1197 | +0.0 | strong |
+| Put | 82300 | 113180 | 53660 | 409.8 | 83023 | 409.8 | 81890 | +1132 | +0.0 | strong |
+| Put | 82400 | 178580 | 117580 | 442.6 | 83023 | 442.6 | 81957 | +1065 | +0.0 | strong |
+| Put | 82500 | 662360 | 338300 | 481.5 | 83022 | 481.9 | 82018 | +1004 | -0.4 | strong |
+| Put | 82600 | 181380 | 139365 | 517.2 | 83023 | 518.5 | 82083 | +940 | -1.3 | strong |
+| Put | 82700 | 245980 | 192154 | 561.4 | 83023 | 564.0 | 82139 | +884 | -2.6 | strong |
+| Put | 82800 | 374600 | 266572 | 601.2 | 83023 | 607.5 | 82199 | +824 | -6.3 | strong |
+| Put | 82900 | 153500 | 105640 | 648.8 | 83022 | 656.3 | 82251 | +771 | -7.5 | strong |
+| Put | 83000 | 327400 | 123296 | 647.2 | 83022 | 708.5 | 82353 | +670 | -61.4 | strong |
+| Put | 83100 | 56600 | 42480 | 641.1 | 83015 | 762.5 | 82459 | +564 | -121.4 | strong |
+| Put | 83200 | 27780 | 18520 | 726.7 | 83021 | 808.6 | 82473 | +549 | -81.9 | strong |
+| Put | 83300 | 13980 | 7420 | 824.1 | 83015 | 873.9 | 82476 | +547 | -49.7 | strong |
+| Put | 83400 | 19860 | 15260 | 924.3 | 83023 | 936.6 | 82476 | +547 | -12.3 | strong |
+| Put | 83500 | 33740 | 17300 | 965.9 | 83019 | 991.8 | 82534 | +488 | -25.9 | strong |
+| Put | 83600 | 7860 | 4480 | 1039.8 | 83005 | 1074.5 | 82560 | +462 | -34.8 | strong |
+| Put | 83700 | 5860 | 2120 | 1061.9 | 83018 | 1134.3 | 82638 | +384 | -72.4 | strong |
+| Put | 83800 | 5320 | 1760 | 1189.1 | 83022 | 1201.8 | 82611 | +412 | -12.6 | strong |
+| Put | 83900 | 4540 | 1180 | 1232.9 | 83022 | 1281.3 | 82667 | +355 | -48.4 | medium |
+| Put | 84000 | 17980 | 4400 | 1199.5 | 83016 | 1335.0 | 82801 | +222 | -135.5 | medium |
+| Put | 84100 | 1720 | 1200 | 1524.3 | 83023 | 1547.4 | 82576 | +447 | -23.1 | strong |
+| Put | 84200 | 1340 | 1220 | 1624.0 | 83023 | 1624.0 | 82576 | +447 | +0.0 | strong |
+
+## Strong vs weak writers, monthly 2026-12-31
+
+Strongest call writers at 83000, strongest put writers at 82000; weakest call writers at -, weakest put writers at -. Covers 23% of near-money call OI and 24% of put OI (the rest was open before it was watched, so its selling price is unknown).
+
+| Side | Strike | OI | Of which tracked | Avg sold at | Spot when sold | Now | Break-even | Cushion (pts) | Writer P&L (pts) | Strength |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Call | 82000 | 2980 | 20 | 2100.0 | 83023 | 2100.0 | 84100 | +1077 | +0.0 | strong |
+| Call | 82200 | 140 | 100 | 2124.2 | 83023 | 2124.2 | 84324 | +1302 | +0.0 | strong |
+| Call | 82300 | 100 | 100 | 2134.5 | 83023 | 2134.5 | 84434 | +1412 | +0.0 | strong |
+| Call | 82400 | 100 | 100 | 2074.4 | 83023 | 2074.4 | 84474 | +1452 | +0.0 | strong |
+| Call | 82800 | 320 | 100 | 1766.7 | 83023 | 1766.7 | 84567 | +1544 | +0.0 | strong |
+| Call | 83000 | 1600 | 560 | 1711.9 | 83023 | 1711.9 | 84712 | +1689 | +0.0 | strong |
+| Call | 83100 | 200 | 100 | 1607.8 | 83023 | 1607.8 | 84708 | +1685 | +0.0 | strong |
+| Call | 83400 | 220 | 200 | 1484.0 | 83023 | 1484.0 | 84884 | +1861 | +0.0 | strong |
+| Call | 83500 | 700 | 140 | 1462.5 | 83023 | 1462.5 | 84962 | +1940 | +0.0 | strong |
+| Call | 84000 | 20 | 20 | 1219.0 | 83023 | 1219.0 | 85219 | +2196 | +0.0 | strong |
+| Call | 84200 | 40 | 20 | 1132.7 | 83023 | 1132.7 | 85333 | +2310 | +0.0 | strong |
+| Put | 82000 | 3540 | 440 | 1100.2 | 83023 | 1100.2 | 80900 | +2123 | +0.0 | strong |
+| Put | 82700 | 20 | 20 | 1309.8 | 83023 | 1309.8 | 81390 | +1632 | +0.0 | strong |
+| Put | 82800 | 20 | 20 | 1354.2 | 83023 | 1354.2 | 81446 | +1577 | +0.0 | strong |
+| Put | 82900 | 60 | 60 | 1400.3 | 83023 | 1400.3 | 81500 | +1523 | +0.0 | strong |
+| Put | 83000 | 940 | 20 | 1400.0 | 83023 | 1400.0 | 81600 | +1423 | +0.0 | strong |
+| Put | 83100 | 100 | 100 | 1467.3 | 83023 | 1467.3 | 81633 | +1390 | +0.0 | strong |
+| Put | 83200 | 160 | 160 | 1540.9 | 83023 | 1540.9 | 81659 | +1363 | +0.0 | strong |
+| Put | 83300 | 200 | 200 | 1565.7 | 83023 | 1565.7 | 81734 | +1288 | +0.0 | strong |
+| Put | 83400 | 40 | 40 | 1607.4 | 83023 | 1607.4 | 81793 | +1230 | +0.0 | strong |
+| Put | 83500 | 880 | 400 | 1720.0 | 83023 | 1720.0 | 81780 | +1243 | +0.0 | strong |
 
 ## 30-minute patterns (Nifty move to that day's close)
 
 | Expiry | Pattern | Seen | Up after | Avg move to close | Range | Walls held to expiry | Lean |
 |---|---|---|---|---|---|---|---|
 | monthly | PCR down · put and call writing · walls same · mid walls | 1 |  |  |  |  | too few (0/10) |
+| monthly | PCR up · put and call writing · walls up · near call wall | 1 |  |  |  |  | too few (0/10) |
+| weekly | PCR down · put and call writing · walls up · near put wall | 1 |  |  |  |  | too few (0/10) |
 | weekly | PCR down · unwinding · walls same · mid walls | 1 |  |  |  |  | too few (0/10) |
+
+## Day patterns (Nifty move next day)
+
+| Expiry | Pattern | Seen | Up after | Avg move next day | Range | Walls held to expiry | Lean |
+|---|---|---|---|---|---|---|---|
+| weekly | PCR flat · put and call writing · walls up · near put wall | 1 |  |  |  |  | too few (0/10) |
 
 ## Writer patterns (Nifty move to the close for 30-minute rows, next day for day rows)
 
 | Layer | Expiry | Writers | Seen | Up after | Avg move | Lean |
 |---|---|---|---|---|---|---|
-| intraday | monthly | writers even · few weak writers | 1 |  |  | too few (0/10) |
+| intraday | monthly | writers even · few weak writers | 2 |  |  | too few (0/10) |
+| intraday | weekly | call writers stronger · weak puts | 1 | 100% | +0.57% | too few (1/10) |
+| intraday | weekly | writers even · few weak writers | 1 |  |  | too few (0/10) |
 | intraday | weekly | writers even · weak puts | 1 |  |  | too few (0/10) |
-| day | monthly | writers even · few weak writers | 1 |  |  | too few (0/10) |
-| day | weekly | writers even · weak puts | 1 |  |  | too few (0/10) |
+| day | monthly | writers even · few weak writers | 2 | 100% | +0.00% | too few (1/10) |
+| day | weekly | writers even · few weak writers | 1 |  |  | too few (0/10) |
+| day | weekly | writers even · weak puts | 1 | 100% | +0.00% | too few (1/10) |
 
 ## Writer patterns by market trend
 
 | Layer | Expiry | Writers · trend | Seen | Up after | Avg move | Lean |
 |---|---|---|---|---|---|---|
-| intraday | monthly | writers even · few weak writers · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
+| intraday | monthly | writers even · few weak writers · weekly sideways · 125m up | 2 |  |  | too few (0/10) |
+| intraday | weekly | call writers stronger · weak puts · weekly sideways · 125m up | 1 | 100% | +0.57% | too few (1/10) |
+| intraday | weekly | writers even · few weak writers · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
 | intraday | weekly | writers even · weak puts · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
-| day | monthly | writers even · few weak writers · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
-| day | weekly | writers even · weak puts · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
+| day | monthly | writers even · few weak writers · weekly sideways · 125m up | 2 | 100% | +0.00% | too few (1/10) |
+| day | weekly | writers even · few weak writers · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
+| day | weekly | writers even · weak puts · weekly sideways · 125m up | 1 | 100% | +0.00% | too few (1/10) |
 
 ## How to read this
 - A pattern is: near-money PCR change · where new OI near the money went · how the put and call walls (biggest OI strikes) moved · where spot sits between the walls.

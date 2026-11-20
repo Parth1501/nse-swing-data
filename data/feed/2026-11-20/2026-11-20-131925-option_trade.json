@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "13:18: 84.2, holding",
+ "summary": "Nifty 25,718 pausing at 25,700; puts still writing there. Stop 68 (breakeven) or Nifty < 25,650.",
+ "trade": {
+  "trade_id": "2026-11-20-bull-call-25600-25750",
+  "event": "update",
+  "now": 84.15,
+  "spot": 25717.7
+ },
+ "created_at": "2026-11-20T13:19:25+05:30",
+ "id": "2026-11-20-131925-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

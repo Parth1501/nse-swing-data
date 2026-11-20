@@ -48,13 +48,13 @@ jobs:
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py && bash .github/save_sensex_chain.sh
-      - name: Bank Nifty and Midcap Select snapshot now
+      - name: Bank Nifty snapshot (saved only) now
         if: inputs.sensex_probe != 'yes'
         continue-on-error: true      # never blocks Nifty or Sensex
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: |
-          for ix in banknifty midcpselect; do
+          for ix in banknifty; do
             CHAIN_INDEX=$ix python sensex_chain.py && bash .github/save_index_chain.sh $ix || echo "$ix snapshot failed"
           done
       - name: Snapshot 30 minutes later
@@ -66,12 +66,12 @@ jobs:
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py && bash .github/save_sensex_chain.sh
-      - name: Bank Nifty and Midcap Select snapshot 30 minutes later
+      - name: Bank Nifty snapshot (saved only) 30 minutes later
         if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
         continue-on-error: true      # never blocks Nifty or Sensex
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: |
-          for ix in banknifty midcpselect; do
+          for ix in banknifty; do
             CHAIN_INDEX=$ix python sensex_chain.py && bash .github/save_index_chain.sh $ix || echo "$ix snapshot failed"
           done

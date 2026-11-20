@@ -11,6 +11,10 @@ on:
         description: "Only print Upstox's raw Sensex answer (for checking the field mapping); saves nothing"
         required: false
         default: "no"
+      probe_index:
+        description: "With sensex_probe=yes: which Upstox index to probe (sensex, banknifty, midcpselect)"
+        required: false
+        default: "sensex"
 
 permissions:
   contents: write
@@ -33,6 +37,7 @@ jobs:
         if: inputs.sensex_probe == 'yes'
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+          CHAIN_INDEX: ${{ inputs.probe_index }}
         run: python sensex_chain.py --probe
       - name: Snapshot now
         if: inputs.sensex_probe != 'yes'
@@ -43,6 +48,15 @@ jobs:
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py && bash .github/save_sensex_chain.sh
+      - name: Bank Nifty and Midcap Select snapshot now
+        if: inputs.sensex_probe != 'yes'
+        continue-on-error: true      # never blocks Nifty or Sensex
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: |
+          for ix in banknifty midcpselect; do
+            CHAIN_INDEX=$ix python sensex_chain.py && bash .github/save_index_chain.sh $ix || echo "$ix snapshot failed"
+          done
       - name: Snapshot 30 minutes later
         if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
         run: sleep 1800 && python option_chain.py && bash .github/save_option_chain.sh
@@ -52,3 +66,12 @@ jobs:
         env:
           UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
         run: python sensex_chain.py && bash .github/save_sensex_chain.sh
+      - name: Bank Nifty and Midcap Select snapshot 30 minutes later
+        if: inputs.second_snapshot != 'no' && inputs.sensex_probe != 'yes'
+        continue-on-error: true      # never blocks Nifty or Sensex
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: |
+          for ix in banknifty midcpselect; do
+            CHAIN_INDEX=$ix python sensex_chain.py && bash .github/save_index_chain.sh $ix || echo "$ix snapshot failed"
+          done

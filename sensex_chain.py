@@ -14,6 +14,8 @@ calendar month) to data/sensex_chain/<IST date>.csv with the same columns as the
 the same analysis code works on both. Upstox gives no exchange timestamp, so "nse_time" holds the
 snapshot time rounded to the minute; change in OI is OI minus Upstox's prev_oi (yesterday's).
 
+CHAIN_INDEX=banknifty (or midcpselect) reads that index instead into data/<index>_chain/.
+
 `python sensex_chain.py --probe` prints the expiry list and one sample strike, for checking the
 mapping.
 """
@@ -29,10 +31,17 @@ import requests
 from option_chain import COLUMNS  # same columns as the Nifty files
 
 IST = timezone(timedelta(hours=5, minutes=30))
-OUT_DIR = os.path.join("data", "sensex_chain")
 API = "https://api.upstox.com/v2"
-SENSEX = "BSE_INDEX|SENSEX"
-PENDING = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "sensex_chain_pending.json")
+# The same code reads other indexes through Upstox: set CHAIN_INDEX to one of these keys.
+INDEXES = {
+    "sensex": ("BSE_INDEX|SENSEX", "sensex_chain"),
+    "banknifty": ("NSE_INDEX|Nifty Bank", "banknifty_chain"),
+    "midcpselect": ("NSE_INDEX|NIFTY MID SELECT", "midcpselect_chain"),
+}
+INDEX = os.environ.get("CHAIN_INDEX", "sensex").strip().lower() or "sensex"
+SENSEX, _dir = INDEXES[INDEX]
+OUT_DIR = os.path.join("data", _dir)
+PENDING = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), f"{_dir}_pending.json")
 
 
 def creds():
@@ -70,14 +79,17 @@ def expiries(headers):
 
 
 def pick_expiries(dates):
-    """[(YYYY-MM-DD, 'weekly'|'monthly')]: nearest expiry, and the first monthly after it."""
+    """[(YYYY-MM-DD, 'weekly'|'monthly')]: nearest expiry, and the first monthly after it.
+    Indexes with monthly expiries only (Bank Nifty, Midcap Select) give this month's and next month's."""
     today = f"{datetime.now(IST):%Y-%m-%d}"
     ds = sorted(d for d in dates if d >= today)
     last_of_month = {}
     for d in ds:
         last_of_month[d[:7]] = d
-    monthly = next(d for d in sorted(last_of_month.values()) if d > ds[0])
-    return [(ds[0], "weekly"), (monthly, "monthly")]
+    monthlies = set(last_of_month.values())
+    monthly = next(d for d in sorted(monthlies) if d > ds[0])
+    first = "monthly" if INDEX != "sensex" and ds[0] in monthlies else "weekly"  # Sensex keeps its old labels
+    return [(ds[0], first), (monthly, "monthly")]
 
 
 def chain(headers, expiry):

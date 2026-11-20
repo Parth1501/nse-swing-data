@@ -1,0 +1,17 @@
+{
+ "kind": "option_trade",
+ "title": "Exit: 25600/25750 bull call spread at 93 (time exit)",
+ "summary": "Friday 14:48 time exit. Entry 67.65, exit ~93: +25.5/unit, about +Rs 1,650 per lot.",
+ "body_md": "Exit before 15:00 (Friday, no weekend hold). BUY 25600 CE / SELL 25750 CE, weekly 23 Nov, entered 12:18 at 67.65. Now 215.6 - 122.45 = ~93 with Nifty 25,741. About +Rs 1,650 per lot (lot 65). Analysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-20-bull-call-25600-25750",
+  "event": "exit",
+  "exit": 93.15,
+  "result": "+25.5 per unit, about +Rs 1,650 per lot",
+  "spot": 25741.1
+ },
+ "created_at": "2026-11-20T14:49:09+05:30",
+ "id": "2026-11-20-144909-option_trade",
+ "symbols": [],
+ "notify": true
+}

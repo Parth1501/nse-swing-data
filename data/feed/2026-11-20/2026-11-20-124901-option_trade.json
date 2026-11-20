@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "12:48: 82.1, holding",
+ "summary": "Nifty 25,712; calls still covering below, puts writing at 25,700. +14 per unit vs entry 67.65.",
+ "trade": {
+  "trade_id": "2026-11-20-bull-call-25600-25750",
+  "event": "update",
+  "now": 82.1,
+  "spot": 25712.05
+ },
+ "created_at": "2026-11-20T12:49:01+05:30",
+ "id": "2026-11-20-124901-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

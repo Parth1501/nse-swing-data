@@ -1,0 +1,26 @@
+{
+ "kind": "option_trade",
+ "title": "Nifty 8/10 trade: 25600/25750 bull call spread 12:18",
+ "summary": "Nifty broke 25,500 and 25,600 with call writers covering and puts writing behind; 9/10.",
+ "body_md": "Score 9/10. BUY 25600 CE ~144, SELL 25750 CE ~76, weekly 23 Nov. Debit ~68 (65-72). Max loss ~Rs 4,400/lot, max profit ~Rs 5,350/lot (lot 65). Breakeven ~25,668. Target 105 (Nifty ~25,750). Stop 48 or Nifty below 25,580. Exit by 14:48 today. Analysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-20-bull-call-25600-25750",
+  "event": "open",
+  "strategy": "bull call debit spread",
+  "expiry": "2026-11-23",
+  "legs": [
+   "BUY 25600 CE @ 143.9",
+   "SELL 25750 CE @ 76.25"
+  ],
+  "entry": 67.65,
+  "target": "105 (Nifty ~25,750)",
+  "stop": "48 or Nifty < 25,580",
+  "conviction": 9,
+  "spot": 25653.65,
+  "now": 67.65
+ },
+ "created_at": "2026-11-20T12:19:44+05:30",
+ "id": "2026-11-20-121944-option_trade",
+ "symbols": [],
+ "notify": true
+}

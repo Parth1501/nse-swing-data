@@ -1,5 +1,5 @@
 {
- "generated_at_ist": "2026-11-23 07:39",
+ "generated_at_ist": "2026-11-23 18:46",
  "items": [
   {
    "name": "S&P 500",
@@ -51,52 +51,52 @@
   },
   {
    "name": "Hang Seng",
-   "value": 22103.41,
+   "value": 22383.74,
    "for_date": "2026-11-23",
-   "change_pct": -1.37,
+   "change_pct": -0.12,
    "source": "Yahoo Finance ^HSI",
    "source_url": "https://finance.yahoo.com/quote/^HSI",
    "check_source": "CNBC .HSI",
-   "check_value": 22103.41,
+   "check_value": 22383.74,
    "agree": true,
    "errors": [],
    "prev_close": 22410.8,
    "prev_date": "2026-11-20",
    "check_url": "https://www.cnbc.com/quotes/.HSI",
-   "check_date": "2026-11-23T09:54:02.000+0800"
+   "check_date": "2026-11-23T16:08:44.000+0800"
   },
   {
    "name": "Brent crude (front-month future, $/bbl)",
-   "value": 89.72,
-   "for_date": "2026-11-22",
-   "change_pct": -3.08,
+   "value": 88.4,
+   "for_date": "2026-11-23",
+   "change_pct": -4.5,
    "source": "Yahoo Finance BZ=F",
    "source_url": "https://finance.yahoo.com/quote/BZ=F",
    "check_source": "CNBC @LCO.1",
-   "check_value": 92.28,
+   "check_value": 90.98,
    "agree": false,
    "errors": [],
    "prev_close": 92.57,
    "prev_date": "2026-11-20",
-   "change_1m_pct": -23.13,
+   "change_1m_pct": -24.26,
    "check_url": "https://www.cnbc.com/quotes/@LCO.1",
-   "check_date": "2026-11-23T02:59:02.000+0100"
+   "check_date": "2026-11-23T14:06:10.000+0100"
   },
   {
    "name": "USD/INR",
-   "value": 92.66,
+   "value": 92.73,
    "for_date": "2026-11-23",
-   "change_pct": -0.68,
+   "change_pct": -0.61,
    "source": "Yahoo Finance INR=X",
    "source_url": "https://finance.yahoo.com/quote/INR=X",
    "check_source": "CNBC INR=",
-   "check_value": 92.67,
+   "check_value": 92.91,
    "agree": true,
    "errors": [],
    "prev_close": 93.295,
    "prev_date": "2026-11-20",
    "check_url": "https://www.cnbc.com/quotes/INR=",
-   "check_date": "2026-11-20T13:39:00.000-0500"
+   "check_date": "2026-11-23T05:01:00.000-0500"
   },
   {
    "name": "US 10-yr yield (%)",

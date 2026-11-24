@@ -1,17 +1,22 @@
 {
-  "generated_at_ist": "2026-11-23 18:49",
+  "generated_at_ist": "2026-11-24 18:49",
   "data_date": "2026-11-23",
   "method": "price action + volume only; no indicators; no stop-loss; support trades only (no breakouts), support read from weekly candles",
   "universe_source": "F&O: NSE fo_mktlots.csv; Nifty Midcap 150: https://nsearchives.nseindia.com/content/indices/ind_niftymidcap150list.csv; others: NSE sec_list.csv filtered to 20-day avg traded value >= Rs 50 cr",
   "fno_count": 218,
   "midcap150_count": 150,
   "midcap150_non_fno_count": 57,
-  "liquid_non_fno_count": 205,
-  "universe_count": 466,
-  "stocks_analysed": 465,
-  "etfs_left_out": 14,
+  "liquid_non_fno_count": 212,
+  "universe_count": 472,
+  "stocks_analysed": 466,
+  "etfs_left_out": 15,
   "stocks_failed_download": [
-    "MONEYVIEW"
+    "AONESTEELS",
+    "BONFIG",
+    "MONEYVIEW",
+    "SMT",
+    "TONBO",
+    "ZETWERK"
   ],
   "note_failed": "Listed fewer than 40 sessions ago or no Yahoo data",
   "eligible_count": 0,
@@ -20,12 +25,12 @@
     "pat_C_pullback": 15,
     "pat_D_retest": 62,
     "pat_E_candle": 5,
-    "pat_F_room": 137,
+    "pat_F_room": 138,
     "pat_G_rel_strength": 103,
     "pat_W_weekly_reversal": 1,
     "vol_ok": 5,
     "smc_sweep": 7,
-    "smc_order_block": 70,
+    "smc_order_block": 71,
     "smc_fvg": 19,
     "smc_choch": 11
   },
@@ -61,7 +66,7 @@
   },
   "fno_ban": {
     "status": "ok",
-    "header": "Securities in Ban For Trade Date 23-NOV-2026:",
+    "header": "Securities in Ban For Trade Date 25-NOV-2026:",
     "symbols": [
       "MANAPPURAM"
     ]
@@ -69,7 +74,7 @@
   "asm_gsm": {
     "asm": {
       "status": "ok",
-      "count": 168
+      "count": 167
     },
     "gsm": {
       "status": "ok",
@@ -112,14 +117,14 @@
   },
   "sector_source": "https://nsearchives.nseindia.com/content/indices/ind_niftytotalmarket_list.csv; stocks outside it: NSE stock quote page (cached in data/sector_map.csv)",
   "sector_lookup": {
-    "outside_index_list": 43,
+    "outside_index_list": 44,
     "from_cache": 0,
     "looked_up": 5,
     "found": 0,
     "not_found": [],
     "errors": 5,
     "stopped_early": true,
-    "left_for_next_run": 38
+    "left_for_next_run": 39
   },
   "sectors": [
     {

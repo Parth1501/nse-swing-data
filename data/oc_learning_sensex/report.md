@@ -1,31 +1,31 @@
 # Sensex option chain pattern log
-Updated 2026-11-23 15:56 IST. Learns only from live snapshots since 14 Oct 2026. Analysis only, not trading advice.
+Updated 2026-11-24 09:56 IST. Learns only from live snapshots since 14 Oct 2026. Analysis only, not trading advice.
 
 ## Data
-- 30 snapshots over 3 trading days
-- 57 patterns logged; 35 different patterns so far
+- 32 snapshots over 4 trading days
+- 61 patterns logged; 38 different patterns so far
 
-## Latest read (2026-11-23 15:46:00)
+## Latest read (2026-11-24 09:46:00)
 
 Sensex trend: weekly **sideways**, 125-min **sideways**, 25-min (timing) **down**. Each is up when the close is above its fast average and the fast average above the slow one, down when both are the other way, sideways otherwise (weekly 20/50 weeks; 125-min and 25-min 6/15 candles).
 
 | Expiry | Days left | Spot | PCR near | Max pain | Put wall | Call wall | Implied move | ATM IV |
 |---|---|---|---|---|---|---|---|---|
-| 2026-11-26 (weekly) | 3.0 | 82436 | 1.013 | 82800 | 79000 | 88000 | ±1.36% (81318-83554) | 18.73 |
-| 2026-12-31 (monthly) | 38.0 | 82436 | 2.003 | 83000 | 82000 | 87900 | ±3.95% (79181-85691) | 15.11 |
+| 2026-11-26 (weekly) | 2.2 | 82436 | 1.013 | 82800 | 79000 | 88000 | ±1.36% (81318-83554) | 18.73 |
+| 2026-12-31 (monthly) | 37.2 | 82436 | 2.003 | 83000 | 82000 | 87900 | ±3.95% (79181-85691) | 15.11 |
 
-- **Weekly, last 30 min**: `PCR up · put and call writing · walls same · mid walls`. Seen 1 times before; Sensex was up after it 0% of the time, average -1.15%. Too few outcomes (1/20) to trade on.
-  - Writers: `writers even · few weak writers`. Seen 10 times before; Sensex was up after it 67% of the time, average +0.18%. Too few outcomes (9/20) to trade on.
-  - Same, only when the trend was `weekly sideways · 125m sideways`: New pattern, never seen before. Logged; nothing to go on yet.
-- **Weekly, today vs previous day**: `PCR flat · put and call writing · walls same · mid walls`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Writers: `writers even · few weak writers`. Seen 1 times before; Sensex was up after it 0% of the time, average -1.77%. Too few outcomes (1/20) to trade on.
-  - Same, only when the trend was `weekly sideways · 125m sideways`: New pattern, never seen before. Logged; nothing to go on yet.
-- **Monthly, last 30 min**: `PCR down · put and call writing · walls same · near put wall`. Seen 1 times before; Sensex was up after it 100% of the time, average +0.48%. Too few outcomes (1/20) to trade on.
-  - Writers: `put writers stronger · weak puts`. Seen 3 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on.
-  - Same, only when the trend was `weekly sideways · 125m sideways`: Seen 3 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on.
-- **Monthly, today vs previous day**: `PCR up · put and call writing · walls down · near put wall`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Writers: `put writers stronger · weak puts`. New pattern, never seen before. Logged; nothing to go on yet.
-  - Same, only when the trend was `weekly sideways · 125m sideways`: New pattern, never seen before. Logged; nothing to go on yet.
+- **Weekly, last 30 min**: `PCR flat · quiet OI · walls same · mid walls`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Writers: `writers even · few weak writers`. Seen 12 times before; Sensex was up after it 67% of the time, average +0.18%. Too few outcomes (9/20) to trade on.
+  - Same, only when the trend was `weekly sideways · 125m sideways`: Seen 2 times before. Too few outcomes (0/20) to trade on.
+- **Weekly, today vs previous day**: `PCR flat · put and call writing · walls same · mid walls`. Seen 1 times before. Too few outcomes (0/20) to trade on.
+  - Writers: `writers even · few weak writers`. Seen 2 times before; Sensex was up after it 0% of the time, average -1.77%. Too few outcomes (1/20) to trade on.
+  - Same, only when the trend was `weekly sideways · 125m sideways`: Seen 1 times before. Too few outcomes (0/20) to trade on.
+- **Monthly, last 30 min**: `PCR flat · quiet OI · walls same · near put wall`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Writers: `put writers stronger · weak puts`. Seen 5 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on.
+  - Same, only when the trend was `weekly sideways · 125m sideways`: Seen 5 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on.
+- **Monthly, today vs previous day**: `PCR flat · put and call writing · walls same · near put wall`. New pattern, never seen before. Logged; nothing to go on yet.
+  - Writers: `put writers stronger · weak puts`. Seen 1 times before. Too few outcomes (0/20) to trade on.
+  - Same, only when the trend was `weekly sideways · 125m sideways`: Seen 1 times before. Too few outcomes (0/20) to trade on.
 
 ## Strong vs weak writers, weekly 2026-11-26
 
@@ -140,28 +140,30 @@ Strongest call writers at 83000, strongest put writers at 83000; weakest call wr
 | monthly | PCR up · put writing · walls same · near put wall | 9 | 25% | -0.43% | -1.29 to +0.22% |  | too few (8/10) |
 | monthly | PCR flat · put and call writing · walls same · near put wall | 4 | 50% | -0.03% | -0.22 to +0.16% |  | too few (4/10) |
 | monthly | PCR down · call writing · walls same · near put wall | 3 | 33% | -0.24% | -0.70 to +0.25% |  | too few (3/10) |
-| monthly | PCR down · put and call writing · walls up · near put wall | 2 | 50% | -0.14% | -1.14 to +0.86% |  | too few (2/10) |
-| monthly | PCR up · put and call writing · walls up · near put wall | 2 | 100% | +0.93% | +0.89 to +0.97% |  | too few (2/10) |
-| monthly | PCR down · put and call writing · walls same · near put wall | 2 | 100% | +0.48% | +0.48 to +0.48% |  | too few (1/10) |
-| weekly | PCR flat · put and call writing · walls same · near put wall | 2 | 100% | +0.91% | +0.86 to +0.97% |  | too few (2/10) |
-| weekly | PCR down · unwinding · walls same · mid walls | 2 | 0% | -0.07% | -0.07 to -0.07% |  | too few (1/10) |
-| weekly | PCR up · put and call writing · walls same · mid walls | 2 | 0% | -1.15% | -1.15 to -1.15% |  | too few (1/10) |
-| weekly | PCR up · put and call writing · walls down · mid walls | 2 | 0% | -0.86% | -1.30 to -0.43% |  | too few (2/10) |
 | weekly | PCR up · put writing · walls same · mid walls | 2 | 0% | -0.43% | -0.64 to -0.22% |  | too few (2/10) |
+| monthly | PCR down · put and call writing · walls up · near put wall | 2 | 50% | -0.14% | -1.14 to +0.86% |  | too few (2/10) |
+| monthly | PCR down · put and call writing · walls same · near put wall | 2 | 100% | +0.48% | +0.48 to +0.48% |  | too few (1/10) |
+| weekly | PCR down · unwinding · walls same · mid walls | 2 | 0% | -0.07% | -0.07 to -0.07% |  | too few (1/10) |
+| monthly | PCR up · put and call writing · walls up · near put wall | 2 | 100% | +0.93% | +0.89 to +0.97% |  | too few (2/10) |
+| weekly | PCR up · put and call writing · walls same · mid walls | 2 | 0% | -1.15% | -1.15 to -1.15% |  | too few (1/10) |
+| weekly | PCR flat · put and call writing · walls same · near put wall | 2 | 100% | +0.91% | +0.86 to +0.97% |  | too few (2/10) |
 | weekly | PCR up · put writing · walls same · near put wall | 2 | 100% | +0.13% | +0.03 to +0.22% |  | too few (2/10) |
+| weekly | PCR up · put and call writing · walls down · mid walls | 2 | 0% | -0.86% | -1.30 to -0.43% |  | too few (2/10) |
+| monthly | PCR down · call writing · walls down · near put wall | 1 | 0% | -0.64% | -0.64 to -0.64% |  | too few (1/10) |
+| weekly | PCR down · call writing · walls down · mid walls | 1 | 0% | -0.95% | -0.95 to -0.95% |  | too few (1/10) |
 | monthly | PCR up · put and call writing · walls up · near call wall | 1 | 100% | +1.08% | +1.08 to +1.08% |  | too few (1/10) |
 | monthly | PCR up · put and call writing · walls same · near call wall | 1 | 100% | +1.09% | +1.09 to +1.09% |  | too few (1/10) |
 | monthly | PCR down · put and call writing · walls same · mid walls | 1 |  |  |  |  | too few (0/10) |
-| monthly | PCR down · call writing · walls down · near put wall | 1 | 0% | -0.64% | -0.64 to -0.64% |  | too few (1/10) |
+| monthly | PCR flat · quiet OI · walls same · near put wall | 1 |  |  |  |  | too few (0/10) |
 | weekly | PCR down · put and call writing · walls up · near put wall | 1 | 100% | +1.08% | +1.08 to +1.08% |  | too few (1/10) |
 | weekly | PCR down · call writing · walls up · mid walls | 1 | 0% | -0.35% | -0.35 to -0.35% |  | too few (1/10) |
 | weekly | PCR down · call writing · walls same · mid walls | 1 | 0% | -0.70% | -0.70 to -0.70% |  | too few (1/10) |
 | weekly | PCR down · call writing · walls down · near call wall | 1 | 0% | -1.14% | -1.14 to -1.14% |  | too few (1/10) |
-| weekly | PCR down · call writing · walls down · mid walls | 1 | 0% | -0.95% | -0.95 to -0.95% |  | too few (1/10) |
 | monthly | PCR up · put writing · walls down · near put wall | 1 | 0% | -1.15% | -1.15 to -1.15% |  | too few (1/10) |
 | weekly | PCR flat · put and call writing · walls down · mid walls | 1 | 0% | -0.28% | -0.28 to -0.28% |  | too few (1/10) |
-| weekly | PCR flat · call writing · walls same · near put wall | 1 | 100% | +0.17% | +0.17 to +0.17% |  | too few (1/10) |
 | weekly | PCR flat · put writing · walls up · near put wall | 1 | 100% | +0.48% | +0.48 to +0.48% |  | too few (1/10) |
+| weekly | PCR flat · call writing · walls same · near put wall | 1 | 100% | +0.17% | +0.17 to +0.17% |  | too few (1/10) |
+| weekly | PCR flat · quiet OI · walls same · mid walls | 1 |  |  |  |  | too few (0/10) |
 | weekly | PCR flat · unwinding · walls same · near put wall | 1 | 100% | +0.25% | +0.25 to +0.25% |  | too few (1/10) |
 | weekly | PCR up · put and call writing · walls up · near put wall | 1 | 100% | +1.09% | +1.09 to +1.09% |  | too few (1/10) |
 | weekly | PCR up · put and call writing · walls same · near put wall | 1 | 100% | +0.90% | +0.90 to +0.90% |  | too few (1/10) |
@@ -174,8 +176,9 @@ Strongest call writers at 83000, strongest put writers at 83000; weakest call wr
 
 | Expiry | Pattern | Seen | Up after | Avg move next day | Range | Walls held to expiry | Lean |
 |---|---|---|---|---|---|---|---|
+| weekly | PCR flat · put and call writing · walls same · mid walls | 2 |  |  |  |  | too few (0/10) |
+| monthly | PCR flat · put and call writing · walls same · near put wall | 1 |  |  |  |  | too few (0/10) |
 | monthly | PCR up · put and call writing · walls down · near put wall | 1 |  |  |  |  | too few (0/10) |
-| weekly | PCR flat · put and call writing · walls same · mid walls | 1 |  |  |  |  | too few (0/10) |
 | weekly | PCR up · put and call writing · walls same · near call wall | 1 | 0% | -1.77% | -1.77 to -1.77% |  | too few (1/10) |
 
 ## Writer patterns (Nifty move to the close for 30-minute rows, next day for day rows)
@@ -183,17 +186,17 @@ Strongest call writers at 83000, strongest put writers at 83000; weakest call wr
 | Layer | Expiry | Writers | Seen | Up after | Avg move | Lean |
 |---|---|---|---|---|---|---|
 | intraday | monthly | writers even · few weak writers | 14 | 75% | +0.03% | no clear direction |
-| intraday | weekly | writers even · few weak writers | 11 | 67% | +0.18% | too few (9/10) |
+| intraday | weekly | writers even · few weak writers | 13 | 67% | +0.18% | too few (9/10) |
 | intraday | monthly | put writers stronger · few weak writers | 9 | 22% | -0.44% | too few (9/10) |
 | intraday | weekly | writers even · weak calls | 7 | 71% | -0.22% | too few (7/10) |
+| intraday | monthly | put writers stronger · weak puts | 6 | 0% | -0.21% | too few (3/10) |
 | intraday | weekly | call writers stronger · weak puts | 6 | 17% | +0.06% | too few (6/10) |
-| intraday | monthly | put writers stronger · weak puts | 4 | 0% | -0.21% | too few (3/10) |
 | intraday | weekly | call writers stronger · few weak writers | 4 | 0% | -0.82% | too few (4/10) |
 | intraday | monthly | writers even · weak puts | 1 | 0% | -0.22% | too few (1/10) |
 | intraday | weekly | writers even · weak puts | 1 |  |  | too few (0/10) |
+| day | weekly | writers even · few weak writers | 3 | 0% | -1.77% | too few (1/10) |
+| day | monthly | put writers stronger · weak puts | 2 |  |  | too few (0/10) |
 | day | monthly | writers even · few weak writers | 2 | 50% | -0.34% | too few (2/10) |
-| day | weekly | writers even · few weak writers | 2 | 0% | -1.77% | too few (1/10) |
-| day | monthly | put writers stronger · weak puts | 1 |  |  | too few (0/10) |
 | day | weekly | writers even · weak puts | 1 | 100% | +1.08% | too few (1/10) |
 
 ## Writer patterns by market trend
@@ -204,16 +207,16 @@ Strongest call writers at 83000, strongest put writers at 83000; weakest call wr
 | intraday | weekly | writers even · few weak writers · weekly sideways · 125m up | 10 | 67% | +0.18% | too few (9/10) |
 | intraday | monthly | put writers stronger · few weak writers · weekly sideways · 125m up | 9 | 22% | -0.44% | too few (9/10) |
 | intraday | weekly | writers even · weak calls · weekly sideways · 125m up | 7 | 71% | -0.22% | too few (7/10) |
-| intraday | monthly | put writers stronger · weak puts · weekly sideways · 125m sideways | 4 | 0% | -0.21% | too few (3/10) |
+| intraday | monthly | put writers stronger · weak puts · weekly sideways · 125m sideways | 6 | 0% | -0.21% | too few (3/10) |
 | intraday | weekly | call writers stronger · few weak writers · weekly sideways · 125m up | 4 | 0% | -0.82% | too few (4/10) |
 | intraday | weekly | call writers stronger · weak puts · weekly sideways · 125m sideways | 4 | 0% | -0.21% | too few (4/10) |
+| intraday | weekly | writers even · few weak writers · weekly sideways · 125m sideways | 3 |  |  | too few (0/10) |
 | intraday | weekly | call writers stronger · weak puts · weekly sideways · 125m up | 2 | 50% | +0.62% | too few (2/10) |
 | intraday | monthly | writers even · weak puts · weekly sideways · 125m sideways | 1 | 0% | -0.22% | too few (1/10) |
-| intraday | weekly | writers even · few weak writers · weekly sideways · 125m sideways | 1 |  |  | too few (0/10) |
 | intraday | weekly | writers even · weak puts · weekly sideways · 125m up | 1 |  |  | too few (0/10) |
+| day | monthly | put writers stronger · weak puts · weekly sideways · 125m sideways | 2 |  |  | too few (0/10) |
 | day | monthly | writers even · few weak writers · weekly sideways · 125m up | 2 | 50% | -0.34% | too few (2/10) |
-| day | monthly | put writers stronger · weak puts · weekly sideways · 125m sideways | 1 |  |  | too few (0/10) |
-| day | weekly | writers even · few weak writers · weekly sideways · 125m sideways | 1 |  |  | too few (0/10) |
+| day | weekly | writers even · few weak writers · weekly sideways · 125m sideways | 2 |  |  | too few (0/10) |
 | day | weekly | writers even · few weak writers · weekly sideways · 125m up | 1 | 0% | -1.77% | too few (1/10) |
 | day | weekly | writers even · weak puts · weekly sideways · 125m up | 1 | 100% | +1.08% | too few (1/10) |
 

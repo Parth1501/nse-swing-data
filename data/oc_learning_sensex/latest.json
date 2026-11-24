@@ -1,5 +1,5 @@
 {
- "as_of": "2026-11-23 15:46:00",
+ "as_of": "2026-11-24 09:46:00",
  "trend_weekly": "sideways",
  "trend_125m": "sideways",
  "trend_25m": "down",
@@ -7,7 +7,7 @@
   {
    "expiry": "2026-11-26",
    "type": "weekly",
-   "dte": 2.99,
+   "dte": 2.24,
    "spot": 82435.99,
    "pcr_near": 1.013,
    "max_pain": 82800.0,
@@ -20,22 +20,22 @@
    ],
    "atm_iv": 18.73,
    "intraday": {
-    "pattern": "PCR up \u00b7 put and call writing \u00b7 walls same \u00b7 mid walls",
-    "verdict": "Seen 1 times before; Sensex was up after it 0% of the time, average -1.15%. Too few outcomes (1/20) to trade on.",
+    "pattern": "PCR flat \u00b7 quiet OI \u00b7 walls same \u00b7 mid walls",
+    "verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
     "writers": "writers even \u00b7 few weak writers",
-    "writers_verdict": "Seen 10 times before; Sensex was up after it 67% of the time, average +0.18%. Too few outcomes (9/20) to trade on.",
+    "writers_verdict": "Seen 12 times before; Sensex was up after it 67% of the time, average +0.18%. Too few outcomes (9/20) to trade on.",
     "trend": "weekly sideways \u00b7 125m sideways",
     "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
-    "writers_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet."
+    "writers_trend_verdict": "Seen 2 times before. Too few outcomes (0/20) to trade on."
    },
    "day": {
     "pattern": "PCR flat \u00b7 put and call writing \u00b7 walls same \u00b7 mid walls",
-    "verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "verdict": "Seen 1 times before. Too few outcomes (0/20) to trade on.",
     "writers": "writers even \u00b7 few weak writers",
-    "writers_verdict": "Seen 1 times before; Sensex was up after it 0% of the time, average -1.77%. Too few outcomes (1/20) to trade on.",
+    "writers_verdict": "Seen 2 times before; Sensex was up after it 0% of the time, average -1.77%. Too few outcomes (1/20) to trade on.",
     "trend": "weekly sideways \u00b7 125m sideways",
-    "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
-    "writers_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet."
+    "pattern_trend_verdict": "Seen 1 times before. Too few outcomes (0/20) to trade on.",
+    "writers_trend_verdict": "Seen 1 times before. Too few outcomes (0/20) to trade on."
    },
    "writers": {
     "label": "writers even \u00b7 few weak writers",
@@ -1428,7 +1428,7 @@
   {
    "expiry": "2026-12-31",
    "type": "monthly",
-   "dte": 37.99,
+   "dte": 37.24,
    "spot": 82435.99,
    "pcr_near": 2.003,
    "max_pain": 83000.0,
@@ -1441,22 +1441,22 @@
    ],
    "atm_iv": 15.11,
    "intraday": {
-    "pattern": "PCR down \u00b7 put and call writing \u00b7 walls same \u00b7 near put wall",
-    "verdict": "Seen 1 times before; Sensex was up after it 100% of the time, average +0.48%. Too few outcomes (1/20) to trade on.",
-    "writers": "put writers stronger \u00b7 weak puts",
-    "writers_verdict": "Seen 3 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on.",
-    "trend": "weekly sideways \u00b7 125m sideways",
-    "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
-    "writers_trend_verdict": "Seen 3 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on."
-   },
-   "day": {
-    "pattern": "PCR up \u00b7 put and call writing \u00b7 walls down \u00b7 near put wall",
+    "pattern": "PCR flat \u00b7 quiet OI \u00b7 walls same \u00b7 near put wall",
     "verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
     "writers": "put writers stronger \u00b7 weak puts",
-    "writers_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "writers_verdict": "Seen 5 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on.",
     "trend": "weekly sideways \u00b7 125m sideways",
     "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
-    "writers_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet."
+    "writers_trend_verdict": "Seen 5 times before; Sensex was up after it 0% of the time, average -0.21%. Too few outcomes (3/20) to trade on."
+   },
+   "day": {
+    "pattern": "PCR flat \u00b7 put and call writing \u00b7 walls same \u00b7 near put wall",
+    "verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "writers": "put writers stronger \u00b7 weak puts",
+    "writers_verdict": "Seen 1 times before. Too few outcomes (0/20) to trade on.",
+    "trend": "weekly sideways \u00b7 125m sideways",
+    "pattern_trend_verdict": "New pattern, never seen before. Logged; nothing to go on yet.",
+    "writers_trend_verdict": "Seen 1 times before. Too few outcomes (0/20) to trade on."
    },
    "writers": {
     "label": "put writers stronger \u00b7 weak puts",

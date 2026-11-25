@@ -1,0 +1,17 @@
+{
+ "kind": "option_trade",
+ "title": "Exit: Bull call 25850/26000 at 62 (stop)",
+ "summary": "Stop hit at 12:48. Nifty back below 25,800 at 25,781, put writers covering 25,600-26,000, calls adding. About -19.35 per unit (~-Rs 1,258/lot).",
+ "body_md": "Nifty bull call 25850/26000 exited at about 62.15 (entry 81.5). Nifty fell back below 25,800, put writers covered across 25,600-26,000, call writers returned at 25,800/25,900/26,000, PCR 1.13 to 1.02. Result about -19.35 per unit, roughly -Rs 1,258 per lot.\n\nAnalysis only, not trading advice.",
+ "trade": {
+  "trade_id": "2026-11-25-bullcall-25850-26000",
+  "event": "exit",
+  "exit": 62.15,
+  "result": "-19.35 per unit (~-Rs 1,258/lot)",
+  "spot": 25780.95
+ },
+ "created_at": "2026-11-25T12:50:43+05:30",
+ "id": "2026-11-25-125043-option_trade",
+ "symbols": [],
+ "notify": true
+}

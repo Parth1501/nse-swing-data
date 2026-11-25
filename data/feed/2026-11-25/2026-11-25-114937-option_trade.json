@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "11:48: 85, holding",
+ "summary": "Nifty 25,948. Calls adding at 25,950-26,050 but puts still building at 25,900-26,000, so holding. Target 110, stop 62.",
+ "trade": {
+  "trade_id": "2026-11-25-bullcall-25850-26000",
+  "event": "update",
+  "now": 85.05,
+  "spot": 25947.55
+ },
+ "created_at": "2026-11-25T11:49:37+05:30",
+ "id": "2026-11-25-114937-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

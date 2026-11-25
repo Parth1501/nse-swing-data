@@ -1,0 +1,16 @@
+{
+ "kind": "option_trade",
+ "title": "12:18: 79, holding",
+ "summary": "Nifty pulled back to 25,897. Small put covering at 25,700-25,800 but no fresh call writing above, so holding. Stop 62.",
+ "trade": {
+  "trade_id": "2026-11-25-bullcall-25850-26000",
+  "event": "update",
+  "now": 78.8,
+  "spot": 25897.3
+ },
+ "created_at": "2026-11-25T12:19:29+05:30",
+ "id": "2026-11-25-121929-option_trade",
+ "body_md": "",
+ "symbols": [],
+ "notify": false
+}

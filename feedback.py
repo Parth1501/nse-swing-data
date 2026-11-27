@@ -275,6 +275,34 @@ def entry_window(p, df, n):
     return d[d.index > pd.Timestamp(p["list_date"])].iloc[:n], d
 
 
+# A what-if that has reached one of these is decided: later runs keep it as it is, the same way closed trades
+# in the picks log are frozen, so a gap in Yahoo's history can't turn a decided result back into "waiting".
+WHATIF_DECIDED = ("Full win (T2)", "Partial win (T1)", "Failed", "Not bought")
+MAX_WINDOW_GAP_DAYS = 7      # first price after the list date later than this: the history has a hole, don't replay
+
+
+WHATIF_KEYS = ["status", "fill_date", "fill_price", "t1_date", "max_dip_pct", "max_rise_pct", "return_pct",
+               "current_pct"]
+LISTED_KEYS = ["status", "fill_date", "fill_price", "t1_date", "max_dip_pct", "max_rise_pct", "return_pct"]
+
+
+def previous_missed_entries():
+    """From the last feedback.json: each pick's record keyed by (list_date, symbol), and its decided
+    what-if results keyed by (list_date, symbol, rule)."""
+    try:
+        prev = json.load(open(OUT, encoding="utf-8")).get("missed_entries") or {}
+    except Exception:
+        return {}, {}
+    recs, decided = {}, {}
+    for rec in prev.get("picks") or []:
+        key = (str(rec.get("list_date")), rec.get("symbol"))
+        recs[key] = rec
+        for name, res in (rec.get("whatif") or {}).items():
+            if (res or {}).get("status") in WHATIF_DECIDED:
+                decided[key + (name,)] = res
+    return recs, decided
+
+
 def missed_entries(df):
     """Per pick: how close the price came to the zone, what a better buy price was, and what the
     fixed what-if entry rules would have done. Plus a table of each rule over all support picks."""
@@ -282,6 +310,7 @@ def missed_entries(df):
     sd, frames = load_prices(sorted(picks["symbol"].unique()))
     if sd is None or not frames:
         return None
+    prev_recs, frozen = previous_missed_entries()
     per, rows = [], {name: [] for name in ["As listed"] + list(WHATIFS)}
     base_cols = ["list_date", "symbol", "entry_style", "entry_low", "entry_high", "t1", "t2"]
     for _, p in picks.iterrows():
@@ -289,9 +318,21 @@ def missed_entries(df):
         if prices is None or prices.empty:
             continue
         win, full = entry_window(p, prices, sd.ENTRY_WINDOW)
-        if win.empty:
-            continue
         base = {c: p[c] for c in base_cols}
+        key = (str(p["list_date"]), p["symbol"])
+        if win.empty or (win.index[0] - pd.Timestamp(p["list_date"])).days > MAX_WINDOW_GAP_DAYS:
+            # the downloaded history has a hole after the list date: replaying it would give a wrong
+            # entry, so keep last run's record for this pick (or leave the pick out if there is none)
+            old = prev_recs.get(key)
+            if old is None:
+                continue
+            if p["entry_style"] != "Breakout":
+                for name in WHATIFS:
+                    if old.get("whatif", {}).get(name):
+                        rows[name].append({**base, **old["whatif"][name]})
+                rows["As listed"].append({**base, **{k: p.get(k) for k in LISTED_KEYS}})
+            per.append(old)
+            continue
         hi, lo = float(p["entry_high"]), float(p["entry_low"])
         win_low = float(win["Low"].min())
         rec = {"list_date": p["list_date"], "symbol": p["symbol"], "entry_style": p["entry_style"],
@@ -311,8 +352,9 @@ def missed_entries(df):
         rec["whatif"] = {}
         for name, rule in WHATIFS.items():
             res = sd.replay_pick(rule(base), prices)
-            rec["whatif"][name] = {k: res.get(k) for k in ["status", "fill_date", "fill_price", "t1_date",
-                                                         "max_dip_pct", "return_pct", "current_pct"]}
+            if key + (name,) in frozen:              # decided on an earlier run: keep that result
+                res = {**res, **frozen[key + (name,)]}
+            rec["whatif"][name] = {k: res.get(k) for k in WHATIF_KEYS}
             if p["entry_style"] != "Breakout":
                 rows[name].append({**base, **res})
         if p["entry_style"] != "Breakout":
